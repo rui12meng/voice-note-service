@@ -14,7 +14,7 @@ class PhpRedisConnector implements ConnectorInterface
         if (isset($config['password'])) {
             $config['password'] = (string)$config['password'];
             if ($config['password'] !== '') {
-                $connection->auth($config['password']);
+                $connection->auth(['default' , $config['password']]);
             }
         }
         if (isset($config['database'])) {

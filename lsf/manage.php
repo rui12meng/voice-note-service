@@ -38,8 +38,8 @@ class Manage
      * @return void
      */
     private function _cliParamValidate(){
-        $allowCommandStr = '{' . implode($this->_allowCommandArr, '|') . '}';
-        $allowEnvStr = '{' . implode($this->_allowEnvArr, '|') . '}';
+        $allowCommandStr = '{' . implode('|' , $this->_allowCommandArr) . '}';
+        $allowEnvStr = '{' . implode('|' , $this->_allowEnvArr) . '}';
         global $argv;
         $fileName = trim($argv[0]);
         // 未获取到命令参数
