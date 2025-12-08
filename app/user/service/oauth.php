@@ -54,25 +54,24 @@ class Oauth
         // === 4. 验证并解码 id_token ===
         try {
             $decoded = JWT::decode($id_token, $keys);
-            var_dump($decoded);exit();
 
             if ($decoded->iss !== 'https://appleid.apple.com') {
-                throw new Exception("Invalid issuer");
+                throw new \Exception("Invalid issuer");
             }
 
             if ($decoded->aud !== '你的 Apple Service ID / Client ID') {
-                throw new Exception("Invalid audience");
+                throw new \Exception("Invalid audience");
             }
 
             if ($decoded->exp < time()) {
-                throw new Exception("expired token");
+                throw new \Exception("expired token");
             }
 
             $data['apple_uid'] = $decoded->sub;
             $data['email'] = $decoded->email ?? '';
 
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $errData = [
                 'method'    => __FUNCTION__,
                 'message' => "token verification failed",
