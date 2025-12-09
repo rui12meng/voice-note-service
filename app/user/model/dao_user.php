@@ -20,16 +20,6 @@ class DaoUser extends \Lsf\Model
      * @return mixed
      */
     public function userSign($data){
-/*
- * $user_info=[
-                'apple_uid'=> $data['apple_uid'],
-                'identifier' => $params['id_token'],
-                'credential' => $params['auth_code'],
-                'username' => $params['user_name'],
-                'email' => $data['email'],
-                'provider' => 'apple',
-            ];
- * */
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
 
         try {
@@ -40,7 +30,7 @@ class DaoUser extends \Lsf\Model
             $this->_svrDaoVnUserAuthModel->injectDb($db);
             // 3. 开启事务
             $userData = [
-                'user_uid' => uuid_create(UUID_TYPE_RANDOM),
+                'user_uid' => 'ujrri899wuww99',//uuid_create(UUID_TYPE_RANDOM),
                 'username' => $data['username'] ?? '',
                 'email' => $data['email'] ?? '',
                 'register_type' => $data['provider'] ?? '',
@@ -48,13 +38,13 @@ class DaoUser extends \Lsf\Model
             ];
             $this->begin();
             $userId = $this->storeData($userData);
-            if ($userId === false) {
+            if ($userId < 0 ) {
                 throw new \Exception('Insert user failed');
             }
             $authData = [
                 'user_id' => $userId,
                 'auth_type' => $data['provider'] ?? '',
-                'identifier' => $data['id_token'] ?? '',
+                'identifier' => $data['identifier'] ?? '',
                 'credential' => $data['credential'] ?? '',
                 'last_login_at' => time(),
             ];
@@ -107,10 +97,10 @@ class DaoUser extends \Lsf\Model
         }
 
         $result = $this->insert($data);
-        if(isset($result['id']) && !empty($result['id'])){
+        if(isset($result) && !empty($result)){
             return $result;
         }else{//入库失败
-            return -7;
+            return -2;
         }
 
     }

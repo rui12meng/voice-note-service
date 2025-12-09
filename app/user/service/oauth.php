@@ -95,7 +95,8 @@ class Oauth
         }
         //根据 sub（苹果用户唯一ID）查找本地用户
         if(isset($data['apple_uid']) && !empty($data['apple_uid'])){
-            $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($$data);
+            $oauthWhereData = ['auth_type' => $data['provider'], 'identifier' =>$data['apple_uid']];
+            $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($oauthWhereData);
             //找到则返回用户uid
             if(isset($result['uid'])){
                 $uid = $result['uid'];

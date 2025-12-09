@@ -81,6 +81,8 @@ class Oauth extends \App\Application
         //校验identityToken合法性且未过期
         //$data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
 
+        //临时测试
+        $data['apple_uid'] = 'sdfsdferuiweurwoeiirwoekrwop';
         if(isset($data['apple_uid']) && !empty($data['apple_uid'])){ //说明授权成功
             $user_info=[
                 'apple_uid'=> $data['apple_uid'],
