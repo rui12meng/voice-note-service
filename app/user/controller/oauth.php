@@ -66,26 +66,37 @@ class Oauth extends \App\Application
         if ( !isset($params['id_token']) || empty($params['id_token'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'id_token');
         }
-
-        //校验identityToken合法性且未过期
-        $data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
-
-        if(isset($data['apple_uid']) && !empty($data['apple_uid'])){ //说明授权成功
-            //登录or注册逻辑
-            $this->_oauthService->appleLoginOrSignUp($data);
-        }
-
-
         //我们使用自己的用户体系，所以不需要换取苹果token，且后续不会再与苹果服务交互，我们只做不为空简单校验即可
         if ( !isset($params['auth_code']) || empty($params['auth_code'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'auth_code');
         }
+
         if( isset($params['email']) & !empty($params['email'])){
             // 正则验证邮箱
-            if($this->validate_email($params['email'])){
-                $user_info['email'] = $params['email'];
-            }
+//            if($this->validate_email($params['email'])){
+//                $user_info['email'] = $params['email'];
+//            }
         }
+
+        //校验identityToken合法性且未过期
+        //$data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
+
+        if(isset($data['apple_uid']) && !empty($data['apple_uid'])){ //说明授权成功
+            $user_info=[
+                'apple_uid'=> $data['apple_uid'],
+                'identifier' => $params['id_token'],
+                'credential' => $params['auth_code'],
+                'username' => $params['user_name'],
+                'email' => $data['email'],
+                'provider' => 'apple',
+            ];
+            //登录or注册逻辑
+            $this->_oauthService->appleLoginOrSignUp($user_info);
+        }
+
+
+
+
         if( isset($params['user_name']) & !empty($params['user_name'])){
             $user_info['user_name'] = $params['user_name'];
         }

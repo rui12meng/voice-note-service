@@ -20,7 +20,16 @@ class DaoUser extends \Lsf\Model
      * @return mixed
      */
     public function userSign($data){
-
+/*
+ * $user_info=[
+                'apple_uid'=> $data['apple_uid'],
+                'identifier' => $params['id_token'],
+                'credential' => $params['auth_code'],
+                'username' => $params['user_name'],
+                'email' => $data['email'],
+                'provider' => 'apple',
+            ];
+ * */
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
 
         try {
@@ -46,7 +55,7 @@ class DaoUser extends \Lsf\Model
                 'user_id' => $userId,
                 'auth_type' => $data['provider'] ?? '',
                 'identifier' => $data['id_token'] ?? '',
-                'credential' => '',
+                'credential' => $data['credential'] ?? '',
                 'last_login_at' => time(),
             ];
             $authId = $this->_svrDaoVnUserAuthModel->insert($authData);
