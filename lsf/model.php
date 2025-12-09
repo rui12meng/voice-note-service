@@ -15,6 +15,7 @@ class Model
     public $table       = '';
     private $_db;
     private $_mysqlPool;
+    protected $_injectedDb = null; //用于外部注入DB连接
 
     /**
      * 构造函数
@@ -29,6 +30,20 @@ class Model
     }
 
     /**
+     * 注入外部DB连接（用于事务）
+     */
+    public function injectDb($db) {
+        $this->_injectedDb = $db;
+    }
+
+    /**
+     * 获取当前使用的DB连接（用于传递给其他Model）
+     */
+    public function getDb() {
+        return $this->_db;
+    }
+
+    /**
      * __call
      * @param  string  $method
      * @param  array   $args
@@ -38,9 +53,25 @@ class Model
         if(method_exists($this, $method) === FALSE){
             throw new \Exception('Model '. $method . ' method not exists');
         }
+
+        // 如果已注入外部DB，则使用它（不从连接池取）
+        if ($this->_injectedDb !== null) {
+            $this->_db = $this->_injectedDb;
+            return call_user_func_array([$this, $method], $args);
+        }
+
+        // 否则走原有逻辑：从连接池取 + 自动归还
         // 动态从连接池中获取新的db对象
         $this->_db = $this->_mysqlPool->db($this->nodeName);
-        $result = call_user_func_array(array($this, $method), $args);
+
+        try {
+            $result = call_user_func_array([$this, $method], $args);
+        } finally {
+            $this->_db->recycle($this->nodeName);
+            $this->_db = null;
+        }
+
+        //$result = call_user_func_array(array($this, $method), $args);
         // 从每一次数据库操作都返回资源修改为每一次协程执行完成后再返回资源
         // $this->_db->recycle($this->nodeName);
         return $result;

@@ -75,13 +75,6 @@ class Oauth extends \App\Application
             $this->_oauthService->appleLoginOrSignUp($data);
         }
 
-//        验证 id_token 合法且未过期
-//
-//根据 sub（苹果用户唯一ID）查找本地用户
-//
-//找不到则自动注册绑定
-//
-//完成本地登录流程（颁发你自己的 session / JWT）
 
         //我们使用自己的用户体系，所以不需要换取苹果token，且后续不会再与苹果服务交互，我们只做不为空简单校验即可
         if ( !isset($params['auth_code']) || empty($params['auth_code'])) {
