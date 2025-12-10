@@ -88,8 +88,8 @@ class Oauth extends \App\Application
                 'apple_uid'=> $data['apple_uid'],
                 'identifier' => $params['id_token'],
                 'credential' => $params['auth_code'],
-                'username' => $params['user_name'],
-                'email' => $data['email'],
+                'username' => $params['user_name'] ?? '',
+                'email' => $data['email'] ?? '',
                 'provider' => 'apple',
             ];
             //登录or注册逻辑

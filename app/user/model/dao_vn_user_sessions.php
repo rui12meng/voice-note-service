@@ -4,10 +4,10 @@ namespace User\Model;
 /**
  * 用户数据
  * @author mengrui
- * $Id: dao_vn_user_session.php $
+ * $Id: dao_vn_user_sessions.php $
  */
 
-class DaoVnUserSession extends \Lsf\Model
+class DaoVnUserSessions extends \Lsf\Model
 {
     public $primary     = 'id';
     public $tablePrefix = '';

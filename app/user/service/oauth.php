@@ -22,6 +22,7 @@ class Oauth
     private $_svrDaoUserModel;
     private $_svrDaoVnUserAuthModel;
     private $_svrDaoVnUserSessionModel;
+    private $_svrDaoVnUserDevicesModel;
 
     /**
      * 构造函数
@@ -33,6 +34,7 @@ class Oauth
         $this->_svrDaoUserModel = \Lsf\Loader::model('DaoUser', false, APP_NAME_USER);
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
         $this->_svrDaoVnUserSessionModel = \Lsf\Loader::model('DaoVnUserSessions', false, APP_NAME_USER);
+        $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevicess', false, APP_NAME_USER);
     }
 
     /**
@@ -104,7 +106,7 @@ class Oauth
             'push_token' => 'dfsdfjieuewww983j',
             'ip_address' => '127.0.0.1',
         ];
-        $result = $this->_svrDaoVnUserSessionModel->storeDevices($uid,$device_id,$data);
+        $result = $this->_svrDaoVnUserDevicesModel->storeDevices($uid,$device_id,$data);
         var_dump($result);
         exit();
 
