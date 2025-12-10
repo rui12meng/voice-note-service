@@ -46,7 +46,7 @@ class DaoUser extends \Lsf\Model
                 'auth_type' => $data['provider'] ?? '',
                 'identifier' => $data['identifier'] ?? '',
                 'credential' => $data['credential'] ?? '',
-                'last_login_at' => time(),
+                'last_login_at' => date('Y-m-d H:i:s'),
             ];
             $authId = $this->_svrDaoVnUserAuthModel->insert($authData);
             if ($authId === false) {

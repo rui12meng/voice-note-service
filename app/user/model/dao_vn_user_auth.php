@@ -22,7 +22,7 @@ class DaoVnUserAuth extends \Lsf\Model
     public function findOauthInfo($data){
         $where = [
             'auth_type' => $data['provider'],
-            'identifier' => $data['oauth_uid'],
+            'identifier' => $data['identifier'],
         ];
         $columns = 'id';
         $result = $this->query($columns ,  $where);
