@@ -2,16 +2,16 @@
 namespace User\Model;
 
 /**
- * 用户日志数据
+ * 用户信息（资料）数据
  * @author mengrui
- * $Id: dao_vn_user_logs.php $
+ * $Id: dao_vn_user_info.php $
  */
 
-class DaoVnUserLogs extends \Lsf\Model
+class DaoVnUserInfo extends \Lsf\Model
 {
     public $primary     = 'id';
     public $tablePrefix = '';
-    public $table       = 'user_logs';
+    public $table       = 'user_info';
 
     /**
      * 构造函数
@@ -23,14 +23,17 @@ class DaoVnUserLogs extends \Lsf\Model
         parent::__construct();
     }
 
+
     /**
-     * 存储日志信息
-     * @param  array   $data
+     * 查询用户个人信息
+     * @param  array   $col
+     * @param  int   $uid
      * @return mixed
      */
 
-    public function storeLogs($data){
-        $result = $this->insert($data);
+    public function findUserInfo($col,$uid)
+    {
+        $result = $this->find($col, $uid);
         if($result === FALSE){
             return FALSE;
         }else{

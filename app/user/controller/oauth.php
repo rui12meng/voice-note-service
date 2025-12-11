@@ -93,18 +93,19 @@ class Oauth extends \App\Application
                 'provider' => 'apple',
             ];
             //登录or注册逻辑
-            $this->_oauthService->appleLoginOrSignUp($user_info);
+            $result = $this->_oauthService->appleLoginOrSignUp($user_info);
+        }else{
+            $result = [];
         }
 
 
 
 
-        if( isset($params['user_name']) & !empty($params['user_name'])){
-            $user_info['user_name'] = $params['user_name'];
-        }
+//        if( isset($params['user_name']) & !empty($params['user_name'])){
+//            $user_info['user_name'] = $params['user_name'];
+//        }
 
 
-        $result = [];
         return $this->json($result);
     }
 

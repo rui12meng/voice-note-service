@@ -13,6 +13,7 @@ class DaoUser extends \Lsf\Model
     public $tablePrefix = '';
     public $table       = 'users';
     private $_svrDaoVnUserAuthModel;
+    private $_svrDaoVnUserInfoModel;
 
     /**
      * 用户注册事务处理
@@ -21,6 +22,7 @@ class DaoUser extends \Lsf\Model
      */
     public function userSign($data){
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
+        $this->_svrDaoVnUserInfoModel = \Lsf\Loader::model('DaoVnUserInfo', false, APP_NAME_USER);
 
         try {
             // 1. 从连接池获取一个DB连接（手动管理）
@@ -28,6 +30,7 @@ class DaoUser extends \Lsf\Model
             // 2. 注入到两个Model
             $this->injectDb($db);
             $this->_svrDaoVnUserAuthModel->injectDb($db);
+            $this->_svrDaoVnUserInfoModel->injectDb($db);
             // 3. 开启事务
             $userData = [
                 'user_uid' => 'ujrri899wuww99',//uuid_create(UUID_TYPE_RANDOM),
@@ -41,6 +44,18 @@ class DaoUser extends \Lsf\Model
             if ($userId < 0 ) {
                 throw new \Exception('Insert user failed');
             }
+
+            $userInfoData = [
+                'user_id' => $userId,
+                'email' => $data['email'],
+                'nickname' => $data['username'],
+            ];
+
+            $info = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
+            if ($info === false) {
+                throw new \Exception('Insert user info failed');
+            }
+
             $authData = [
                 'user_id' => $userId,
                 'auth_type' => $data['provider'] ?? '',
@@ -54,6 +69,11 @@ class DaoUser extends \Lsf\Model
             }
             // 5. 提交事务
             $this->commit();
+
+            return [
+                'uid' => $userId,
+                'auth_id' => $authId,
+            ];
 
         }catch (\Exception $e){
             // 6. 回滚（如果已开启事务）

@@ -56,7 +56,7 @@ class DaoVnUserDevices extends \Lsf\Model
         $updates = [];
         foreach($data as $k => $v){
             if(isset($data[$k]) && !empty($data[$k])){
-                $updates[] = $k ."=". 'VALUE('.$k.')';
+                $updates[] = $k ."=". '"'.$v.'"';
             }
         }
         $updates[] = "last_login_time = CURRENT_TIMESTAMP";
@@ -67,7 +67,7 @@ class DaoVnUserDevices extends \Lsf\Model
         INSERT INTO {$this->table}
         (user_id, device_id, device_type, device_name, os_version, app_version, push_token, ip_address)
         VALUES
-        (UNHEX('$uid'), '$device_id', '$device_type', '$device_name', '$os_version', '$app_version', '$push_token', '$ip_address')
+        ('$uid', '$device_id', '$device_type', '$device_name', '$os_version', '$app_version', '$push_token', '$ip_address')
         ON DUPLICATE KEY UPDATE
             $updateSql
 SQL;

@@ -20,9 +20,11 @@ class Oauth
      * @var mixed
      */
     private $_svrDaoUserModel;
+    private $_svrDaoUserInfoModel;
     private $_svrDaoVnUserAuthModel;
     private $_svrDaoVnUserSessionModel;
     private $_svrDaoVnUserDevicesModel;
+    private $_svrDaoVnUserLogsModel;
 
     /**
      * 构造函数
@@ -32,9 +34,11 @@ class Oauth
     public function __construct()
     {
         $this->_svrDaoUserModel = \Lsf\Loader::model('DaoUser', false, APP_NAME_USER);
+        $this->_svrDaoUserInfoModel = \lsf\Loader::model('DaoVnUserInfo', false, APP_NAME_USER);
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
         $this->_svrDaoVnUserSessionModel = \Lsf\Loader::model('DaoVnUserSessions', false, APP_NAME_USER);
-        $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevicess', false, APP_NAME_USER);
+        $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevices', false, APP_NAME_USER);
+        $this->_svrDaoVnUserLogsModel = \Lsf\Loader::model('DaoVnUserLogs', false, APP_NAME_USER)
     }
 
     /**
@@ -95,105 +99,177 @@ class Oauth
      * @return string
      */
     public function appleLoginOrSignUp($data){
-        //test
-        $uid = 6;
-        $device_id = 'device_idjdjkjdjsldslslsssl_djfsdjf837473';
-        $data = [
-            'device_type' => 'ios',
-            'device_name' => 'mr iphone 15S',
-            'os_version' => '15.01.89',
-            'app_version' => '0.1',
-            'push_token' => 'dfsdfjieuewww983j',
-            'ip_address' => '127.0.0.1',
-        ];
-        $result = $this->_svrDaoVnUserDevicesModel->storeDevices($uid,$device_id,$data);
-        var_dump($result);
-        exit();
+
+        $result_data = [];
 
         if(!isset($data['provider']) && empty($data['provider'])){
             $data['provider'] = 'apple';
         }
+        $result_data['log_mode'] = $data['provider'];
         //根据 sub（苹果用户唯一ID）查找本地用户
         if(isset($data['apple_uid']) && !empty($data['apple_uid'])){
+
+            //查询用户是否存在
             $oauthWhereData = ['auth_type' => $data['provider'], 'identifier' =>$data['apple_uid']];
             $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($oauthWhereData);
-            //找到则返回用户uid
+            //存在返回用户信息+登录态信息
             if(isset($result['uid'])){
                 $uid = $result['uid'];
-            }else{//找不到则自动注册绑定
-                //事务处理
+
+            }
+            else{//找不到则自动注册绑定
+                //事务处理，存储user + user_auth
                 $result = $this->_svrDaoUserModel->userSign($data);
 
-                if(isset($result) && is_int($result) && $result > 0){
-                    $uid = $result;
-                    //同时把用户输入信息部分返回
-                    //生成登录态token信息
-                    $result_token = generateTokens($uid);
-                    //存储用户会话信息
-                    $session_data = [
-                        'user_id'       => $result['uid'],
-                        'auth_id'       => $result['auth_id'],
-                        'refresh_token' => $result_token['refresh_token'],
-                        'session_token'  => $result_token['access_token'],
-                        'expire_at'    => date('Y-m-d H:i:s', time() + 3600),
-                        'refresh_expires_at'=> date('Y-m-d H:i:s', time() + 30*24*3600),
-                        'ip_address'            => $_SERVER['REMOTE_ADDR'] ?? '',
-                        //设备信息
-                        'device_id'     => $data['device_id'] ?? '',
-                        'device_type'     => $data['device_type'] ?? '',
-                        'device_name'     => $data['device_name'] ?? '',
-                        'device_info'     => $data['device_info'] ?? '',
-                        'user_agent'     => $data['user_agent'] ?? '',
-                        'last_active_at'    => date('Y-m-d H:i:s')
-                    ];
-                    $session_id = $this->_svrDaoVnUserSessionModel->storeData($session_data);
-
-                    if(isset($session_id) && is_int($session_id)){
-
-                    }else{//session 信息存储失败
-                        return false;
-                    }
-
-
+                if(isset($result['uid']) && is_int($result['uid']) && $result['uid'] > 0){
+                    $uid = $result['uid'];
                 }else{
-                    return 'err';
+                    //注册失败
+                    return false;
                     //log
                 }
             }
+            $result_data['user_id'] = $uid;
+            //生成登录态token信息
+            $result_token = $this->generateTokens($uid);
 
+            if(!isset($result_token['access_token']) || !isset($result_token['refresh_token']) || !isset($result_token['expires_at'])){
+                return false;
+            }
+            else{
+                $result_data['token'] = $result_token['access_token'];
+                $result_data['refresh_token'] = $result_token['refresh_token'];
+                $result_data['expires_in'] = $result_token['expires_at'];
+            }
+
+            //存储用户会话信息
+            $device_info = [
+                //设备信息
+                'device_id'     => $data['device_id'] ?? '',
+                'device_type'     => $data['device_type'] ?? '',
+                'device_name'     => $data['device_name'] ?? '',
+                'device_info'     => $data['device_info'] ?? '',
+                'user_agent'     => $data['user_agent'] ?? '',
+                'os_version' => '15.01.89',
+                'app_version' => '0.1',
+                'push_token' => 'dfsdfjieuewww983j',
+                'ip_address' => '127.0.0.1',
+            ];
+
+            $session_id = $this->storeUserSessionInfo($uid, $result_token['access_token'], $result_token['refresh_token'], $device_info);
+
+            if(isset($session_id) && is_int($session_id)){
+
+            }else{//session 信息存储失败
+                return false;
+            }
+
+            // 存储用户设备信息,
+            $this->storeUserDevicesInfo($uid, $device_info['device_id'], $device_info);
+
+            //记录登录日志
+            $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $device_info);
+
+            //查询用户信息返回给客户端
+            $userInfo = $this->_svrDaoUserInfoModel->findUserInfo(['nickname','email','avatar_url','gender'],$uid);
+
+            $result_data['nickname'] = $userInfo[0]['nickname'] ?? '';
+            $result_data['email'] = $userInfo[0]['email'] ?? '';
+            $result_data['avatar_url'] = $userInfo[0]['avatar_url'] ?? '';
+            $result_data['gender'] = $userInfo[0]['gender'] ?? '';
         }else{
             //验证客户端授权信息失败
+            return false;
 
         }
-return [];
+
+        return $result_data;
 
     }
 
     /**
      * 存储用户session会话信息
-     * @param void
+     * @param int $uid
+     * @param string $access_token
+     * @param string $refresh_token
+     * @param array $device_info
      * @return string
      */
-    public function storeUserSessionInfo($data){
+    public function storeUserSessionInfo($uid, $access_token, $refresh_token, $device_info){
+        $session_data = [
+            'user_id'       => $uid,
+            'refresh_token' => $refresh_token,
+            'session_token'  => $access_token,
+            'expire_at'    => date('Y-m-d H:i:s', time() + 3600),
+            'refresh_expires_at'=> date('Y-m-d H:i:s', time() + 30*24*3600),
+            'ip_address'            => $_SERVER['REMOTE_ADDR'] ?? '',
+            //设备信息
+            'device_id'     => $device_info['device_id'] ?? '',
+            'device_type'     => $device_info['device_type'] ?? '',
+            'device_name'     => $device_info['device_name'] ?? '',
+            'device_info'     => $device_info['device_info'] ?? '',
+            'user_agent'     => $device_info['user_agent'] ?? '',
+            'last_active_at'    => date('Y-m-d H:i:s')
+        ];
+        $session_id = $this->_svrDaoVnUserSessionModel->storeData($session_data);
+        if($session_id == FALSE){
 
+            //记录log
+            return false;
+
+        }else{
+            return $session_id;
+        }
     }
 
     /**
-     * 存储用户日志信息
-     * @param void
+     * 存储用户操作日志信息
+     * @param int $uid
+     * @param string $log_type
+     * @param string $action
+     * @param string $description
+     * @param array $device_info
      * @return string
      */
-    public function storeUserLogsInfo($data){
+    public function storeUserLogsInfo($uid, $log_type, $action, $description,$device_info){
+        $data = [
+            'uid' => $uid,
+            'log_type' => $log_type,
+            'action' => $action,
+            'description' => $description,
+            'ip_address' => $device_info['ip_address'],
+            'user_agent' => $device_info['user_agent'],
+            'device_id' => $device_info['device_id'],
+        ];
+        $result = $this->_svrDaoVnUserLogsModel->storeLogs($data);
+        if($result == FALSE){
 
+            //记录log
+
+        }
     }
 
     /**
      * 存储用户设备信息
-     * @param void
+     * @param int $uid
+     * @param string $device_id
+     * @param array $data
      * @return string
      */
-    public function storeUserDevicesInfo($data){
-
+    public function storeUserDevicesInfo($uid, $device_id, $data){
+        $uid = 6;
+        $device_id = 'device_idjdjkjdjsldslslsssl_djfsdjf837473';
+        $data = [
+            'device_type' => isset($data['device_type']) ?? 'ios',
+            'device_name' => isset($data['device_type']) ?? 'mr iphone 15S',
+            'os_version' => isset($data['device_type']) ?? '15.01.89S',
+            'app_version' => isset($data['device_type']) ?? '0.1',
+            'push_token' => isset($data['push_token']) ?? 'dfsdfjieuewww983j',
+            'ip_address' => isset($data['ip_address']) ?? '127.0.0.1',
+        ];
+        $result = $this->_svrDaoVnUserDevicesModel->storeDevices($uid,$device_id,$data);
+        // 返回布尔型，true 为成功，false为失败
+        return $result;
     }
 
     /**
