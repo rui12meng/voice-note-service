@@ -288,7 +288,6 @@ class Oauth
             'exp' => $now + Env::get('TOKEN_ACCESS_TTL'),
         ];
         $token_jwt_access_secret = Env::get('TOKEN_JWT_ACCESS_SECRET');
-        var_dump($token_jwt_access_secret);exit();
         $accessToken = JWT::encode($accessPayload, $token_jwt_access_secret, 'HS256');
 
         // 2. refresh_token

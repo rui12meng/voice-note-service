@@ -144,18 +144,22 @@ class Oauth extends \App\Application
      * @param  void
      * @return string
      */
-    public function token_refresh($params){
-
-        if ( ! isset($params['refresh_token']) || empty($params['refresh_token'])) {
+    public function tokenRefresh(){
+        $result = [];
+        $refresh_token = $this->post('refresh_token', true);
+        if ( ! isset($refresh_token) || empty($refresh_token)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'refresh_token');
         }
 
-        $result = $this->_oauthService->refreshAccessToken($params['refresh_token']);
-        if($result === false){
-echo 'err';
+        $token_info = $this->_oauthService->refreshAccessToken($refresh_token);
+        if($token_info === false){
+            echo 'err';
         }else{
-            var_dump($result);
+            $result['token'] = $token_info['access_token'] ?? '';
+            $result['refresh_token'] = $token_info['refresh_token'] ?? '';
+            $result['expires_in'] = $token_info['expires_at'] ?? '';
         }
+        return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**
