@@ -306,20 +306,7 @@ class Oauth
         ];
     }
 
-    /**
-     * 验证 access_token
-     * @param void
-     * @return void
-     */
-    public function verifyAccessToken(string $token) {
-        try{
-            $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
-            return (array)$payload;
-        }catch (\Exception $e) {
-            //log access解析失败，非法token
-            return false;
-        }
-    }
+
 
     /**
      * 验证 refresh_token

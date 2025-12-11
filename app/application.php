@@ -2,6 +2,8 @@
 namespace App;
 
 use Lsf\Exception\FinishException;
+use Firebase\JWT\Key;
+use Lsf\Env;
 
 /**
  * 应用全局基类
@@ -50,7 +52,7 @@ class Application extends \Lsf\Controller
      */
     protected $noNeedCheckTokenRouter = [ // 无需检查token的路由
         // 帐号
-        '/api/user/oauth/login_or_signup'                    => 1,
+        '/user/oauth/login_or_signup'                    => 1,
     ];
 
     /**
@@ -64,7 +66,6 @@ class Application extends \Lsf\Controller
         // 系统维护（由于之前服务端临时支撑，目前先注释，后续修改方案通过单独接口来维护，而不是全局依赖调用）
         // $this->systemMaintenance();
         $router = '/' . $appName . '/' . $controllerName . '/' . uncamelize($actionName);
-        var_dump($router);
         if (array_key_exists($router, $this->noNeedCheckTokenRouter) === false) {
             $this->token = $this->post('token', true);
 
@@ -74,9 +75,32 @@ class Application extends \Lsf\Controller
             if ($this->token == '') {
                 throw new FinishException($this->errParamMissing(ECODE_PARAM_VALUE_INVALID, 'token'));
             }
+            //校验token
+            $payload = $this->verifyAccessToken($this->token);
+            if($payload === false){
+                throw new FinishException($this->json(9999999, [], 'token非法'));
+            }else{
+                var_dump($payload);
+            }
+
         }
         // 再执行每个app自定义的初始化方法
         $this->initAppsApplication();
+    }
+
+    /**
+     * 验证 access_token
+     * @param void
+     * @return void
+     */
+    private function verifyAccessToken(string $token) {
+        try{
+            $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
+            return (array)$payload;
+        }catch (\Exception $e) {
+            //log access解析失败，非法token
+            return false;
+        }
     }
 
     /**
