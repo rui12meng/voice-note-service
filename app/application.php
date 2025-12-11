@@ -10,43 +10,33 @@ use Lsf\Exception\FinishException;
  */
 
 define('ECODE_SUCCESS', 0);                              // 成功
-define('ECODE_PARAM_MISSING', 9040000);                  // 缺失参数
-define('ECODE_PARAM_VALUE_INVALID', 9040001);            // 参数值非法
-define('ECODE_DATABASE_QUERY_FAIL', 9040002);            // 数据库查询失败
-define('ECODE_DATA_NOT_FOUND', 9040004);                 // 数据不存在
-define('ECODE_API_NETWORK_REQUEST_FAIL', 9040005);       // 接口网络请求失败
-define('ECODE_API_RESPONSE_DATA_EXCEPTION', 9040006);    // 接口响应数据异常
-define('ECODE_CALL_INNER_METHOD_PARAMS_ERROR', 9040007); // 调用内部方法参数错误
-define('ECODE_SEND_SMS_TOO_OFTEN', 9040008);             // 发送短信过于频繁
-define('ECODE_SEND_SMS_FAIL', 9040009);                  // 发送短信失败
-define('ECODE_UNDEFINED_ERROR', 9040010);                // 未知错误
-define('ECODE_API_RESPONSE_CODE_ERROR', 9040011);        // 接口响应错误
-define('ECODE_UPOLOAD_ERROR', 9040013);                  // 魔拍图片上传失败
-define('ECODE_SEND_REQUEST_TOO_OFTEN', 9040014);         // 请求频率过于频繁
-define('ECODE_PIC_YELLOW', 9040016);                     // 图片鉴定为黄色
-
-define('ECODE_INVALID_QRCODE', 9040100); // 请扫描有效二维码
-
-define('ECODE_SMS_CHECK_FAIL', 9040201);           // 验证失败
-define('ECODE_SMS_CHECK_TIMEOUT', 9040202);        // 验证超时
-define('ECODE_SMS_CHECK_EXCEPTION', 9040203);      // 验证异常
-define('ECODE_SMS_TYPE_UNDEFINED', 9040204);       // 场景不存在
-define('ECODE_SMS_PHONE_ERROR', 9040205);          // 手机号码有误
-define('ECODE_CHECK_CODE_ERROR', 9040206);         // 手机号码有误
-define('ECODE_OCR_SUBJECT_ERROR', 9040207);        // 未能识别到学科
-define('ECODE_OCR_SUBJECT_INCONFORMITY', 9040208); // 识别的学科与传入的学科不一致
-define('ECODE_OCR_MARKS_ERROR', 9040209);          // 未能识别到错误标识
-define('ECODE_CREATE_CODE_ERROR', 9040210);        // 生成验证码失败
-define('ECODE_OCR_QUESTION_ERROR', 9040211);       // 未能识别到切题标识
+define('ECODE_PARAM_MISSING', 9010000);                  // 缺失参数
+define('ECODE_PARAM_VALUE_INVALID', 9010001);            // 参数值非法
+define('ECODE_DATABASE_QUERY_FAIL', 9010002);            // 数据库查询失败
+define('ECODE_DATA_NOT_FOUND', 9010004);                 // 数据不存在
+define('ECODE_API_NETWORK_REQUEST_FAIL', 9010005);       // 接口网络请求失败
+define('ECODE_API_RESPONSE_DATA_EXCEPTION', 9010006);    // 接口响应数据异常
+define('ECODE_CALL_INNER_METHOD_PARAMS_ERROR', 9010007); // 调用内部方法参数错误
+define('ECODE_SEND_SMS_TOO_OFTEN', 9010008);             // 发送短信过于频繁
+define('ECODE_SEND_SMS_FAIL', 9010009);                  // 发送短信失败
+define('ECODE_UNDEFINED_ERROR', 9010010);                // 未知错误
+define('ECODE_API_RESPONSE_CODE_ERROR', 9010011);        // 接口响应错误
+define('ECODE_API_PASSPORT_NOT_FOUND', 9010012);         // 账号不存在
+define('ECODE_API_PHONE_NUM_ERROR', 9010013);            // 手机号码有误
+define('ECODE_DATABASE_INSERT_FAIL', 9010014);           // 数据库存储失败
+define('ECODE_UPOLOAD_ERROR', 9010015);                  // 魔拍图片上传失败
+define('ECODE_PIC_YELLOW', 9010016);                     // 图片鉴定失败。被鉴定为黄色
+define('ECODE_OCR_SUBJECT_ERROR', 9010017);              // 未能识别到学科
+define('ECODE_OCR_SUBJECT_INCONFORMITY', 9010018);       // 识别的学科与传入的学科不一致
+define('ECODE_OCR_QUESTION_ERROR', 9010020);             // 未能识别到切题标识
+define('ECODE_SEND_REQUEST_TOO_OFTEN', 9010021);         // 发送请求过于频繁
+define('ECODE_INVALID_QRCODE', 9010100);                 // 请扫描有效二维码
+define('ECODE_DEVICE_REPETBIND', 9010123);               // 重复绑定孩子
+define('ECODE_STUDENT_REPETBIND', 9010124);              // 孩子重复绑定设备
 
 class Application extends \Lsf\Controller
 {
     const SERVER_SWITCH_CODE = 10002;
-
-    /**
-     * @var int
-     */
-    protected $uid = 0; // 用户uid（帐号systemId）
     /**
      * @var string
      */
@@ -59,16 +49,8 @@ class Application extends \Lsf\Controller
      * @var array
      */
     protected $noNeedCheckTokenRouter = [ // 无需检查token的路由
-        // 平台
-        '/platform/app_config/new_protocol'     => 1,
-        '/platform/app_config/android_download' => 1,
-        '/platform/app_config/app_upgrade'      => 1,
         // 帐号
-        '/passport/user/login'                  => 1,
-        '/passport/user/key'                    => 1,
-        '/passport/user/send_code'              => 1,
-        '/passport/user/check_code'             => 1,
-        '/passport/user/change_password'        => 1,
+        '/api/user/oauth/login_or_signup'                    => 1,
     ];
 
     /**
@@ -80,94 +62,21 @@ class Application extends \Lsf\Controller
     {
         parent::__construct($appName, $controllerName, $actionName);
         // 系统维护（由于之前服务端临时支撑，目前先注释，后续修改方案通过单独接口来维护，而不是全局依赖调用）
-        // $this->_systemMaintenance();
-        // 先执行全局的初始化方法
-        $this->uid   = $this->post('uid', true);
-        $this->token = $this->post('token', true);
-        // 接口限流器
-        $this->_apiCurrentLimiter($this->uid);
-        // $this->_init();
-        // 再执行每个app自定义的初始化方法
-        $this->initAppsApplication();
-    }
-
-    /**
-     * 全局初始化
-     * @param  void
-     * @return void
-     */
-    private function _init()
-    {
-        $router = '/' . $this->appName . '/' . $this->controllerName . '/' . uncamelize($this->actionName);
-        // 登录token验证
+        // $this->systemMaintenance();
+        $router = '/' . $appName . '/' . $controllerName . '/' . uncamelize($actionName);
+        var_dump($router);
         if (array_key_exists($router, $this->noNeedCheckTokenRouter) === false) {
-            // 检查token是否有效
-            $this->uid   = $this->post('uid', true);
             $this->token = $this->post('token', true);
-            if ( ! isset($this->uid) || empty($this->uid)) {
-                throw new FinishException($this->errParamMissing(ECODE_PARAM_MISSING, 'uid'));
-            }
-            if ( ! is_numeric($this->uid) || intval($this->uid) <= 0) {
-                throw new FinishException($this->errParamMissing(ECODE_PARAM_VALUE_INVALID, 'uid'));
-            }
-            if ( ! isset($this->token) || empty($this->token)) {
+
+            if ( ! $this->token) {
                 throw new FinishException($this->errParamMissing(ECODE_PARAM_MISSING, 'token'));
             }
             if ($this->token == '') {
                 throw new FinishException($this->errParamMissing(ECODE_PARAM_VALUE_INVALID, 'token'));
             }
-            $checkResult = ['code' => 0];
-            // 需要对token失效和账户被顶做处理
-            if ($checkResult['code'] != 0) {
-                switch ($checkResult['code']) {
-                    // token失效
-                    case -7:
-                        $eCode = 9040003;
-                        break;
-                    // token获取用户信息失败
-                    case -105:
-                    case -109:
-                        $eCode = 9040006;
-                        break;
-                    default:
-                        $eCode = 9040003;
-                        break;
-                }
-                throw new FinishException($this->json($eCode));
-            }
         }
-    }
-
-    /**
-     * 接口限流器
-     * @param  int    $uid
-     * @return void
-     */
-    private function _apiCurrentLimiter($uid)
-    {
-        //$config = \Lsf\Loader::plugin('ConfigCenter')->group('api_current_limter');
-        //$config =\Lsf\Env::group('REDIS_');
-        $config =[];
-        if (isset($config['uris']) && ! empty($config['uris'])) {
-            $router = '/' . $this->appName . '/' . $this->controllerName . '/' . uncamelize($this->actionName);
-            $uriArr = json_decode($config['uris'], true);
-            if (isset($uriArr[$router])) {
-                $ratio = (int) $uriArr[$router];
-                if ($ratio <= 0) {
-                    $result = false;
-                } elseif ($ratio >= 100) {
-                    $result = true;
-                } else {
-                    $uid    = (int) $uid;
-                    $num    = $uid > 0 ? $uid : mt_rand(81000000000, 81999999999);
-                    $value  = ($num % 100) + 1;
-                    $result = $value > $ratio ? false : true;
-                }
-                if ($result === false) {
-                    throw new FinishException($this->json(9999998));
-                }
-            }
-        }
+        // 再执行每个app自定义的初始化方法
+        $this->initAppsApplication();
     }
 
     /**
@@ -175,9 +84,9 @@ class Application extends \Lsf\Controller
      * @param  void
      * @return void
      */
-    private function _systemMaintenance()
+    private function systemMaintenance()
     {
-        $redisKey  = 'ok-student-middle:system_maintenance';
+        $redisKey  = 'plus-okay-middle:system_maintenance';
         $cacheInfo = \Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
         if ($cacheInfo === false) {
             $daoOkayServersModel = \Lsf\Loader::model('DaoOkayServers', true);
@@ -221,9 +130,127 @@ class Application extends \Lsf\Controller
      * @param  mixed    $value
      * @return string
      */
-    public function errParamValueInvalid($eCode, $paramName, $value)
+    public function errParamValueInvalid($eCode, $paramName, $value = '')
     {
         return $this->json($eCode, ['param_name' => $paramName, 'value' => $value]);
+    }
+
+    /**
+     * 缺失参数------特殊处理数组不转对象
+     * @param  int      $eCode
+     * @param  string   $paramName
+     * @return string
+     */
+    public function errParamMissingStr($eCode, $paramName, $sign)
+    {
+        return $this->jsonStr($eCode, ['param_name' => $paramName], '', $sign);
+    }
+
+    /**
+     * 参数值非法------特殊处理数组不转对象
+     * @param  int      $eCode
+     * @param  string   $paramName
+     * @param  mixed    $value
+     * @return string
+     */
+    public function errParamValueInvalidStr($eCode, $paramName, $value, $sign)
+    {
+        return $this->jsonStr($eCode, ['param_name' => $paramName, 'value' => $value], '', $sign);
+    }
+
+    /**
+     * @param  int          $eCode
+     * @param  array        $data
+     * @param  string       $eMsg
+     * @param  bool         $changObject
+     * @throws \Exception
+     * @return string
+     */
+    public function jsonStr($eCode = 0, $data = [], $eMsg = '', $changObject = true)
+    {
+        // 定义json数组
+        if ($changObject === true) {
+            $jsonArr = [
+                'meta' => [
+                    'ecode' => $eCode,
+                    'emsg'  => '',
+                ],
+                'data' => (object) $data,
+            ];
+        } else {
+            $jsonArr = [
+                'meta' => [
+                    'ecode' => $eCode,
+                    'emsg'  => '',
+                ],
+                'data' => $data,
+            ];
+        }
+        if ($eMsg != '') {
+            $jsonArr['meta']['emsg'] = $eMsg;
+        } else {
+            // 依次加载应用错误码配置
+            $msgGlobalConfig = \Lsf\Loader::config('response_message', true);
+            $msgAppConfig    = \Lsf\Loader::config('response_message', false, 1, $this->appName);
+
+            $msgConfig = (array) $msgGlobalConfig + (array) $msgAppConfig;
+            if (empty($msgConfig)) {
+                throw new \Exception('Response msg config content empty');
+            } elseif ( ! isset($msgConfig[$eCode])) {
+                throw new \Exception('Response msg config content not define, ecode ' . $eCode);
+            } elseif (is_array($msgConfig[$eCode]) && ! isset($msgConfig[$eCode]['emsg'])) {
+                throw new \Exception('Response msg config ecode value is array but key emsg not define, ecode ' . $eCode);
+            } elseif (is_array($msgConfig[$eCode]) && ! isset($msgConfig[$eCode]['desc'])) {
+                throw new \Exception('Response msg config ecode value is array but key desc not define, ecode ' . $eCode);
+            } else {
+                // 生成路由key
+                $routerKey = $this->appName . '_' . $this->controllerName . '_' . $this->actionName;
+                // 错误信息和描述字段处理（兼容只有emsg的错误提示方式）
+                if (is_string($msgConfig[$eCode])) {
+                    $jsonArr['meta']['emsg'] = $msgConfig[$eCode];
+                } else {
+                    $tmpArr = ['emsg' => $msgConfig[$eCode]['emsg']];
+                    // 路由匹配
+                    $descArr = [];
+                    if (isset($msgConfig[$eCode]['desc'][$routerKey])) {
+                        $descArr = $msgConfig[$eCode]['desc'][$routerKey];
+                    } elseif (isset($msgConfig[$eCode]['desc']['default'])) {
+                        $descArr = $msgConfig[$eCode]['desc']['default'];
+                    } else {
+                        $descArr = [];
+                    }
+                    // 最多支持三部分定义（保证前置存在才解析下级）
+                    if (isset($descArr[0]) && ! empty($descArr[0])) {
+                        $tmpArr[] = $descArr[0];
+                        if (isset($descArr[1]) && ! empty($descArr[1])) {
+                            $tmpArr[] = $descArr[1];
+                            if (isset($descArr[2]) && ! empty($descArr[2])) {
+                                $tmpArr[] = $descArr[2];
+                            }
+                        }
+                    }
+                    $jsonArr['meta']['emsg'] = implode('--', $tmpArr);
+                }
+            }
+        }
+        $this->setHeader('Pragma', 'no-cache');
+        $this->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+        $json = json_encode($jsonArr, JSON_UNESCAPED_UNICODE);
+        if ( ! $changObject) {
+            return $json;
+        }
+        // 支持jsonp
+        $contentType = 'application/json; charset=utf-8';
+        if ( ! empty($_REQUEST['jsonp'])) {
+            $contentType = 'application/x-javascript; charset=utf-8';
+            $json        = $_REQUEST['jsonp'] . '(' . $json . ');';
+        }
+        $this->setHeader('Content-Type', $contentType);
+        global $responseStatus, $responseMsg;
+        $responseStatus = $eCode;
+        $responseMsg    = $jsonArr['meta']['emsg'];
+
+        return $json;
     }
 
     /**
@@ -253,8 +280,11 @@ class Application extends \Lsf\Controller
             case -4:
                 $eCode = ECODE_API_RESPONSE_DATA_EXCEPTION;
                 break;
+            case -6:
+                $eCode = ECODE_API_PASSPORT_NOT_FOUND;
+                break;
             default:
-                \Lsf\Loader::plugin('Log')->error(9040513, ['code' => $code]);
+                \Lsf\Loader::plugin('Log')->error(9010513, ['code' => $code]);
                 // 未知错误
                 $eCode = ECODE_UNDEFINED_ERROR;
                 break;

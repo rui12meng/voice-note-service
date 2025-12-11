@@ -59,7 +59,7 @@ class DaoUser extends \Lsf\Model
             $authData = [
                 'user_id' => $userId,
                 'auth_type' => $data['provider'] ?? '',
-                'identifier' => $data['identifier'] ?? '',
+                'identifier' => $data['apple_uid'] ?? '',
                 'credential' => $data['credential'] ?? '',
                 'last_login_at' => date('Y-m-d H:i:s'),
             ];
@@ -69,7 +69,7 @@ class DaoUser extends \Lsf\Model
             }
             // 5. 提交事务
             $this->commit();
-
+            $this->_injectedDb = null;
             return [
                 'uid' => $userId,
                 'auth_id' => $authId,
@@ -79,6 +79,7 @@ class DaoUser extends \Lsf\Model
             // 6. 回滚（如果已开启事务）
             if (isset($this)) {
                 $this->rollback();
+                $this->_injectedDb = null;
             }
             // 记录错误 & 抛出
             \Lsf\Loader::plugin('Log')->error(9000999, ['msg' => $e->getMessage()], 'user_register');

@@ -105,8 +105,7 @@ class Oauth extends \App\Application
 //            $user_info['user_name'] = $params['user_name'];
 //        }
 
-
-        return $this->json($result);
+        return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**

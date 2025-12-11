@@ -59,7 +59,7 @@ class DaoVnUserDevices extends \Lsf\Model
                 $updates[] = $k ."=". '"'.$v.'"';
             }
         }
-        $updates[] = "last_login_time = CURRENT_TIMESTAMP";
+        $updates[] = "last_login_at = CURRENT_TIMESTAMP";
         $updateSql = implode(", ", $updates);
 
 

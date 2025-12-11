@@ -12,7 +12,7 @@ require_once LSFPATH . '/lib/php-jwt/autoload.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use Firebase\JWT\Key;
-use \Lsf\Env;
+use Lsf\Env;
 
 class Oauth
 {
@@ -38,7 +38,7 @@ class Oauth
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
         $this->_svrDaoVnUserSessionModel = \Lsf\Loader::model('DaoVnUserSessions', false, APP_NAME_USER);
         $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevices', false, APP_NAME_USER);
-        $this->_svrDaoVnUserLogsModel = \Lsf\Loader::model('DaoVnUserLogs', false, APP_NAME_USER)
+        $this->_svrDaoVnUserLogsModel = \Lsf\Loader::model('DaoVnUserLogs', false, APP_NAME_USER);
     }
 
     /**
@@ -130,6 +130,7 @@ class Oauth
                 }
             }
             $result_data['user_id'] = $uid;
+            var_dump($uid);
             //生成登录态token信息
             $result_token = $this->generateTokens($uid);
 
@@ -171,7 +172,7 @@ class Oauth
             $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $device_info);
 
             //查询用户信息返回给客户端
-            $userInfo = $this->_svrDaoUserInfoModel->findUserInfo(['nickname','email','avatar_url','gender'],$uid);
+            $userInfo = $this->_svrDaoUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
 
             $result_data['nickname'] = $userInfo[0]['nickname'] ?? '';
             $result_data['email'] = $userInfo[0]['email'] ?? '';
@@ -207,7 +208,7 @@ class Oauth
             'device_id'     => $device_info['device_id'] ?? '',
             'device_type'     => $device_info['device_type'] ?? '',
             'device_name'     => $device_info['device_name'] ?? '',
-            'device_info'     => $device_info['device_info'] ?? '',
+            'device_info'     => json_encode($device_info ?: []), //$device_info['device_info'] ?? '',
             'user_agent'     => $device_info['user_agent'] ?? '',
             'last_active_at'    => date('Y-m-d H:i:s')
         ];
@@ -233,7 +234,7 @@ class Oauth
      */
     public function storeUserLogsInfo($uid, $log_type, $action, $description,$device_info){
         $data = [
-            'uid' => $uid,
+            'user_id' => $uid,
             'log_type' => $log_type,
             'action' => $action,
             'description' => $description,
@@ -284,22 +285,24 @@ class Oauth
         $accessPayload = [
             'sub' => $userId,        // 用户ID
             'iat' => $now,           // 签发时间
-            'exp' => $now + \Lsf\Env::get('TOKEN_ACCESS_TTL'),
+            'exp' => $now + Env::get('TOKEN_ACCESS_TTL'),
         ];
-        $accessToken = JWT::encode($accessPayload, \Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256');
+        $token_jwt_access_secret = Env::get('TOKEN_JWT_ACCESS_SECRET');
+        var_dump($token_jwt_access_secret);exit();
+        $accessToken = JWT::encode($accessPayload, $token_jwt_access_secret, 'HS256');
 
         // 2. refresh_token
         $refreshPayload = [
             'sub' => $userId,
             'iat' => $now,
-            'exp' => $now + \Lsf\Env::get('TOKEN_REFRESH_TTL'),
+            'exp' => $now + Env::get('TOKEN_REFRESH_TTL'),
         ];
-        $refreshToken = JWT::encode($refreshPayload, \Lsf\Env::get('TOKEN_JWT_REFRESH_SECRET'), 'HS256');
+        $refreshToken = JWT::encode($refreshPayload, Env::get('TOKEN_JWT_REFRESH_SECRET'), 'HS256');
 
         return [
             'access_token'  => $accessToken,
             'refresh_token' => $refreshToken,
-            'expires_at'    => $now + \Lsf\Env::get('TOKEN_ACCESS_TTL')
+            'expires_at'    => $now + Env::get('TOKEN_ACCESS_TTL')
         ];
     }
 

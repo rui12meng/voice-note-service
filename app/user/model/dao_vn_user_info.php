@@ -26,14 +26,17 @@ class DaoVnUserInfo extends \Lsf\Model
 
     /**
      * 查询用户个人信息
-     * @param  array   $col
+     * @param  string   $col
      * @param  int   $uid
+     * @param  int   $limit
      * @return mixed
      */
 
-    public function findUserInfo($col,$uid)
+    public function findUserInfo($col,$uid,$limit=1)
     {
-        $result = $this->find($col, $uid);
+        $where['user_id'] = $uid;
+        $result = $this->select($col, $where, $this->primary . ' DESC', $limit);
+        var_dump($result);exit();
         if($result === FALSE){
             return FALSE;
         }else{
