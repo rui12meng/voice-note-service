@@ -318,6 +318,7 @@ class Oauth
             $payload = JWT::decode($token,  new Key(\Lsf\Env::get('TOKEN_JWT_REFRESH_SECRET'), 'HS256'));
             return (array)$payload;
         } catch (\Exception $e) {
+            var_dump($e->getMessage());
             return false;
         }
     }

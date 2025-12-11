@@ -140,6 +140,25 @@ class Oauth extends \App\Application
     }
 
     /**
+     * 刷新token（登录态刷新）
+     * @param  void
+     * @return string
+     */
+    public function token_refresh($params){
+
+        if ( ! isset($params['refresh_token']) || empty($params['refresh_token'])) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'refresh_token');
+        }
+
+        $result = $this->_oauthService->refreshAccessToken($params['refresh_token']);
+        if($result === false){
+echo 'err';
+        }else{
+            var_dump($result);
+        }
+    }
+
+    /**
      * 正则验证邮箱格式[较宽松验证，非精准匹配]
      * @param  void
      * @return string
@@ -167,5 +186,7 @@ class Oauth extends \App\Application
 
         return true;
     }
+
+
 
 }

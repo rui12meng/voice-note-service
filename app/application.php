@@ -1,7 +1,10 @@
 <?php
 namespace App;
 
+require_once LSFPATH . '/lib/php-jwt/autoload.php';
+
 use Lsf\Exception\FinishException;
+use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Lsf\Env;
 
@@ -42,6 +45,10 @@ class Application extends \Lsf\Controller
     /**
      * @var string
      */
+    protected $uid = 0; // 用户uid（帐号systemId）
+    /**
+     * @var string
+     */
     protected $token = ''; // 登录态token
     /**
      * @var array
@@ -53,6 +60,7 @@ class Application extends \Lsf\Controller
     protected $noNeedCheckTokenRouter = [ // 无需检查token的路由
         // 帐号
         '/user/oauth/login_or_signup'                    => 1,
+        '/user/oauth/token_refresh'                      => 1,
     ];
 
     /**
@@ -80,7 +88,7 @@ class Application extends \Lsf\Controller
             if($payload === false){
                 throw new FinishException($this->json(9999999, [], 'token非法'));
             }else{
-                var_dump($payload);
+                $this->uid = $payload['sub'];
             }
 
         }
