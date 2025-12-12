@@ -28,13 +28,27 @@ class DaoVnUserSessions extends \Lsf\Model
      * @param  array   $data
      * @return mixed
      */
-
     public function storeData($data){
         $result = $this->insert($data);
         if($result === FALSE){
             return FALSE;
         }else{
             return $result; //主键id
+        }
+    }
+
+    /**
+     * 更新会话信息
+     * @param  array   $data
+     * @param  array   $where
+     * @return mixed
+     */
+    public function updateSession($data, $where){
+        $result = $this->update($data, $where);
+        if($result === FALSE){
+            return FALSE;
+        }else{
+            return $result;
         }
     }
 

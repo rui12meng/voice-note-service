@@ -163,6 +163,117 @@ class Oauth extends \App\Application
     }
 
     /**
+     * 登出（退出登录）
+     * @param  void
+     * @return string
+     */
+    public function logout(){
+
+        //1. 解析 access_token 取 uid;不需要校验 exp 是否过期(入口文件已实现)
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+        }
+
+        $device_id = $this->post('device_id', true);
+        if ( ! isset($device_id) || empty($device_id)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'device_id');
+        }
+        // 2. refresh_token 必须删除或失效化
+
+        $result = $this->_oauthService->revokedSession($uid, $device_id);
+
+        var_dump($result);exit();
+
+
+    }
+
+    /**
+     * 更新用户信息
+     * @param  void
+     * @return string
+     */
+    public function editProfile(){
+        $uid = $this->uid;
+        if (empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
+        }
+
+        $userInfo = [];
+
+        // 用户信息-昵称
+        $nickname = $this->post('nickname', true);
+        if (!empty($nickname)) {
+            $userInfo['nickname'] = $nickname;
+        }
+        // 用户信息-性别
+        $gender = $this->post('gender', true);
+        if (!empty($gender)) {
+            $userInfo['gender'] = $gender;
+        }
+        // 用户信息-时区
+        $timezone = $this->post('timezone', true);
+        if (!empty($timezone)) {
+            $userInfo['timezone'] = $timezone;
+        }
+        if(is_array($userInfo) && count($userInfo) > 0){
+            $result = $this->_oauthService->editUserInfo();
+            var_dump($result);exit();
+        }else{
+            //没有要修改的内容
+            echo 'err params';exit();
+        }
+    }
+
+    /**
+     * 获取用户信息
+     * @param  void
+     * @return string
+     */
+    public function getProfile(){
+        //token
+        $uid = $this->uid;
+        if (empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
+        }
+        $result = $this->_oauthService->getUserInfo($uid);
+        var_dump($result);exit();
+
+    }
+
+    /**
+     * 注销帐户
+     * @param  void
+     * @return string
+     */
+    public function cancellation(){
+        //解析 access_token 获取 uid
+        $uid = $this->uid;
+        if (empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
+        }
+
+        $this->_oauthService->cancellation($uid);
+        //开启事务
+        //
+        //删除或标记 user_session：所有该用户的登录态
+        //
+        //删除或标记 user_auth：第三方绑定信息
+        //
+        //删除或标记 user_info：扩展资料
+        //
+        //删除或标记 user：主表
+        //
+        //提交事务
+
+        //软删除：生产环境建议标记 deleted_at 或 is_deleted=1，方便追踪和合规
+        //
+        //清理缓存 / token：删除或失效 user_session，以防 access_token 或 refresh_token 继续使用
+        //
+        //日志记录：记录操作，用于审计
+    }
+
+    /**
      * 正则验证邮箱格式[较宽松验证，非精准匹配]
      * @param  void
      * @return string

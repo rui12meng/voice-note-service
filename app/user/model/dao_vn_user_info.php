@@ -31,12 +31,10 @@ class DaoVnUserInfo extends \Lsf\Model
      * @param  int   $limit
      * @return mixed
      */
-
     public function findUserInfo($col,$uid,$limit=1)
     {
         $where['user_id'] = $uid;
         $result = $this->select($col, $where, $this->primary . ' DESC', $limit);
-        var_dump($result);exit();
         if($result === FALSE){
             return FALSE;
         }else{
@@ -44,6 +42,22 @@ class DaoVnUserInfo extends \Lsf\Model
         }
     }
 
-
+    /**
+     * 编辑用户个人信息
+     * @param  int   $uid
+     * @param  string   $user_info
+     * @return mixed
+     */
+    public function editUserInfo($uid, $user_info){
+        $where = [
+            'uid' => $uid,
+        ];
+        $result = $this->update($user_info, $where);
+        if($result === FALSE){
+            return FALSE;
+        }else{
+            return $result;
+        }
+    }
 
 }

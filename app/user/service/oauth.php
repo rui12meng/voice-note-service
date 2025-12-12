@@ -13,6 +13,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use Firebase\JWT\Key;
 use Lsf\Env;
+use phpDocumentor\Reflection\Types\Integer;
 
 class Oauth
 {
@@ -20,7 +21,7 @@ class Oauth
      * @var mixed
      */
     private $_svrDaoUserModel;
-    private $_svrDaoUserInfoModel;
+    private $_svrDaoVnUserInfoModel;
     private $_svrDaoVnUserAuthModel;
     private $_svrDaoVnUserSessionModel;
     private $_svrDaoVnUserDevicesModel;
@@ -34,7 +35,7 @@ class Oauth
     public function __construct()
     {
         $this->_svrDaoUserModel = \Lsf\Loader::model('DaoUser', false, APP_NAME_USER);
-        $this->_svrDaoUserInfoModel = \lsf\Loader::model('DaoVnUserInfo', false, APP_NAME_USER);
+        $this->_svrDaoVnUserInfoModel = \lsf\Loader::model('DaoVnUserInfo', false, APP_NAME_USER);
         $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
         $this->_svrDaoVnUserSessionModel = \Lsf\Loader::model('DaoVnUserSessions', false, APP_NAME_USER);
         $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevices', false, APP_NAME_USER);
@@ -172,7 +173,7 @@ class Oauth
             $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $device_info);
 
             //查询用户信息返回给客户端
-            $userInfo = $this->_svrDaoUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
+            $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
 
             $result_data['nickname'] = $userInfo[0]['nickname'] ?? '';
             $result_data['email'] = $userInfo[0]['email'] ?? '';
@@ -328,10 +329,74 @@ class Oauth
      * @return void
      */
     public function refreshAccessToken(string $refreshToken){
+        //1. 验证 refresh_token 是否为合法
         $payload = $this->verifyRefreshToken($refreshToken);
         if(!$payload) return false;
 
         $userId = $payload['sub'];
+
+        //2. 去数据库查 user_sessions 是否注销
+
+        //3. 颁发新的 access_token & refresh_token
         return $this->generateTokens($userId);
+
+        //4. UPDATE 一条记录user_sessions
+    }
+
+    /**
+     * 登出接口使seesion信息失效
+     * @param int $uid
+     * @param string $device_id
+     * @return void
+     */
+    public function revokedSession(int $uid, string $device_id){
+        $data = [
+            'revoked' => 1,
+            'revoked_at' => date('Y-m-d H:i:s'),
+        ];
+        $where = [
+            'uid' => $uid,
+            'device_id' => $device_id,
+        ];
+        $result = $this->_svrDaoVnUserSessionModel->updateSession($data, $where);
+        return $result;
+    }
+
+    /**
+     * 根据uid编辑用户信息
+     * @param int $uid
+     * @param array $user_info
+     * @return void
+     */
+    public function editUserInfo($uid, $user_info){
+        $result = $this->_svrDaoVnUserInfoModel->editUserInfo($uid, $user_info);
+        return $result;
+    }
+
+    /**
+     * 根据uid查询用户信息
+     * @param int $uid
+     * @return void
+     */
+    public function getUserInfo($uid){
+        // 要查询的字段
+        $col = [
+            'nickname',
+            'gender',
+            'avatar_url',
+            'timezone',
+            'language',
+        ];
+        $result = $this->_svrDaoVnUserInfoModel->findUserInfo($col, $uid);
+        return $result;
+    }
+
+    /**
+     * 用户注销
+     * @param int $uid
+     * @return void
+     */
+    public function cancellation($uid){
+
     }
 }
