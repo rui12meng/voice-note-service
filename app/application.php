@@ -85,7 +85,12 @@ class Application extends \Lsf\Controller
                 throw new FinishException($this->errParamMissing(ECODE_PARAM_VALUE_INVALID, 'token'));
             }
             //校验token
-            $payload = $this->verifyAccessToken($this->token);
+            if($router == '/user/oauth/logout'){
+                $payload = $this->verifyAccessToken($this->token, ['verify_exp'=> false]);
+            }else{
+                $payload = $this->verifyAccessToken($this->token);
+            }
+
             if($payload === false){
                 throw new FinishException($this->json(9999999, [], 'token非法'));
             }else{
@@ -104,13 +109,41 @@ class Application extends \Lsf\Controller
      * @return void
      */
     private function verifyAccessToken(string $token, $options = ['verify_exp' => true]) {
-        try{
-            $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
-            return (array)$payload;
-        }catch (\Exception $e) {
-            //log access解析失败，非法token
-            return false;
+        if($options['verify_exp'] === false){
+            try{
+                $payload = $this->checkTokenIgnoreExp($token);
+                return (array)$payload;
+            }catch (\Exception $e){
+                //log access解析失败，非法token
+                return false;
+            }
+
+        }else{
+            try{
+                $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
+                return (array)$payload;
+            }catch (\Exception $e) {
+                //log access解析失败，非法token
+                return false;
+            }
         }
+
+    }
+
+    /**
+     * 校验token，忽略exp校验，用于退出接口验证（不需要校验 exp 是否过期，即使过期也可以正常退出）
+     * @param  string  $token
+     * @return void
+     */
+    private function checkTokenIgnoreExp($token){
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            throw new Exception("Invalid token format");
+        }
+
+        $payload = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[1]));
+
+        return $payload;
     }
 
     /**

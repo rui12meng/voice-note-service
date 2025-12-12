@@ -169,17 +169,11 @@ class Oauth extends \App\Application
      */
     public function logout(){
         //1. 解析 access_token 取 uid;不需要校验 exp 是否过期(入口文件已实现)
-        $token = $this->token;
-        if ( ! isset($token) || empty($token)) {
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
 
-        $payload = $this->_oauthService->checkTokenIgnoreExp($token);
-        if(! isset($payload['sub']) || empty($payload['sub'])){
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }
-        $uid = $payload['sub'];
-        
         $device_id = $this->post('device_id', true);
         if ( ! isset($device_id) || empty($device_id)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'device_id');
