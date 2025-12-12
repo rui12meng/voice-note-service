@@ -399,4 +399,20 @@ class Oauth
     public function cancellation($uid){
 
     }
+
+    /**
+     * 校验token，忽略exp校验，用于退出接口验证（不需要校验 exp 是否过期，即使过期也可以正常退出）
+     * @param  string  $token
+     * @return void
+     */
+    public function checkTokenIgnoreExp($token){
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            throw new Exception("Invalid token format");
+        }
+
+        $payload = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[1]));
+
+        return (array)$payload;
+    }
 }

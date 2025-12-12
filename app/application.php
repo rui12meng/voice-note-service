@@ -61,6 +61,7 @@ class Application extends \Lsf\Controller
         // 帐号
         '/user/oauth/login_or_signup'                    => 1,
         '/user/oauth/token_refresh'                      => 1,
+        '/user/oauth/logout'                             => 1,//说明：token需特殊处理（不需要校验 exp 是否过期，即使过期也可以正常退出，内部方法独立校验，不走统一token校验逻辑）
     ];
 
     /**
@@ -84,13 +85,7 @@ class Application extends \Lsf\Controller
                 throw new FinishException($this->errParamMissing(ECODE_PARAM_VALUE_INVALID, 'token'));
             }
             //校验token
-            //logout 登出API特殊处理（不需要校验 exp 是否过期，即使过期也可以正常退出）
-            if($router == '/user/oauth/logout'){
-                $payload = $this->verifyAccessToken($this->token, ['verify_exp' => false]);
-            }else{
-                $payload = $this->verifyAccessToken($this->token);
-            }
-
+            $payload = $this->verifyAccessToken($this->token);
             if($payload === false){
                 throw new FinishException($this->json(9999999, [], 'token非法'));
             }else{
@@ -110,12 +105,7 @@ class Application extends \Lsf\Controller
      */
     private function verifyAccessToken(string $token, $options = ['verify_exp' => true]) {
         try{
-            if($options['verify_exp'] === false){
-                $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'), $options);
-            }else{
-                $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
-            }
-
+            $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
             return (array)$payload;
         }catch (\Exception $e) {
             //log access解析失败，非法token
