@@ -73,7 +73,7 @@ class Oauth extends \App\Application
 
         if( isset($params['email']) & !empty($params['email'])){
             // 正则验证邮箱
-            if($this->validate_email($params['email'])){
+            if($this->validateEmail($params['email'])){
                 $user_info['email'] = $params['email'];
             }
         }
