@@ -51,7 +51,7 @@ class Oauth extends \App\Application
                 $result = $this->loginWithGuest($params);
                 break;
         }
-        return $this->json($result);
+        return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**
@@ -101,8 +101,9 @@ class Oauth extends \App\Application
 //        if( isset($params['user_name']) & !empty($params['user_name'])){
 //            $user_info['user_name'] = $params['user_name'];
 //        }
+        return $result;
 
-        return $this->json(ECODE_SUCCESS, $result);
+        //return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**
@@ -121,7 +122,7 @@ class Oauth extends \App\Application
         }
 
         $result = [];
-        return $this->json($result);
+        return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**
@@ -133,7 +134,7 @@ class Oauth extends \App\Application
 
         $result = [];
 
-        return $this->json($result);
+        return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**
