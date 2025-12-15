@@ -239,22 +239,22 @@ class Application extends \Lsf\Controller
         if ($changObject === true) {
             $jsonArr = [
                 'meta' => [
-                    'ecode' => $eCode,
-                    'emsg'  => '',
+                    'code' => $eCode,
+                    'message'  => '',
                 ],
                 'data' => (object) $data,
             ];
         } else {
             $jsonArr = [
                 'meta' => [
-                    'ecode' => $eCode,
-                    'emsg'  => '',
+                    'code' => $eCode,
+                    'message'  => '',
                 ],
                 'data' => $data,
             ];
         }
         if ($eMsg != '') {
-            $jsonArr['meta']['emsg'] = $eMsg;
+            $jsonArr['meta']['message'] = $eMsg;
         } else {
             // 依次加载应用错误码配置
             $msgGlobalConfig = \Lsf\Loader::config('response_message', true);
@@ -265,7 +265,7 @@ class Application extends \Lsf\Controller
                 throw new \Exception('Response msg config content empty');
             } elseif ( ! isset($msgConfig[$eCode])) {
                 throw new \Exception('Response msg config content not define, ecode ' . $eCode);
-            } elseif (is_array($msgConfig[$eCode]) && ! isset($msgConfig[$eCode]['emsg'])) {
+            } elseif (is_array($msgConfig[$eCode]) && ! isset($msgConfig[$eCode]['message'])) {
                 throw new \Exception('Response msg config ecode value is array but key emsg not define, ecode ' . $eCode);
             } elseif (is_array($msgConfig[$eCode]) && ! isset($msgConfig[$eCode]['desc'])) {
                 throw new \Exception('Response msg config ecode value is array but key desc not define, ecode ' . $eCode);
@@ -274,9 +274,9 @@ class Application extends \Lsf\Controller
                 $routerKey = $this->appName . '_' . $this->controllerName . '_' . $this->actionName;
                 // 错误信息和描述字段处理（兼容只有emsg的错误提示方式）
                 if (is_string($msgConfig[$eCode])) {
-                    $jsonArr['meta']['emsg'] = $msgConfig[$eCode];
+                    $jsonArr['meta']['message'] = $msgConfig[$eCode];
                 } else {
-                    $tmpArr = ['emsg' => $msgConfig[$eCode]['emsg']];
+                    $tmpArr = ['message' => $msgConfig[$eCode]['message']];
                     // 路由匹配
                     $descArr = [];
                     if (isset($msgConfig[$eCode]['desc'][$routerKey])) {
@@ -296,7 +296,7 @@ class Application extends \Lsf\Controller
                             }
                         }
                     }
-                    $jsonArr['meta']['emsg'] = implode('--', $tmpArr);
+                    $jsonArr['meta']['message'] = implode('--', $tmpArr);
                 }
             }
         }
@@ -315,7 +315,7 @@ class Application extends \Lsf\Controller
         $this->setHeader('Content-Type', $contentType);
         global $responseStatus, $responseMsg;
         $responseStatus = $eCode;
-        $responseMsg    = $jsonArr['meta']['emsg'];
+        $responseMsg    = $jsonArr['meta']['message'];
 
         return $json;
     }
