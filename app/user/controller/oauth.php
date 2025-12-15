@@ -111,8 +111,8 @@ class Oauth extends \App\Application
                 'apple_uid'=> $data['apple_uid'],
                 'identifier' => $params['id_token'],
                 'credential' => $params['auth_code'],
-                'username' => $params['user_name'] ?? '',
-                'email' => $data['email'] ?? '',
+                'username' => $params['username'] ?? '',
+                'email' => $params['email'] ?? '',
                 'provider' => 'apple',
                 'user_agent' => $params['user_agent'],
             ];
@@ -160,7 +160,7 @@ class Oauth extends \App\Application
         }
 
         $user_info=[
-            'identifier' => $params['device_id'],
+            'device_id' => $params['device_id'],
             'provider' => 'guest',
             'user_agent' => isset($params['user_agent']) ?? '',
         ];
