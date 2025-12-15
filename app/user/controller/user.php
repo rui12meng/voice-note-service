@@ -13,6 +13,7 @@ class User extends \App\Application
      * @var mixed
      */
     private $_userService;
+    private $_uploadService;
 
     /**
      * 构造函数
@@ -25,6 +26,7 @@ class User extends \App\Application
     {
         parent::__construct($appName, $controllerName, $actionName);
         $this->_userService = \Lsf\Loader::service('User', false, APP_NAME_USER);
+        $this->_uploadService = \Lsf\Loader::service('Upload', true);
     }
 
     /**
@@ -70,11 +72,69 @@ class User extends \App\Application
     }
 
     /**
+     * 用户设置/修改头像
+     * @author mengrui
+     *
+     * @param  void
+     * @throws \Exception
+     * @return string
+     */
+    public function updateAvatar()
+    {
+        // 用户id
+//        $uid = $this->uid;
+//        if (empty($uid)) {
+//            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+//        }
+        $uid = 1;
+        // 头像信息
+        $files_info = $this->files('avatar', true);
+
+        if ($files_info['error'] !== UPLOAD_ERR_OK || $files_info['size'] === 0) {
+            throw new Exception("Invalid or empty file");
+        }
+
+        if (empty($files_info['tmp_name']) || empty($files_info['size'])) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'avatar');
+        }
+//        $fp = fopen($filesInfo['tmp_name'], "rb");
+//        $as = fread($fp, $filesInfo['size']);
+//        $avatar = base64_encode($as);
+
+// || $filesInfo['error'] !== UPLOAD_ERR_OK
+
+        // 校验文件类型（MIME）
+        $f_info = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($f_info, $files_info['tmp_name']);
+        finfo_close($f_info);
+
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif']; // 允许的 MIME 类型
+        if (!in_array($mimeType, $allowedMimes)) {
+            //格式错误
+            echo json_encode(['error' => 'Only JPG/PNG/GIF allowed']);
+            exit;
+        }
+
+        // 校验文件大小（2MB）
+        if ($files_info['size'] > 2 * 1024 * 1024) {
+            //文件超过限制
+            http_response_code(400);
+            echo json_encode(['error' => 'File too large (max 5MB)']);
+            exit;
+        }
+
+
+
+        $result = $this->_uploadService->updateAvatarOss($uid, $files_info);
+
+    }
+
+    /**
      * 用户上传头像
      * @param  void
      * @return string
      */
-    public function upload_avatar()
+    /*public function upload_avatar()
     {
         // 用户id
         $uid = $this->post('uid', true);
@@ -132,7 +192,7 @@ class User extends \App\Application
         }
 
         return $this->json($eCode, $result, $eMsg);
-    }
+    }*/
 
     /**
      * 查询用户个人信息

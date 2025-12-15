@@ -61,7 +61,6 @@ class Application extends \Lsf\Controller
         // 帐号
         '/user/oauth/login_or_signup'                    => 1,
         '/user/oauth/token_refresh'                      => 1,
-        '/user/oauth/logout'                             => 1,//说明：token需特殊处理（不需要校验 exp 是否过期，即使过期也可以正常退出，内部方法独立校验，不走统一token校验逻辑）
     ];
 
     /**
@@ -85,6 +84,7 @@ class Application extends \Lsf\Controller
                 throw new FinishException($this->errParamMissing(ECODE_PARAM_VALUE_INVALID, 'token'));
             }
             //校验token
+            //说明：登出不强校验exp，token单独处理（不需要校验 exp 是否过期，即使过期也可以正常退出
             if($router == '/user/oauth/logout'){
                 $payload = $this->verifyAccessToken($this->token, ['verify_exp'=> false]);
             }else{

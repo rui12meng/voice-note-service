@@ -198,25 +198,31 @@ class Oauth extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
         }
 
-        $userInfo = [];
+        $user_info = [];
 
         // 用户信息-昵称
         $nickname = $this->post('nickname', true);
         if (!empty($nickname)) {
-            $userInfo['nickname'] = $nickname;
+            $user_info['nickname'] = $nickname;
         }
         // 用户信息-性别
         $gender = $this->post('gender', true);
         if (!empty($gender)) {
-            $userInfo['gender'] = $gender;
+            $user_info['gender'] = $gender;
         }
         // 用户信息-时区
         $timezone = $this->post('timezone', true);
         if (!empty($timezone)) {
-            $userInfo['timezone'] = $timezone;
+            $user_info['timezone'] = $timezone;
         }
-        if(is_array($userInfo) && count($userInfo) > 0){
-            $result = $this->_oauthService->editUserInfo();
+        // 用户信息-语言
+        $language = $this->post('language', true);
+        if (!empty($timezone)) {
+            $user_info['language'] = $language;
+        }
+
+        if(is_array($user_info) && count($user_info) > 0){
+            $result = $this->_oauthService->editUserInfo($uid, $user_info);
             var_dump($result);exit();
         }else{
             //没有要修改的内容
@@ -252,24 +258,13 @@ class Oauth extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
         }
 
-        $this->_oauthService->cancellation($uid);
-        //开启事务
-        //
-        //删除或标记 user_session：所有该用户的登录态
-        //
-        //删除或标记 user_auth：第三方绑定信息
-        //
-        //删除或标记 user_info：扩展资料
-        //
-        //删除或标记 user：主表
-        //
-        //提交事务
+        $result = $this->_oauthService->cancellation($uid);
+        if($result){
+            return true;
+        }else{
+            return false;
+        }
 
-        //软删除：生产环境建议标记 deleted_at 或 is_deleted=1，方便追踪和合规
-        //
-        //清理缓存 / token：删除或失效 user_session，以防 access_token 或 refresh_token 继续使用
-        //
-        //日志记录：记录操作，用于审计
     }
 
     /**

@@ -48,4 +48,19 @@ class DaoVnUserAuth extends \Lsf\Model
         }
     }
 
+    /**
+     * 更新oauth信息
+     * @param  array   $data
+     * @param  array   $where
+     * @return mixed
+     */
+    public function updateOauth($data, $where){
+        $result = $this->update($data, $where);
+        if($result === FALSE){
+            return FALSE;
+        }else{
+            return $result;
+        }
+    }
+
 }

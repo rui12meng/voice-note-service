@@ -50,9 +50,24 @@ class DaoVnUserInfo extends \Lsf\Model
      */
     public function editUserInfo($uid, $user_info){
         $where = [
-            'uid' => $uid,
+            'user_id' => $uid,
         ];
         $result = $this->update($user_info, $where);
+        if($result === FALSE){
+            return FALSE;
+        }else{
+            return $result;
+        }
+    }
+
+    /**
+     * 更新userInfo信息
+     * @param  array   $data
+     * @param  array   $where
+     * @return mixed
+     */
+    public function updateUserInfo($data, $where){
+        $result = $this->update($data, $where);
         if($result === FALSE){
             return FALSE;
         }else{

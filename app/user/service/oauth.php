@@ -119,17 +119,43 @@ class Oauth
 
             }
             else{//找不到则自动注册绑定
-                //事务处理，存储user + user_auth
-                $result = $this->_svrDaoUserModel->userSign($data);
+                $userData = [
+                    'user_uid' => 'ujrri899wuww99',//uuid_create(UUID_TYPE_RANDOM),
+                    'username' => $data['username'] ?? '',
+                    'email' => $data['email'] ?? '',
+                    'register_type' => $data['provider'] ?? '',
+                    'is_guest' => 0,
+                ];
 
-                if(isset($result['uid']) && is_int($result['uid']) && $result['uid'] > 0){
-                    $uid = $result['uid'];
-                }else{
-                    //注册失败
-                    return false;
-                    //log
+                $uid = $this->_svrDaoUserModel->storeData($userData); // 返回主键id
+                if ($uid  === false ) {
+                    throw new \Exception('Insert user failed');
+                }
+
+                $userInfoData = [
+                    'user_id' => $uid,
+                    'email' => $data['email'],
+                    'nickname' => $data['username'],
+                ];
+
+                $info_id = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
+                if ($info_id === false) {
+                    throw new \Exception('Insert user info failed');
+                }
+
+                $authData = [
+                    'user_id' => $uid,
+                    'auth_type' => $data['provider'] ?? '',
+                    'identifier' => $data['apple_uid'] ?? '',
+                    'credential' => $data['credential'] ?? '',
+                    'last_login_at' => date('Y-m-d H:i:s'),
+                ];
+                $auth_id = $this->_svrDaoVnUserAuthModel->insert($authData);
+                if ($auth_id === false) {
+                    throw new \Exception('Insert auth failed');
                 }
             }
+
             $result_data['user_id'] = $uid;
             var_dump($uid);
             //生成登录态token信息
@@ -355,7 +381,7 @@ class Oauth
             'revoked_at' => date('Y-m-d H:i:s'),
         ];
         $where = [
-            'uid' => $uid,
+            'user_id' => $uid,
             'device_id' => $device_id,
         ];
         $result = $this->_svrDaoVnUserSessionModel->updateSession($data, $where);
@@ -380,13 +406,7 @@ class Oauth
      */
     public function getUserInfo($uid){
         // 要查询的字段
-        $col = [
-            'nickname',
-            'gender',
-            'avatar_url',
-            'timezone',
-            'language',
-        ];
+        $col = 'nickname, gender, avatar_url, timezone, language';
         $result = $this->_svrDaoVnUserInfoModel->findUserInfo($col, $uid);
         return $result;
     }
@@ -394,9 +414,55 @@ class Oauth
     /**
      * 用户注销
      * @param int $uid
+     * @param array $params
      * @return void
      */
-    public function cancellation($uid){
+    public function cancellation($uid , $params){
+
+        try{
+            //1. 登录态信息失效（所有该用户的登录态）
+            $data = [
+                'is_deleted' => 1, //注销
+            ];
+            $where = [
+                'user_id' => $uid,
+            ];
+            $result_session = $this->_svrDaoVnUserSessionModel->updateSession($data , $where);
+
+            //2. 用户第三方绑定信息失效
+            $result_auth = $this->_svrDaoVnUserAuthModel->updateOauth($data , $where);
+
+            //3. 用户扩展资料信息失效
+            $result_info = $this->_svrDaoVnUserInfoModel->updateUserInfo($data , $where);
+
+            //4. 主表信息失效
+            $where = [
+                'uid' => $uid,
+            ];
+            $result_user = $this->_svrDaoUserModel->deleteUser($data , $where);
+
+            //5. 日志记录(即使失败无需报错，日记记录，方便追踪)
+            $data= [
+                'user_id' => $uid,
+                'device_id' => $params['device_id'],
+                'log_type' => 'cancellation',
+                'action' => '/cancellation',
+                'description' => 'user cancellation',
+                'ip_address' => $params['ip_address'],
+                'user_agent' => $params['user_agent'],
+            ];
+            $result_log = $this->_svrDaoVnUserLogsModel->storeLogs($data);
+
+            if($result_session && $result_auth && $result_info && $result_user && $result_log){
+                return true;
+            }else{
+                return false;
+            }
+
+        }catch (\Exception $e){
+            \Lsf\Loader::plugin('Log')->error(9018508, ['error' => $e, 'uid' => $uid, 'params' => $params]);
+            return false;
+        }
 
     }
 }
