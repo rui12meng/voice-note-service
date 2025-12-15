@@ -243,7 +243,7 @@ class Oauth
      */
     private function createUser($data){
         $userData = [
-            'user_uid' => 'ujrri899wuww99',//uuid_create(UUID_TYPE_RANDOM),
+            'user_uid' => random_int(100000000, 999999999),//uuid_create(UUID_TYPE_RANDOM),
             'username' => $data['username'] ?? '',
             'email' => $data['email'] ?? '',
             'register_type' => $data['provider'] ?? '',

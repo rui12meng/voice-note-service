@@ -105,7 +105,7 @@ class Oauth extends \App\Application
         //$data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
 
         //临时测试
-        $data['apple_uid'] = 'sdfsdferuiweurwoeiirwoekrwop';
+        $data['apple_uid'] = 'test_'.random_int(10000, 99999);
         if(isset($data['apple_uid']) && !empty($data['apple_uid'])){ //说明授权成功
             $user_info=[
                 'apple_uid'=> $data['apple_uid'],
