@@ -162,67 +162,7 @@ class Oauth
                 }
             }
 
-            //生成登录态token信息
-            $result_token = $this->generateTokens($uid);
-
-            if(!isset($result_token['access_token']) || !isset($result_token['refresh_token']) || !isset($result_token['expires_at'])){
-                \Lsf\Loader::plugin('Log')->error(9040511, [
-                    'call'      => 'generateTokens',
-                    'result'    => $result_token,
-                    'message'   => 'generate jwt token failed',
-                ]);
-                return false;
-            }else{
-                $result_data['token'] = $result_token['access_token'];
-                $result_data['refresh_token'] = $result_token['refresh_token'];
-                $result_data['expires_in'] = $result_token['expires_at'];
-            }
-
-            //存储用户会话信息
-            $device_info = [
-                //设备信息
-                'device_id'     => $data['device_id'] ?? '',
-                'device_type'     => $data['device_type'] ?? '',
-                'device_name'     => $data['device_name'] ?? '',
-                'device_info'     => $data['device_info'] ?? '',
-                'user_agent'     => $data['user_agent'] ?? '',
-                'os_version' => '15.01.89',
-                'app_version' => '0.1',
-                'push_token' => 'dfsdfjieuewww983j',
-                'ip_address' => '127.0.0.1',
-            ];
-
-            $session_id = $this->storeUserSessionInfo($uid, $result_token['jti'],$result_token['access_token'], $result_token['refresh_token'], $device_info);
-
-            if ($session_id === false) {//session 信息存储失败
-                \Lsf\Loader::plugin('Log')->error(9040511, [
-                    'call'      => 'mysql user session insert',
-                    'result'    => $session_id,
-                    'message'   => 'Insert user session failed',
-                ]);
-                return false;
-            }
-
-            // 存储用户设备信息,
-            $device_id = $this->storeUserDevicesInfo($uid, $device_info['device_id'], $device_info);
-            if ($device_id === false) {//session 信息存储失败
-                \Lsf\Loader::plugin('Log')->error(9040511, [
-                    'call'      => 'mysql user device insert',
-                    'result'    => $device_id,
-                    'message'   => 'Insert user device failed',
-                ]);
-            }
-
-            //记录登录日志
-            $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $device_info);
-
-            //查询用户信息返回给客户端
-            $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
-
-            $result_data['nickname'] = $userInfo[0]['nickname'] ?? '';
-            $result_data['email'] = $userInfo[0]['email'] ?? '';
-            $result_data['avatar_url'] = $userInfo[0]['avatar_url'] ?? '';
-            $result_data['gender'] = $userInfo[0]['gender'] ?? '';
+            $result_data = $this->recordSessionContext($uid, $data);
 
         }else{
             //验证客户端授权信息失败
@@ -231,6 +171,69 @@ class Oauth
 
         return $result_data;
 
+    }
+
+    /**
+     * 游客登录Or注册，返回登录态
+     * @param void
+     * @return string
+     */
+    public function guestLoginOrSignUp($data){
+        $result_data = [];
+
+        if(!isset($data['provider']) && empty($data['provider'])){
+            $data['provider'] = 'guest';
+        }
+        $result_data['log_mode'] = $data['provider'];
+
+        $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($data['provider'], $data['device_id']);
+
+        if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
+            $uid = $result[0]['user_id'];
+            $is_deleted = $result[0]['is_deleted'];
+            if($is_deleted === 1){ // 注销用户
+                $new_uid = $this->createUser($data);
+                //更新auth表
+                $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $new_uid],['auth_type' => $data['provider'] , 'identifier' => $data['device_id']]);
+                //记录log
+                $logData = [
+                    'user_id' => $new_uid,
+                    'device_id' => $data['device_id'],
+                    'log_type' => 'login(signed up with a new account using this provider)',
+                    'action' => 'guestLoginOrSignUp',
+                    'description' => 'User re-registered with Guest (oauth_type=guest). Previous binding was soft-deleted; new user ID created. old user ID is:'.$uid,
+                    'ip_address' => $data['ip_address'],
+                    'user_agent' => $data['user_agent'],
+                ];
+                $result = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
+                if($result === false){
+                    return false;
+                }
+                $uid = $new_uid;
+            }
+
+        }else{//找不到则自动注册绑定
+            $uid = $this->createUser($data);
+            $authData = [
+                'user_id' => $uid,
+                'auth_type' => $data['provider'] ?? '',
+                'identifier' => $data['device_id'] ?? '',
+                'last_login_at' => date('Y-m-d H:i:s'),
+            ];
+            $auth_id = $this->_svrDaoVnUserAuthModel->insert($authData);
+            if ($auth_id === false) {
+                \Lsf\Loader::plugin('Log')->error(9040511, [
+                    'call'      => 'mysql user auth insert',
+                    'result'    => $auth_id,
+                    'message'   => 'Insert user auth failed',
+                ]);
+                return false;
+            }
+        }
+
+        $result_data = $this->recordSessionContext($uid, $data);
+
+        return $result_data;
     }
 
     /**
@@ -271,6 +274,82 @@ class Oauth
             ]);
         }
         return $uid;
+    }
+
+    /**
+     * 存储用户登录session+设备+日志（内部方法）
+     * @param int $uid
+     * @param array $data
+     * @return string
+     */
+    private function recordSessionContext($uid, $data){
+        //生成登录态token信息
+        $result_token = $this->generateTokens($uid);
+
+        if(!isset($result_token['access_token']) || !isset($result_token['refresh_token']) || !isset($result_token['expires_at'])){
+            \Lsf\Loader::plugin('Log')->error(9040511, [
+                'call'      => 'generateTokens',
+                'result'    => $result_token,
+                'message'   => 'generate jwt token failed',
+            ]);
+            return false;
+        }else{
+            $result_data['token'] = $result_token['access_token'];
+            $result_data['refresh_token'] = $result_token['refresh_token'];
+            $result_data['expires_in'] = $result_token['expires_at'];
+        }
+
+        //存储用户会话信息
+        $device_info = [
+            //设备信息
+            'device_id'     => $data['device_id'] ?? '',
+            'device_type'     => $data['device_type'] ?? '',
+            'device_name'     => $data['device_name'] ?? '',
+            'device_info'     => $data['device_info'] ?? '',
+            'user_agent'     => $data['user_agent'] ?? '',
+            'os_version' => '15.01.89',
+            'app_version' => '0.1',
+            'push_token' => 'dfsdfjieuewww983j',
+            'ip_address' => '127.0.0.1',
+        ];
+
+        $session_id = $this->storeUserSessionInfo($uid, $result_token['jti'],$result_token['access_token'], $result_token['refresh_token'], $device_info);
+
+        if ($session_id === false) {//session 信息存储失败
+            \Lsf\Loader::plugin('Log')->error(9040511, [
+                'call'      => 'mysql user session insert',
+                'result'    => $session_id,
+                'message'   => 'Insert user session failed',
+            ]);
+            return false;
+        }
+        // 存储用户设备信息,
+        $device_id = $this->storeUserDevicesInfo($uid, $device_info['device_id'], $device_info);
+        if ($device_id === false) {//session 信息存储失败
+            \Lsf\Loader::plugin('Log')->error(9040511, [
+                'call'      => 'mysql user device insert',
+                'result'    => $device_id,
+                'message'   => 'Insert user device failed',
+            ]);
+        }
+
+        //记录登录日志
+        $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $device_info);
+
+        //查询用户信息返回给客户端
+        $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
+
+        if($userInfo === false){
+            return false;
+        }else{
+            $result_data['nickname'] = $userInfo[0]['nickname'] ?? '';
+            $result_data['email'] = $userInfo[0]['email'] ?? '';
+            $result_data['avatar_url'] = $userInfo[0]['avatar_url'] ?? '';
+            $result_data['gender'] = $userInfo[0]['gender'] ?? '';
+        }
+
+        return $result_data;
+
     }
 
     /**

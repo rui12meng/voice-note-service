@@ -33,6 +33,7 @@ class Oauth extends \App\Application
      * @return string
      */
     public function loginOrSignup(){
+        $result = [];
         $params = $this->post('', true);
         if ( ! isset($params['login_mode']) || empty($params['login_mode'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'login_mode');
@@ -41,15 +42,37 @@ class Oauth extends \App\Application
         switch ($params['login_mode']) {
             case "apple":
                 //apple登录
-                $result = $this->loginWithApple($params);
+                $response = $this->loginWithApple($params);
                 break;
             case "google":
-                $result = $this->loginWithGoogle($params);
+                $response = $this->loginWithGoogle($params);
                 break;
             default:
                 //guest登录
-                $result = $this->loginWithGuest($params);
+                $response = $this->loginWithGuest($params);
                 break;
+        }
+
+        if (is_int($response) && $response < 0) {
+            switch ($response) {
+                case -1: // 注册失败
+                    $result['code'] = 1008013;
+                    break;
+                case -2: // apple授权信息无效
+                    $array['code'] = 1008016;
+                    break;
+                case -11:
+                    $array['code'] = 1008017;
+                    break;
+                case -12:
+                    $array['code'] = 1008018;
+                    break;
+                default:
+                    //$array['code'] = $this->erroneous($response);
+                    break;
+            }
+        } else {
+            $result = $response;
         }
         return $this->json(ECODE_SUCCESS, $result);
     }
@@ -91,19 +114,18 @@ class Oauth extends \App\Application
                 'username' => $params['user_name'] ?? '',
                 'email' => $data['email'] ?? '',
                 'provider' => 'apple',
+                'user_agent' => $params['user_agent'],
             ];
             //登录or注册逻辑
             $result = $this->_oauthService->appleLoginOrSignUp($user_info);
+            if($result === false){
+                return -1;
+            }
         }else{
-            $result = [];
+            return -2;
         }
 
-//        if( isset($params['user_name']) & !empty($params['user_name'])){
-//            $user_info['user_name'] = $params['user_name'];
-//        }
         return $result;
-
-        //return $this->json(ECODE_SUCCESS, $result);
     }
 
     /**
@@ -133,6 +155,20 @@ class Oauth extends \App\Application
     public function loginWithGuest($params){
 
         $result = [];
+        if ( !isset($params['device_id']) || empty($params['device_id'])) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'device_id');
+        }
+
+        $user_info=[
+            'identifier' => $params['device_id'],
+            'provider' => 'guest',
+            'user_agent' => $params['user_agent'],
+        ];
+        //登录or注册逻辑
+        $result = $this->_oauthService->guestLoginOrSignUp($user_info);
+        if($result === false){
+            return -3; // guest 注册失败
+        }
 
         return $this->json(ECODE_SUCCESS, $result);
     }
