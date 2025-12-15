@@ -25,7 +25,7 @@ class DaoVnUserAuth extends \Lsf\Model
             'auth_type' => $auth_type,
             'identifier' => $auth_sub,
         ];
-        $columns = 'id ，is_deleted';
+        $columns = 'user_id , is_deleted';
         $result = $this->select($columns ,  $where, $this->primary . ' DESC', $limit = 1);
 
         if($result === FALSE){

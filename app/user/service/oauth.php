@@ -120,59 +120,30 @@ var_dump($result);
             //有记录且 is_deleted = 1	→ 删除该记录（或更新为无效），然后走“无记录”流程
 
             //有记录
-            if(isset($result[0]['uid'])){
-                $uid = $result[0]['uid'];
+            if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
+                $uid = $result[0]['user_id'];
                 $is_deleted = $result[0]['is_deleted'];
                 if($is_deleted === 1){
+                    $new_uid = $this->createUser($data);
                     //更新auth表
-                    $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $uid],['auth_type' => $auth_type , 'identifier' => $auth_sub]);
+                    $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $new_uid],['auth_type' => $auth_type , 'identifier' => $auth_sub]);
                     //记录log
                     $logData = [
-                        'user_id' => $uid,
+                        'user_id' => $new_uid,
                         'device_id' => $data['device_id'],
                         'log_type' => 'login(signed up with a new account using this provider)',
                         'action' => 'appleLoginOrSignUp',
-                        'description' => 'User re-registered with OAuth (oauth_type=apple). Previous binding was soft-deleted; new user ID created.',
+                        'description' => 'User re-registered with OAuth (oauth_type=apple). Previous binding was soft-deleted; new user ID created. old user ID is:'.$uid,
                         'ip_address' => $data['ip_address'],
                         'user_agent' => $data['user_agent'],
                     ];
                     $this->_svrDaoVnUserLogsModel->storeLogs($logData);
+                    $uid = $new_uid;
                 }
                 //正常登录
 
             }else{//找不到则自动注册绑定
-                $userData = [
-                    'user_uid' => 'ujrri899wuww99',//uuid_create(UUID_TYPE_RANDOM),
-                    'username' => $data['username'] ?? '',
-                    'email' => $data['email'] ?? '',
-                    'register_type' => $data['provider'] ?? '',
-                    'is_guest' => 0,
-                ];
-
-                $uid = $this->_svrDaoUserModel->storeData($userData); // 返回主键id
-                if ($uid  === false ) {
-                    \Lsf\Loader::plugin('Log')->error(9040511, [
-                        'call'      => 'mysql user insert',
-                        'result'    => $uid,
-                        'message'   => 'Insert user failed',
-                    ]);
-                }
-
-                $userInfoData = [
-                    'user_id' => $uid,
-                    'email' => $data['email'],
-                    'nickname' => $data['username'],
-                ];
-
-                $info_id = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
-                if ($info_id === false) {
-                    \Lsf\Loader::plugin('Log')->error(9040511, [
-                        'call'      => 'mysql user info insert',
-                        'result'    => $info_id,
-                        'message'   => 'Insert user info failed',
-                    ]);
-                }
-
+                $uid = $this->createUser($data);
                 $authData = [
                     'user_id' => $uid,
                     'auth_type' => $data['provider'] ?? '',
@@ -256,6 +227,46 @@ var_dump($result);
 
         return $result_data;
 
+    }
+
+    /**
+     * 注册新用户（内部方法）
+     * @param array $data
+     * @return string
+     */
+    private function createUser($data){
+        $userData = [
+            'user_uid' => 'ujrri899wuww99',//uuid_create(UUID_TYPE_RANDOM),
+            'username' => $data['username'] ?? '',
+            'email' => $data['email'] ?? '',
+            'register_type' => $data['provider'] ?? '',
+            'is_guest' => 0,
+        ];
+
+        $uid = $this->_svrDaoUserModel->storeData($userData); // 返回主键id
+        if ($uid  === false ) {
+            \Lsf\Loader::plugin('Log')->error(9040511, [
+                'call'      => 'mysql user insert',
+                'result'    => $uid,
+                'message'   => 'Insert user failed',
+            ]);
+        }
+
+        $userInfoData = [
+            'user_id' => $uid,
+            'email' => $data['email'],
+            'nickname' => $data['username'],
+        ];
+
+        $info_id = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
+        if ($info_id === false) {
+            \Lsf\Loader::plugin('Log')->error(9040511, [
+                'call'      => 'mysql user info insert',
+                'result'    => $info_id,
+                'message'   => 'Insert user info failed',
+            ]);
+        }
+        return $uid;
     }
 
     /**
