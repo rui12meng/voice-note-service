@@ -192,7 +192,7 @@ class Oauth
                 'ip_address' => '127.0.0.1',
             ];
 
-            $session_id = $this->storeUserSessionInfo($uid, $result_token['access_token'], $result_token['refresh_token'], $device_info);
+            $session_id = $this->storeUserSessionInfo($uid, $result_token['jti'],$result_token['access_token'], $result_token['refresh_token'], $device_info);
 
             if ($session_id === false) {//session 信息存储失败
                 \Lsf\Loader::plugin('Log')->error(9040511, [
@@ -276,14 +276,16 @@ class Oauth
     /**
      * 存储用户session会话信息
      * @param int $uid
+     * @params string $jti
      * @param string $access_token
      * @param string $refresh_token
      * @param array $device_info
      * @return string
      */
-    public function storeUserSessionInfo($uid, $access_token, $refresh_token, $device_info){
+    public function storeUserSessionInfo($uid, $jti, $access_token, $refresh_token, $device_info){
         $session_data = [
             'user_id'       => $uid,
+            'jti'           => $jti,
             'refresh_token' => $refresh_token,
             'session_token'  => $access_token,
             'expire_at'    => date('Y-m-d H:i:s', time() + 3600),
@@ -369,6 +371,7 @@ class Oauth
         // 1. access_token
         $accessPayload = [
             'sub' => $userId,        // 用户ID
+            'jti' => bin2hex(random_bytes(32)),// 256-bit 随机字符串（64字符十六进制）
             'iat' => $now,           // 签发时间
             'exp' => $now + Env::get('TOKEN_ACCESS_TTL'),
         ];
@@ -384,6 +387,7 @@ class Oauth
         $refreshToken = JWT::encode($refreshPayload, Env::get('TOKEN_JWT_REFRESH_SECRET'), 'HS256');
 
         return [
+            'jti' => $accessPayload['jti'],
             'access_token'  => $accessToken,
             'refresh_token' => $refreshToken,
             'expires_at'    => $now + Env::get('TOKEN_ACCESS_TTL')
