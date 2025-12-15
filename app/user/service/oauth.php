@@ -114,12 +114,10 @@ class Oauth
             $auth_type = $data['provider'];
             $auth_sub = $data['apple_uid'];
             $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($auth_type, $auth_sub);
-var_dump($result);
+
             //无记录	→ 创建新用户 + 新 OAuth 绑定
             //有记录且 is_deleted = 0	→ 正常登录（该用户已存在）
             //有记录且 is_deleted = 1	→ 删除该记录（或更新为无效），然后走“无记录”流程
-
-            //有记录
             if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
                 $uid = $result[0]['user_id'];
                 $is_deleted = $result[0]['is_deleted'];
@@ -137,10 +135,12 @@ var_dump($result);
                         'ip_address' => $data['ip_address'],
                         'user_agent' => $data['user_agent'],
                     ];
-                    $this->_svrDaoVnUserLogsModel->storeLogs($logData);
+                    $result = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
+                    if($result === false){
+                        return false;
+                    }
                     $uid = $new_uid;
                 }
-                //正常登录
 
             }else{//找不到则自动注册绑定
                 $uid = $this->createUser($data);
@@ -158,16 +158,19 @@ var_dump($result);
                         'result'    => $auth_id,
                         'message'   => 'Insert user auth failed',
                     ]);
+                    return false;
                 }
             }
 
-            //$result_data['user_id'] = $uid;
-
-            var_dump($uid);
             //生成登录态token信息
             $result_token = $this->generateTokens($uid);
 
             if(!isset($result_token['access_token']) || !isset($result_token['refresh_token']) || !isset($result_token['expires_at'])){
+                \Lsf\Loader::plugin('Log')->error(9040511, [
+                    'call'      => 'generateTokens',
+                    'result'    => $result_token,
+                    'message'   => 'generate jwt token failed',
+                ]);
                 return false;
             }else{
                 $result_data['token'] = $result_token['access_token'];
@@ -197,6 +200,7 @@ var_dump($result);
                     'result'    => $session_id,
                     'message'   => 'Insert user session failed',
                 ]);
+                return false;
             }
 
             // 存储用户设备信息,
@@ -219,10 +223,10 @@ var_dump($result);
             $result_data['email'] = $userInfo[0]['email'] ?? '';
             $result_data['avatar_url'] = $userInfo[0]['avatar_url'] ?? '';
             $result_data['gender'] = $userInfo[0]['gender'] ?? '';
+
         }else{
             //验证客户端授权信息失败
             return false;
-
         }
 
         return $result_data;
