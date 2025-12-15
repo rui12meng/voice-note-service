@@ -59,16 +59,16 @@ class Oauth extends \App\Application
                     $result['code'] = 1008013;
                     break;
                 case -2: // apple授权信息无效
-                    $array['code'] = 1008016;
+                    $result['code'] = 1008016;
                     break;
-                case -11:
-                    $array['code'] = 1008017;
+                case -3: //guest 登录失败
+                    $result['code'] = 1008017;
                     break;
                 case -12:
-                    $array['code'] = 1008018;
+                    $result['code'] = 1008018;
                     break;
                 default:
-                    //$array['code'] = $this->erroneous($response);
+                    //$result['code'] = $this->erroneous($response);
                     break;
             }
         } else {
@@ -170,7 +170,7 @@ class Oauth extends \App\Application
             return -3; // guest 注册失败
         }
 
-        return $this->json(ECODE_SUCCESS, $result);
+        return $result;
     }
 
     /**
