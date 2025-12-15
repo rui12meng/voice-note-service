@@ -186,7 +186,7 @@ class Oauth
         }
         $result_data['log_mode'] = $data['provider'];
 
-        $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($data['provider'], $data['device_id']);
+        $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($data['provider'], $data['identifier']);
 
         if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
             $uid = $result[0]['user_id'];
@@ -261,8 +261,8 @@ class Oauth
 
         $userInfoData = [
             'user_id' => $uid,
-            'email' => $data['email'],
-            'nickname' => $data['username'],
+            'email' => isset($data['email']) ?? '',
+            'nickname' => isset($data['username']) ?? '',
         ];
 
         $info_id = $this->_svrDaoVnUserInfoModel->insert($userInfoData);

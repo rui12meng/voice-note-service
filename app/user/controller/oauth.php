@@ -162,7 +162,7 @@ class Oauth extends \App\Application
         $user_info=[
             'identifier' => $params['device_id'],
             'provider' => 'guest',
-            'user_agent' => $params['user_agent'],
+            'user_agent' => isset($params['user_agent']) ?? '',
         ];
         //登录or注册逻辑
         $result = $this->_oauthService->guestLoginOrSignUp($user_info);
