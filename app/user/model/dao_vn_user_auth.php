@@ -15,19 +15,24 @@ class DaoVnUserAuth extends \Lsf\Model
 
     /**
      * 根据授权服务商及授权uid获取用户信息
-     * @param  array   $data
+     * @param  string   $auth_type
+     * @param  string   $auth_sub
      * @return mixed
      */
 
-    public function findOauthInfo($data){
+    public function findOauthInfo($auth_type, $auth_sub){
         $where = [
-            'auth_type' => $data['auth_type'],
-            'identifier' => $data['identifier'],
+            'auth_type' => $auth_type,
+            'identifier' => $auth_sub,
         ];
-        $columns = 'id';
-        $result = $this->query($columns ,  $where);
+        $columns = 'id ，is_deleted';
+        $result = $this->select($columns ,  $where, $this->primary . ' DESC', $limit = 1);
 
-        return $result;
+        if($result === FALSE){
+            return FALSE;
+        }else{
+            return $result;
+        }
 
     }
 

@@ -73,9 +73,9 @@ class Oauth extends \App\Application
 
         if( isset($params['email']) & !empty($params['email'])){
             // 正则验证邮箱
-//            if($this->validate_email($params['email'])){
-//                $user_info['email'] = $params['email'];
-//            }
+            if($this->validate_email($params['email'])){
+                $user_info['email'] = $params['email'];
+            }
         }
 
         //校验identityToken合法性且未过期
@@ -97,9 +97,6 @@ class Oauth extends \App\Application
         }else{
             $result = [];
         }
-
-
-
 
 //        if( isset($params['user_name']) & !empty($params['user_name'])){
 //            $user_info['user_name'] = $params['user_name'];
