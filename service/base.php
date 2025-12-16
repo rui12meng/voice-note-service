@@ -50,7 +50,8 @@ class Base
             'jti' => $accessPayload['jti'],
             'access_token'  => $accessToken,
             'refresh_token' => $refreshToken,
-            'expires_at'    => $now + Env::get('TOKEN_ACCESS_TTL')
+            'expires_at'    => $now + Env::get('TOKEN_ACCESS_TTL'),
+            'refresh_exp'   => $now + Env::get('TOKEN_REFRESH_TTL'),
         ];
     }
 

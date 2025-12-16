@@ -109,8 +109,8 @@ class User extends Base
             'jti' => $result_token['jti'],
             'session_token' => $result_token['access_token'],
             'refresh_token' => $result_token['refresh_token'],
-            'expire_at' => $result_token['expire_at'],
-            'refresh_expires_at' => $result_token['refresh_expires_at'],
+            'expire_at' => $result_token['expires_at'],
+            'refresh_expires_at' => $result_token['refresh_exp'],
         ];
         $where = [
             'jti' => $jti,
