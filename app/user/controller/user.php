@@ -35,7 +35,6 @@ class User extends \App\Application
      * @return string
      */
     public function tokenRefresh(){
-        $result = [];
         $refresh_token = $this->post('refresh_token', true);
         if ( ! isset($refresh_token) || empty($refresh_token)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'refresh_token');

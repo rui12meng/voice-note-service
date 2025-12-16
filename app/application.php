@@ -15,29 +15,21 @@ use Lsf\Env;
  */
 
 define('ECODE_SUCCESS', 0);                              // 成功
-define('ECODE_PARAM_MISSING', 9010000);                  // 缺失参数
-define('ECODE_PARAM_VALUE_INVALID', 9010001);            // 参数值非法
-define('ECODE_DATABASE_QUERY_FAIL', 9010002);            // 数据库查询失败
-define('ECODE_DATA_NOT_FOUND', 9010004);                 // 数据不存在
-define('ECODE_API_NETWORK_REQUEST_FAIL', 9010005);       // 接口网络请求失败
-define('ECODE_API_RESPONSE_DATA_EXCEPTION', 9010006);    // 接口响应数据异常
-define('ECODE_CALL_INNER_METHOD_PARAMS_ERROR', 9010007); // 调用内部方法参数错误
-define('ECODE_USER_ACCOUNT_DEACTIVATED', 9010008);       // 用户已注销
-define('ECODE_USER_LOGGED_OUT', 9010009);                // 用户已登出
-define('ECODE_UNDEFINED_ERROR', 9010010);                // 未知错误
-define('ECODE_API_RESPONSE_CODE_ERROR', 9010011);        // 接口响应错误
-define('ECODE_API_PASSPORT_NOT_FOUND', 9010012);         // 账号不存在
-define('ECODE_TOKEN_GENERATE_FAILED', 9010013);          // 手机号码有误
-define('ECODE_DATABASE_INSERT_FAIL', 9010014);           // 数据库存储失败
-define('ECODE_UPOLOAD_ERROR', 9010015);                  // 魔拍图片上传失败
-define('ECODE_PIC_YELLOW', 9010016);                     // 图片鉴定失败。被鉴定为黄色
-define('ECODE_OCR_SUBJECT_ERROR', 9010017);              // 未能识别到学科
-define('ECODE_OCR_SUBJECT_INCONFORMITY', 9010018);       // 识别的学科与传入的学科不一致
-define('ECODE_OCR_QUESTION_ERROR', 9010020);             // 未能识别到切题标识
-define('ECODE_SEND_REQUEST_TOO_OFTEN', 9010021);         // 发送请求过于频繁
-define('ECODE_INVALID_QRCODE', 9010100);                 // 请扫描有效二维码
-define('ECODE_DEVICE_REPETBIND', 9010123);               // 重复绑定孩子
-define('ECODE_STUDENT_REPETBIND', 9010124);              // 孩子重复绑定设备
+define('ECODE_PARAM_MISSING', 1001001);                  // 缺失参数
+define('ECODE_PARAM_VALUE_INVALID', 1001002);            // 参数值非法
+define('ECODE_DATABASE_QUERY_FAIL', 1001003);            // 数据库查询失败
+define('ECODE_DATA_NOT_FOUND', 1001004);                 // 数据不存在
+define('ECODE_API_NETWORK_REQUEST_FAIL', 1001005);       // 接口网络请求失败
+define('ECODE_API_RESPONSE_DATA_EXCEPTION', 1001006);    // 接口响应数据异常
+define('ECODE_CALL_INNER_METHOD_PARAMS_ERROR', 1001007); // 调用内部方法参数错误
+define('ECODE_USER_ACCOUNT_DEACTIVATED', 1001008);       // 用户已注销
+define('ECODE_USER_LOGGED_OUT', 1001009);                // 用户已登出
+define('ECODE_UNDEFINED_ERROR', 1001000);                // 未知错误
+define('ECODE_API_RESPONSE_CODE_ERROR', 1001011);        // 接口响应错误
+define('ECODE_API_PASSPORT_NOT_FOUND', 1001012);         // 账号不存在
+define('ECODE_DATABASE_INSERT_FAIL', 1001013);           // 数据库存储失败
+define('ECODE_UPOLOAD_ERROR', 1001014);                  // 图片上传失败
+define('ECODE_PIC_YELLOW', 1001015);                     // 图片鉴定失败。被鉴定为黄色
 
 class Application extends \Lsf\Controller
 {

@@ -84,10 +84,10 @@ class User extends Base
             return -2; //数据库操作失败
         }
         if(isset($result[0]['status']) && isset($result[0]['is_deleted'])){
-            if($result[0]['is_deleted'] === 1){  //已注销
+            if((int)$result[0]['is_deleted'] === 1){  //已注销
                 return -4;
             }
-            if($result[0]['status'] === 2){ //已登出
+            if((int)$result[0]['status'] === 2){ //已登出
                 return -5;
             }
 
