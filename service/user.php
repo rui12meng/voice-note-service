@@ -152,7 +152,7 @@ class User extends Base
             return -1;
         }
         //查询数据
-        $col = 'nickname, gender, avatar_url, timezone, language, update_at';
+        $col = 'nickname, gender, avatar_url, timezone, language, updated_at';
         $user_info = $this->_svrDaoVnUserInfoModel->findUserInfo($col,$uid);
         // 数据库操作失败
         if($user_info === FALSE){

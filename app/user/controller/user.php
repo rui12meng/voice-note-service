@@ -199,12 +199,12 @@ class User extends \App\Application
                 }
             }else{
                 $uInfo = [
-                    'nickname' => $result['nickname'] ?? '',
-                    'gender' => $result['gender'] ?? 0,
-                    'avatar_url' => $result['avatar_url'] ?? '',
-                    'timezone' => $result['timezone'] ?? '',
-                    'language' => $result['language'] ?? '',
-                    'update_at' => $result['update_at'] ?? '',
+                    'nickname' => $result[0]['nickname'] ?? '',
+                    'gender' => $result[0]['gender'] ?? 0,
+                    'avatar_url' => $result[0]['avatar_url'] ?? '',
+                    'timezone' => $result[0]['timezone'] ?? '',
+                    'language' => $result[0]['language'] ?? '',
+                    'update_at' => $result[0]['updated_at'] ?? '',
                 ];
             }
             return $this->json($eCode, $uInfo);

@@ -1,5 +1,5 @@
 <?php
-namespace User\Model;
+namespace Model;
 
 /**
  * 用户日志数据
