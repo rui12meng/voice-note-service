@@ -119,12 +119,7 @@ class User extends Base
         if($result_session === false){
             return -2; //数据库操作失败
         }
-        $result = [
-            'token' => $result_token['access_token'],
-            'refresh_token' => $result_token['refresh_token'],
-            'expires_in' => date('Y-m-d H:i:s', $result_token['expires_at']),
-        ];
-        return $result;
+        return $data;
     }
 
     /**
