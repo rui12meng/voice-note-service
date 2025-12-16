@@ -11,16 +11,14 @@ require_once LSFPATH . '/lib/php-jwt/autoload.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
-use Firebase\JWT\Key;
-use Lsf\Env;
-use phpDocumentor\Reflection\Types\Integer;
+use Service\Base;
 
-class Oauth
+class Oauth extends \Service\Base
 {
     /**
      * @var mixed
      */
-    private $_svrDaoUserModel;
+    private $_svrDaoVnUserModel;
     private $_svrDaoVnUserInfoModel;
     private $_svrDaoVnUserAuthModel;
     private $_svrDaoVnUserSessionModel;
@@ -34,12 +32,12 @@ class Oauth
      */
     public function __construct()
     {
-        $this->_svrDaoUserModel = \Lsf\Loader::model('DaoUser', false, APP_NAME_USER);
-        $this->_svrDaoVnUserInfoModel = \lsf\Loader::model('DaoVnUserInfo', false, APP_NAME_USER);
-        $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', false, APP_NAME_USER);
-        $this->_svrDaoVnUserSessionModel = \Lsf\Loader::model('DaoVnUserSessions', false, APP_NAME_USER);
-        $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevices', false, APP_NAME_USER);
-        $this->_svrDaoVnUserLogsModel = \Lsf\Loader::model('DaoVnUserLogs', false, APP_NAME_USER);
+        $this->_svrDaoVnUserModel = \Lsf\Loader::model('DaoVnUser', true);
+        $this->_svrDaoVnUserInfoModel = \lsf\Loader::model('DaoVnUserInfo', true);
+        $this->_svrDaoVnUserAuthModel = \Lsf\Loader::model('DaoVnUserAuth', true);
+        $this->_svrDaoVnUserSessionModel = \Lsf\Loader::model('DaoVnUserSessions', true);
+        $this->_svrDaoVnUserDevicesModel = \Lsf\Loader::model('DaoVnUserDevices', true);
+        $this->_svrDaoVnUserLogsModel = \Lsf\Loader::model('DaoVnUserLogs', true);
     }
 
     /**
@@ -250,7 +248,7 @@ class Oauth
             'is_guest' => 0,
         ];
 
-        $uid = $this->_svrDaoUserModel->storeData($userData); // 返回主键id
+        $uid = $this->_svrDaoVnUserModel->storeData($userData); // 返回主键id
         if ($uid  === false ) {
             \Lsf\Loader::plugin('Log')->error(9040511, [
                 'call'      => 'mysql user insert',
@@ -439,171 +437,6 @@ class Oauth
         return $result;
     }
 
-    /**
-     * 生成 JWT token
-     * @param void
-     * @return string
-     */
-    public function generateTokens(int $userId) : array {
-        $now = time();
-
-        // 1. access_token
-        $accessPayload = [
-            'sub' => $userId,        // 用户ID
-            'jti' => bin2hex(random_bytes(32)),// 256-bit 随机字符串（64字符十六进制）
-            'iat' => $now,           // 签发时间
-            'exp' => $now + Env::get('TOKEN_ACCESS_TTL'),
-        ];
-        $token_jwt_access_secret = Env::get('TOKEN_JWT_ACCESS_SECRET');
-        $accessToken = JWT::encode($accessPayload, $token_jwt_access_secret, 'HS256');
-
-        // 2. refresh_token
-        $refreshPayload = [
-            'sub' => $userId,
-            'iat' => $now,
-            'exp' => $now + Env::get('TOKEN_REFRESH_TTL'),
-        ];
-        $refreshToken = JWT::encode($refreshPayload, Env::get('TOKEN_JWT_REFRESH_SECRET'), 'HS256');
-
-        return [
-            'jti' => $accessPayload['jti'],
-            'access_token'  => $accessToken,
-            'refresh_token' => $refreshToken,
-            'expires_at'    => $now + Env::get('TOKEN_ACCESS_TTL')
-        ];
-    }
 
 
-
-    /**
-     * 验证 refresh_token
-     * @param void
-     * @return void
-     */
-    public function verifyRefreshToken(string $token) {
-        try {
-            $payload = JWT::decode($token,  new Key(\Lsf\Env::get('TOKEN_JWT_REFRESH_SECRET'), 'HS256'));
-            return (array)$payload;
-        } catch (\Exception $e) {
-            var_dump($e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * 使用 refresh_token 刷新 access_token
-     * @param $refreshToken string
-     * @return void
-     */
-    public function refreshAccessToken(string $refreshToken){
-        //1. 验证 refresh_token 是否为合法
-        $payload = $this->verifyRefreshToken($refreshToken);
-        if(!$payload) return false;
-
-        $userId = $payload['sub'];
-
-        //2. 去数据库查 user_sessions 是否注销
-
-        //3. 颁发新的 access_token & refresh_token
-        return $this->generateTokens($userId);
-
-        //4. UPDATE 一条记录user_sessions
-    }
-
-    /**
-     * 登出接口使seesion信息失效
-     * @param int $uid
-     * @param string $device_id
-     * @return void
-     */
-    public function revokedSession(int $uid, string $device_id){
-        $data = [
-            'revoked' => 1,
-            'revoked_at' => date('Y-m-d H:i:s'),
-        ];
-        $where = [
-            'user_id' => $uid,
-            'device_id' => $device_id,
-        ];
-        $result = $this->_svrDaoVnUserSessionModel->updateSession($data, $where);
-        return $result;
-    }
-
-    /**
-     * 根据uid编辑用户信息
-     * @param int $uid
-     * @param array $user_info
-     * @return void
-     */
-    public function editUserInfo($uid, $user_info){
-        $result = $this->_svrDaoVnUserInfoModel->editUserInfo($uid, $user_info);
-        return $result;
-    }
-
-    /**
-     * 根据uid查询用户信息
-     * @param int $uid
-     * @return void
-     */
-    public function getUserInfo($uid){
-        // 要查询的字段
-        $col = 'nickname, gender, avatar_url, timezone, language';
-        $result = $this->_svrDaoVnUserInfoModel->findUserInfo($col, $uid);
-        return $result;
-    }
-
-    /**
-     * 用户注销
-     * @param int $uid
-     * @param array $params
-     * @return void
-     */
-    public function cancellation($uid , $params){
-
-        try{
-            //1. 登录态信息失效（所有该用户的登录态）
-            $data = [
-                'is_deleted' => 1, //注销
-            ];
-            $where = [
-                'user_id' => $uid,
-            ];
-            $result_session = $this->_svrDaoVnUserSessionModel->updateSession($data , $where);
-
-            //2. 用户第三方绑定信息失效
-            $result_auth = $this->_svrDaoVnUserAuthModel->updateOauth($data , $where);
-
-            //3. 用户扩展资料信息失效
-            $result_info = $this->_svrDaoVnUserInfoModel->updateUserInfo($data , $where);
-
-            //4. 主表信息失效
-            $where = [
-                'uid' => $uid,
-            ];
-            $result_user = $this->_svrDaoUserModel->deleteUser($data , $where);
-
-            //5. 日志记录(即使失败无需报错，日记记录，方便追踪)
-            $data= [
-                'user_id' => $uid,
-                'device_id' => $params['device_id'],
-                'log_type' => 'cancellation',
-                'action' => '/cancellation',
-                'description' => 'user cancellation',
-                'ip_address' => $params['ip_address'],
-                'user_agent' => $params['user_agent'],
-            ];
-            $result_log = $this->_svrDaoVnUserLogsModel->storeLogs($data);
-
-            if($result_session && $result_auth && $result_info && $result_user && $result_log){
-                return true;
-            }else{
-                return false;
-            }
-
-        }catch (\Exception $e){
-            \Lsf\Loader::plugin('Log')->error(9018508, ['error' => $e, 'uid' => $uid, 'params' => $params]);
-            return false;
-        }
-
-    }
 }

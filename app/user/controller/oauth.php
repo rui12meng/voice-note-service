@@ -3,7 +3,7 @@ namespace User\Controller;
 
 /**
  * 用户控制器
- * $Id: member.php $
+ * $Id: oauth.php $
  * @author mengrui
  */
 class Oauth extends \App\Application
@@ -171,134 +171,6 @@ class Oauth extends \App\Application
         }
 
         return $result;
-    }
-
-    /**
-     * 刷新token（登录态刷新）
-     * @param  void
-     * @return string
-     */
-    public function tokenRefresh(){
-        $result = [];
-        $refresh_token = $this->post('refresh_token', true);
-        if ( ! isset($refresh_token) || empty($refresh_token)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'refresh_token');
-        }
-
-        $token_info = $this->_oauthService->refreshAccessToken($refresh_token);
-        if($token_info === false){
-            echo 'err';
-        }else{
-            $result['token'] = $token_info['access_token'] ?? '';
-            $result['refresh_token'] = $token_info['refresh_token'] ?? '';
-            $result['expires_in'] = $token_info['expires_at'] ?? '';
-        }
-        return $this->json(ECODE_SUCCESS, $result);
-    }
-
-    /**
-     * 登出（退出登录）
-     * @param  void
-     * @return string
-     */
-    public function logout(){
-        //1. 解析 access_token 取 uid;不需要校验 exp 是否过期(入口文件已实现)
-        $uid = $this->uid;
-        if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }
-
-        $device_id = $this->post('device_id', true);
-        if ( ! isset($device_id) || empty($device_id)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'device_id');
-        }
-        // 2. refresh_token 必须删除或失效化
-
-        $result = $this->_oauthService->revokedSession($uid, $device_id);
-
-        var_dump($result);exit();
-
-
-    }
-
-    /**
-     * 更新用户信息
-     * @param  void
-     * @return string
-     */
-    public function editProfile(){
-        $uid = $this->uid;
-        if (empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
-        }
-
-        $user_info = [];
-
-        // 用户信息-昵称
-        $nickname = $this->post('nickname', true);
-        if (!empty($nickname)) {
-            $user_info['nickname'] = $nickname;
-        }
-        // 用户信息-性别
-        $gender = $this->post('gender', true);
-        if (!empty($gender)) {
-            $user_info['gender'] = $gender;
-        }
-        // 用户信息-时区
-        $timezone = $this->post('timezone', true);
-        if (!empty($timezone)) {
-            $user_info['timezone'] = $timezone;
-        }
-        // 用户信息-语言
-        $language = $this->post('language', true);
-        if (!empty($timezone)) {
-            $user_info['language'] = $language;
-        }
-
-        if(is_array($user_info) && count($user_info) > 0){
-            $result = $this->_oauthService->editUserInfo($uid, $user_info);
-            var_dump($result);exit();
-        }else{
-            //没有要修改的内容
-            echo 'err params';exit();
-        }
-    }
-
-    /**
-     * 获取用户信息
-     * @param  void
-     * @return string
-     */
-    public function getProfile(){
-        //token
-        $uid = $this->uid;
-        if (empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
-        }
-        $result = $this->_oauthService->getUserInfo($uid);
-        var_dump($result);exit();
-
-    }
-
-    /**
-     * 注销帐户
-     * @param  void
-     * @return string
-     */
-    public function cancellation(){
-        //解析 access_token 获取 uid
-        $uid = $this->uid;
-        if (empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
-        }
-
-        $result = $this->_oauthService->cancellation($uid);
-        if($result){
-            return true;
-        }else{
-            return false;
-        }
-
     }
 
     /**

@@ -22,12 +22,12 @@ define('ECODE_DATA_NOT_FOUND', 9010004);                 // 数据不存在
 define('ECODE_API_NETWORK_REQUEST_FAIL', 9010005);       // 接口网络请求失败
 define('ECODE_API_RESPONSE_DATA_EXCEPTION', 9010006);    // 接口响应数据异常
 define('ECODE_CALL_INNER_METHOD_PARAMS_ERROR', 9010007); // 调用内部方法参数错误
-define('ECODE_SEND_SMS_TOO_OFTEN', 9010008);             // 发送短信过于频繁
-define('ECODE_SEND_SMS_FAIL', 9010009);                  // 发送短信失败
+define('ECODE_USER_ACCOUNT_DEACTIVATED', 9010008);       // 用户已注销
+define('ECODE_USER_LOGGED_OUT', 9010009);                // 用户已登出
 define('ECODE_UNDEFINED_ERROR', 9010010);                // 未知错误
 define('ECODE_API_RESPONSE_CODE_ERROR', 9010011);        // 接口响应错误
 define('ECODE_API_PASSPORT_NOT_FOUND', 9010012);         // 账号不存在
-define('ECODE_API_PHONE_NUM_ERROR', 9010013);            // 手机号码有误
+define('ECODE_TOKEN_GENERATE_FAILED', 9010013);          // 手机号码有误
 define('ECODE_DATABASE_INSERT_FAIL', 9010014);           // 数据库存储失败
 define('ECODE_UPOLOAD_ERROR', 9010015);                  // 魔拍图片上传失败
 define('ECODE_PIC_YELLOW', 9010016);                     // 图片鉴定失败。被鉴定为黄色
@@ -50,6 +50,10 @@ class Application extends \Lsf\Controller
      * @var string
      */
     protected $token = ''; // 登录态token
+    /**
+     * @var string
+     */
+    protected $jti = ''; // 会话级唯一标识
     /**
      * @var array
      */
@@ -95,6 +99,7 @@ class Application extends \Lsf\Controller
                 throw new FinishException($this->json(9999999, [], 'token非法'));
             }else{
                 $this->uid = $payload['sub'];
+                $this->jti = $payload['jti'];
             }
 
         }
@@ -120,11 +125,32 @@ class Application extends \Lsf\Controller
 
         }else{
             try{
-                $payload = JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
-                return (array)$payload;
+                $payload = (array)JWT::decode($token, new Key(\Lsf\Env::get('TOKEN_JWT_ACCESS_SECRET'), 'HS256'));
+                // 查询是否已登出，先查redis
+                if(isset($payload['jti']) && !empty($payload['jti'])){
+                    $redisKey  = 'voice-note-service:check_access_token:'.$payload['jti'];
+                    $cacheStatus = \Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
+
+                    if ($cacheStatus){
+                        if($cacheStatus === 0 || $cacheStatus === 2){
+                            throw new FinishException($this->json(100001002, [], 'token失效'));
+                        }
+                    }else{ //无redis数据,查表
+                        $daoVnUserSessionsModel = \Lsf\Loader::model('DaoVnUserSessions', true);
+                        $sessionInfo          = $daoVnUserSessionsModel->findSessionByJti('status', $payload['jti']);
+                        // 无session数据，默认无效
+                        $status      = isset($sessionInfo[0]['status']) ? $sessionInfo[0]['status'] : 0;
+                        if($status != 1){ //无效
+                            throw new FinishException($this->json(100001002, [], 'token失效'));
+                        }
+                    }
+                    return $payload;
+                }else{
+                    throw new FinishException($this->json(100001001, [], 'token非法'));
+                }
             }catch (\Exception $e) {
                 //log access解析失败，非法token
-                return false;
+                throw new FinishException($this->json(100001001, [], 'token非法'));
             }
         }
 

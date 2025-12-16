@@ -3,7 +3,7 @@ namespace User\Controller;
 
 /**
  * 用户控制器
- * $Id: member.php $
+ * $Id: user.php $
  * @author mengrui
  */
 class User extends \App\Application
@@ -30,45 +30,189 @@ class User extends \App\Application
     }
 
     /**
-     * 刷新访问令牌
+     * 刷新访问令牌（登录态刷新）
      * @param  void
      * @return string
      */
-    public function refresh_token(){
-        $token = $this->post('token', true);
-        if ( ! isset($token) || empty($token)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }
-        $uid = $this->post('uid', true);
-        if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+    public function tokenRefresh(){
+        $result = [];
+        $refresh_token = $this->post('refresh_token', true);
+        if ( ! isset($refresh_token) || empty($refresh_token)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'refresh_token');
         }
 
-        $returnData = $this->_ucService->tokenRefreshService($uid, $token);
+        $token_info = $this->_userService->refreshAccessToken($refresh_token);
 
-        return $this->json($returnData['ecode'], $returnData['data'], $returnData['emsg']);
+        $eCode = ECODE_SUCCESS;
+        $result = [];
+        if (is_int($token_info) && $token_info < 0) {
+            switch ($token_info) {
+                case -1: //refresh token 非法
+                    $eCode = ECODE_DATABASE_QUERY_FAIL; //ECODE_DATA_NOT_FOUND
+                    break;
+                case -2: //数据库操作失败
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                case -3: //数据不存在
+                    $eCode = ECODE_DATA_NOT_FOUND;
+                    break;
+                case -4: //注销
+                    $eCode = ECODE_USER_ACCOUNT_DEACTIVATED;
+                    break;
+                case -5: //登出
+                    $eCode = ECODE_USER_LOGGED_OUT;
+                    break;
+                case -6: //access token 获取失败
+                    $eCode = ECODE_TOKEN_GENERATE_FAILED;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        } else {
+            $result['token'] = $token_info['access_token'] ?? '';
+            $result['refresh_token'] = $token_info['refresh_token'] ?? '';
+            $result['expires_in'] = $token_info['expires_at'] ?? '';
+        }
+
+        return $this->json($eCode, $result);
     }
 
     /**
-     * 用户退出登录
+     * 登出（退出登录）
      * @param  void
      * @return string
      */
     public function logout(){
-        // 参数校验
-        $uid = $this->post('uid', true);
-        if (empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+        //1. 解析 access_token 取 uid;不需要校验 exp 是否过期(入口文件已实现)
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
-        $token = $this->post('token', true);
-        if (empty($token)) {
+        $jti = $this->jti;
+        if ( ! isset($jti) || empty($jti)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
 
-        $result = $this->_userService->userLogoutService($uid, $token);
+        // 2. refresh_token 必须删除或失效化
+        $result = $this->_userService->logout($jti);
 
-        return $this->json($result['code'], $result['data'], $result['msg']);
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                // 数据库操作失败
+                case -1:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        } else {
+            $eCode = ECODE_SUCCESS;
+        }
+        return $this->json($eCode, []);
+    }
 
+    /**
+     * 获取用户信息
+     * @param  void
+     * @return string
+     */
+    public function getProfile(){
+        $result = [];
+        //token
+        $uid = $this->uid;
+        if (empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
+        }
+        $userInfo = $this->_userService->getUserInfo($uid);
+        $eCode = ECODE_SUCCESS;
+        if (is_int($userInfo) && $userInfo < 0) {
+            switch ($userInfo) {
+                // 数据库操作失败
+                case -1:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        } else {
+            $result = [
+                'nickname' => $result[0]['nickname'] ?? '',
+                'gender' => $result[0]['gender'] ?? 0,
+                'avatar_url' => $result[0]['avatar_url'] ?? '',
+                'timezone' => $result[0]['timezone'] ?? '',
+                'language' => $result[0]['language'] ?? '',
+            ];
+        }
+        return $this->json($eCode, $result);
+    }
+
+    /**
+     * 更新用户信息
+     * @param  void
+     * @return string
+     */
+    public function editProfile(){
+        $uid = $this->uid;
+        if (empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
+        }
+
+        $user_info = [];
+
+        // 用户信息-昵称
+        $nickname = $this->post('nickname', true);
+        if (!empty($nickname)) {
+            $user_info['nickname'] = $nickname;
+        }
+        // 用户信息-性别
+        $gender = $this->post('gender', true);
+        if (!empty($gender)) {
+            $user_info['gender'] = $gender;
+        }
+        // 用户信息-时区
+        $timezone = $this->post('timezone', true);
+        if (!empty($timezone)) {
+            $user_info['timezone'] = $timezone;
+        }
+        // 用户信息-语言
+        $language = $this->post('language', true);
+        if (!empty($timezone)) {
+            $user_info['language'] = $language;
+        }
+
+        if(is_array($user_info) && count($user_info) > 0){
+            $uInfo = [];
+            $eCode = ECODE_SUCCESS;
+            $result = $this->_userService->editUserInfo($uid, $user_info);
+            if (is_int($result) && $result < 0) {
+                switch ($result) {
+                    // 数据库操作失败
+                    case -1:
+                        $eCode = ECODE_DATABASE_QUERY_FAIL;
+                        break;
+                    // 未知错误
+                    default:
+                        $eCode = ECODE_UNDEFINED_ERROR;
+                }
+            }else{
+                $uInfo = [
+                    'nickname' => $result['nickname'] ?? '',
+                    'gender' => $result['gender'] ?? 0,
+                    'avatar_url' => $result['avatar_url'] ?? '',
+                    'timezone' => $result['timezone'] ?? '',
+                    'language' => $result['language'] ?? '',
+                    'update_at' => $result['update_at'] ?? '',
+                ];
+            }
+            return $this->json($eCode, $uInfo);
+
+        }else{
+            //没有要修改的内容
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'miss user info');
+        }
     }
 
     /**
@@ -130,152 +274,32 @@ class User extends \App\Application
     }
 
     /**
-     * 用户上传头像
-     * @param  void
-     * @return string
-     */
-    /*public function upload_avatar()
-    {
-        // 用户id
-        $uid = $this->post('uid', true);
-        if (empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
-        }
-        // token
-        $token = $this->post('token', true);
-        if (empty($token)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }
-
-        // 头像信息
-        $filesInfo = $this->files('avatar', true);
-        if (empty($filesInfo['tmp_name']) || empty($filesInfo['size'])) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'avatar');
-        }
-        $fp     = fopen($filesInfo['tmp_name'], "rb");
-        $as     = fread($fp, $filesInfo['size']);
-        $avatar = base64_encode($as);
-
-        // 角色
-        $userType = $this->post('usertype', true);
-
-        $result = $this->_userService->updateAvatar($uid, $token, $avatar, $userType);
-
-        $eCode = ECODE_SUCCESS;
-        $eMsg  = '';
-        if (is_int($result) && $result < 0) {
-            switch ($result) {
-                //接口网络请求失败
-                case -1:
-                case -2:
-                    $eCode = ECODE_API_NETWORK_REQUEST_FAIL;
-                    break;
-                //接口响应数据异常
-                case -3:
-                case -4:
-                case -5:
-                    $eCode = ECODE_API_RESPONSE_DATA_EXCEPTION;
-                    break;
-                //上行参数异常
-                case -101;
-                    $eCode = 9018114;
-                    break;
-                //图片鉴定为黄色
-                case -102;
-                    $eCode = ECODE_PIC_YELLOW;
-                    $eMsg  = '头像更改失败，内容涉嫌违规';
-                    break;
-                default:
-                    $eCode = ECODE_UNDEFINED_ERROR;
-                    break;
-            }
-        }
-
-        return $this->json($eCode, $result, $eMsg);
-    }*/
-
-    /**
-     * 查询用户个人信息
-     * @param  void
-     * @return string
-     */
-    public function info()
-    {
-        $result = [];
-
-        return $this->json(ECODE_SUCCESS, $result);
-    }
-
-    /**
-     * 更新用户个人信息
-     * @param  void
-     * @return string
-     */
-    public function edit_profile()
-    {
-        $uid = '';
-        // token
-        $token = $this->post('token', true);
-        if (empty($token)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }
-        //token 解析uid
-
-        // 用户信息
-        $nickName = $this->post('nickname', true); //昵称
-        $gender = $this->post('gender', true); //性别
-        $language = $this->post('language', true); //语言
-
-        $userInfo = [];
-        if(isset($nickName) && !empty($nickName)) {
-            $userInfo['nickname'] = $nickName;
-        }
-        if(isset($gender) && !empty($gender)) {
-            $userInfo['gender'] = $gender;
-        }
-        if(isset($language) && !empty($language)) {
-            $userInfo['language'] = $language;
-        }
-
-
-        $result      = $this->_userService->modifyUserInfo($token, $uid, $userInfo);
-        switch ($result['ecode']) {
-            case 0:
-                return $this->json(ECODE_SUCCESS, $result['data']);
-                break;
-            default:
-                return $this->json(9018103, $result);
-                break;
-        }
-
-        return $this->json(ECODE_SUCCESS, $result);
-    }
-
-    /**
      * 用户注销
      * @param  void
      * @return string
      */
     public function cancellation()
     {
+        $data = $this->post('');
         // 参数处理
-        $token = $this->post('token', true);
-        if ( ! isset($token) || empty($token)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
         }
 
         // 注销
-        $result = $this->_userService->cannellation($this->uid);
+        $result = $this->_userService->cancellation($uid , $data);
+
         switch ($result) {
             // 注销成功
             case 0:
                 $eCode = ECODE_SUCCESS;
                 break;
-            case -5:
+            case -1: //部分失败
                 $eCode = 9013009;
                 break;
             // 注销失败
-            case -7:
+            case -2:
                 $eCode = 9013001;
                 break;
             // 未知错误
