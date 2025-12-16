@@ -69,9 +69,9 @@ class User extends \App\Application
                     $eCode = ECODE_UNDEFINED_ERROR;
             }
         } else {
-            $result['token'] = $token_info['access_token'] ?? '';
+            $result['token'] = $token_info['session_token'] ?? '';
             $result['refresh_token'] = $token_info['refresh_token'] ?? '';
-            $result['expires_in'] = $token_info['expires_at'] ?? '';
+            $result['expires_in'] = $token_info['expire_at'] ?? '';
         }
 
         return $this->json($eCode, $result);
