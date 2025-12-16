@@ -89,7 +89,7 @@ class Application extends \Lsf\Controller
             }
             //校验token
             //说明：登出不强校验exp，token单独处理（不需要校验 exp 是否过期，即使过期也可以正常退出
-            if($router == '/user/oauth/logout'){
+            if($router == '/user/user/logout'){
                 $payload = $this->verifyAccessToken($this->token, ['verify_exp'=> false]);
             }else{
                 $payload = $this->verifyAccessToken($this->token);
@@ -131,8 +131,8 @@ class Application extends \Lsf\Controller
                     $redisKey  = 'voice-note-service:check_access_token:'.$payload['jti'];
                     $cacheStatus = \Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
-                    if ($cacheStatus){
-                        if($cacheStatus === 0 || $cacheStatus === 2){
+                    if (is_numeric($cacheStatus)&& ctype_digit($cacheStatus)){
+                        if((int)$cacheStatus === 0 ||(int) $cacheStatus === 2){
                             throw new FinishException($this->json(100001002, [], 'token失效'));
                         }
                     }else{ //无redis数据,查表
@@ -146,11 +146,20 @@ class Application extends \Lsf\Controller
                     }
                     return $payload;
                 }else{
-                    throw new FinishException($this->json(100001001, ['payload' => $payload], 'token非法'));
+                    \Lsf\Loader::plugin('Log')->error(9018508,
+                        [
+                            'call_function' => 'checkToken',
+                            'payload' => $payload,
+                        ]);
+                    throw new FinishException($this->json(100001001, [], 'token非法'));
                 }
             }catch (\Exception $e) {
-                //log access解析失败，非法token
-                throw new FinishException($this->json(100001001, ['err' => $e], 'token非法'));
+                \Lsf\Loader::plugin('Log')->error(9018508,
+                    [
+                        'call_function' => 'checkToken',
+                        'err' => $e->getMessage(),
+                    ]);
+                throw new FinishException($this->json(100001001, [], 'token非法'));
             }
         }
 
