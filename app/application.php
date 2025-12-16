@@ -146,11 +146,11 @@ class Application extends \Lsf\Controller
                     }
                     return $payload;
                 }else{
-                    throw new FinishException($this->json(100001001, [], 'token非法'));
+                    throw new FinishException($this->json(100001001, ['payload' => $payload], 'token非法'));
                 }
             }catch (\Exception $e) {
                 //log access解析失败，非法token
-                throw new FinishException($this->json(100001001, [], 'token非法'));
+                throw new FinishException($this->json(100001001, ['err' => $e], 'token非法'));
             }
         }
 
