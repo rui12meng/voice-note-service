@@ -306,7 +306,7 @@ class User extends \App\Application
                 $eCode = $this->erroneous($result);
         }
 
-        return $this->json($eCode, $result);
+        return $this->json($eCode, []);
     }
 
 }
