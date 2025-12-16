@@ -25,7 +25,7 @@ class User extends \App\Application
     public function __construct($appName, $controllerName, $actionName)
     {
         parent::__construct($appName, $controllerName, $actionName);
-        $this->_userService = \Lsf\Loader::service('User', false, APP_NAME_USER);
+        $this->_userService = \Lsf\Loader::service('User', true);
         $this->_uploadService = \Lsf\Loader::service('Upload', true);
     }
 
@@ -48,7 +48,7 @@ class User extends \App\Application
         if (is_int($token_info) && $token_info < 0) {
             switch ($token_info) {
                 case -1: //refresh token 非法
-                    $eCode = ECODE_DATABASE_QUERY_FAIL; //ECODE_DATA_NOT_FOUND
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
                 case -2: //数据库操作失败
                     $eCode = ECODE_DATABASE_QUERY_FAIL;

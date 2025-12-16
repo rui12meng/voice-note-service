@@ -64,7 +64,7 @@ class Application extends \Lsf\Controller
     protected $noNeedCheckTokenRouter = [ // 无需检查token的路由
         // 帐号
         '/user/oauth/login_or_signup'                    => 1,
-        '/user/oauth/token_refresh'                      => 1,
+        '/user/user/token_refresh'                      => 1,
     ];
 
     /**
