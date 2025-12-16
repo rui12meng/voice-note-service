@@ -139,11 +139,11 @@ class User extends \App\Application
             }
         } else {
             $result = [
-                'nickname' => $result[0]['nickname'] ?? '',
-                'gender' => $result[0]['gender'] ?? 0,
-                'avatar_url' => $result[0]['avatar_url'] ?? '',
-                'timezone' => $result[0]['timezone'] ?? '',
-                'language' => $result[0]['language'] ?? '',
+                'nickname' => $userInfo[0]['nickname'] ?? '',
+                'gender' => $userInfo[0]['gender'] ?? 0,
+                'avatar_url' => $userInfo[0]['avatar_url'] ?? '',
+                'timezone' => $userInfo[0]['timezone'] ?? '',
+                'language' => $userInfo[0]['language'] ?? '',
             ];
         }
         return $this->json($eCode, $result);
