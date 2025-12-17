@@ -1,7 +1,7 @@
 <?php
 namespace Note\Service;
 
-require_once LSFPATH . '/lib/getID3Loader/autoload.php';
+require_once LSFPATH . '/lib/getID3/autoload.php';
 
 use JamesHeinrich\GetID3\GetID3;
 

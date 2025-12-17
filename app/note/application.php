@@ -7,7 +7,7 @@ namespace App\Note;
  * $Id: application.php $
  */
 
-define('APP_NAME_NOTE', 'Note');
+define('APP_NAME_NOTE', 'note');
 
 class Application
 {

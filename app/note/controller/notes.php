@@ -34,7 +34,7 @@ class Notes extends \App\Application
      * @param  void
      * @return void
      */
-    public function add_audio()
+    public function addAudio()
     {
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
@@ -49,9 +49,9 @@ class Notes extends \App\Application
         }
 
         //上传错误
-        if ($audio_info['error'] !== UPLOAD_ERR_OK  || $audio_info['size'] === 0) {
+        /*if ($audio_info['error'] !== UPLOAD_ERR_OK  || $audio_info['size'] === 0) {
             throw new Exception("Invalid or empty audio");
-        }
+        }*/
 
         $response = $this->_svrAudio->validateAudio($audio_info);
         if (is_int($response) && $response < 0) {
