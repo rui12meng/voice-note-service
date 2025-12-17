@@ -27,49 +27,63 @@ class Upload
         $this->_aliyunOssConfig =\Lsf\Env::group('ALIYUN_OSS_');
     }
 
-
-    public function updateAvatarOss($uid, $files_info){
-
+    /**
+     * 上传文件(图片/音频)
+     * @param   int  $uid
+     * @param   string  $scene
+     * @param   array $file_info
+     * @return void
+     */
+    public function uploadFileOss($uid, $scene = 'avatar', $file_info){
         // ===== 生成唯一文件名 =====
-        $ext = pathinfo($files_info['name'], PATHINFO_EXTENSION);
-        //$objectKey = 'user/avatar/' . uniqid() . '.' . $ext; // 路径：user/avatar/65d8a1b2c3e4f.jpg
-        $objectKey = uniqid() . '.' . $ext;
+        $ext = pathinfo($file_info['name'], PATHINFO_EXTENSION);
+        switch ($scene){
+            case 'avatar';
+                $path = 'user/avatar';
+                break;
+            case 'audio':
+                $path = 'user/audio';
+                break;
+            default:
+                $path = '';
+                break;
+        }
+        $objectKey = $path.'/' . uniqid() . '.' . $ext; // 路径：user/avatar/65d8a1b2c3e4f.jpg
 
-        //===== 上传到 OSS =====
+        // 上传到 OSS
         try {
             $ossClient = new OssClient($this->_aliyunOssConfig['access_key_id'], $this->_aliyunOssConfig['access_key_secret'], $this->_aliyunOssConfig['end_point']);
             // 上传文件
-            $ossClient->uploadFile($this->_aliyunOssConfig['bucket'], $objectKey, $files_info['tmp_name']);
+            $ossClient->uploadFile($this->_aliyunOssConfig['bucket'], $objectKey, $file_info['tmp_name']);
 
             // ===== 生成访问 URL =====
             // 方式 A：公开读 Bucket（不推荐，仅演示）
             // $url = "https://{$bucket}.{$endpoint}/{$objectKey}";
 
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
-            //$url = $ossClient->signUrl(self::OSS_BUCKET, $objectKey, 3600); // 3600秒 = 1小时
+            $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600); // 3600秒 = 1小时
             //echo $url;exit();
 
             // 7. 构造公开访问 URL
-            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
-            var_dump($publicUrl);exit();
+            //$publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
+            //var_dump($publicUrl);exit();
             // 返回结果
-            echo json_encode([
-                'code' => 200,
-                'message' => 'Upload success',
-                'data' => [
-                    'avatar_url' => $publicUrl,
-                    'object_key' => $objectKey
-                ]
-            ]);
+            return $url;
 
         } catch (OssException $e) {
-            //error_log("OSS Error: " . $e->getMessage());
-            //http_response_code(500);
-            echo json_encode(['error' => 'OSS upload failed']);
+            \Lsf\Loader::plugin('Log')->error(9011500, [
+                'file' => $file_info,
+                'file_path' => $objectKey,
+                'error' => 'OSS Error:'.$e->getMessage(),
+            ]);
+            return false;
         } catch (Exception $e) {
-            //error_log("General Error: " . $e->getMessage());
-            //http_response_code(500);
-            echo json_encode(['error' => 'Internal server error']);
+            \Lsf\Loader::plugin('Log')->error(9011500, [
+                'file' => $file_info,
+                'file_path' => $objectKey,
+                'error' => 'General Error:'.$e->getMessage(),
+            ]);
+            return false;
         }
 
     }

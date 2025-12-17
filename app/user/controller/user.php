@@ -266,9 +266,7 @@ class User extends \App\Application
             exit;
         }
 
-
-
-        $result = $this->_uploadService->updateAvatarOss($uid, $files_info);
+        $result = $this->_uploadService->uploadFileOss($uid, $scene = 'avatar', $files_info);
 
     }
 
