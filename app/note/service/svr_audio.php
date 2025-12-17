@@ -1,9 +1,9 @@
 <?php
 namespace Note\Service;
 
-require_once LSFPATH . '/lib/getID3/autoload.php';
+//require_once LSFPATH . '/lib/getID3/autoload.php';
 
-use JamesHeinrich\GetID3\GetID3;
+//use JamesHeinrich\GetID3\GetID3;
 
 /**
  * 语音笔记服务
@@ -74,6 +74,8 @@ class SvrAudio
             return -3;
         }
 
+        $r = $this->get($file['tmp_name']);
+        var_dump($r);exit();
         //音频时长校验
         try {
             $getID3 = new GetId3();
@@ -120,5 +122,28 @@ class SvrAudio
             ]);
             return -7;
         }
+    }
+
+    /**
+     * 获取音频时长（秒）
+     */
+    public static function get(string $file): int
+    {
+        if (!is_file($file)) {
+            return 0;
+        }
+
+        $cmd = sprintf(
+            'ffprobe -i %s -show_entries format=duration -v quiet -of csv="p=0"',
+            escapeshellarg($file)
+        );
+
+        $output = shell_exec($cmd);
+
+        if ($output === null) {
+            return 0;
+        }
+
+        return (float)$output;
     }
 }
