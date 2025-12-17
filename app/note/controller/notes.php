@@ -54,7 +54,7 @@ class Notes extends \App\Application
         }*/
 
         $response = $this->_svrAudio->validateAudio($audio_info);
-        if (is_int($response) && $response < 0) {
+        /*if (is_int($response) && $response < 0) {
             switch ($response) {
                 case -1://音频文件大小超过限制
                     $eCode = 9043020;
@@ -82,13 +82,14 @@ class Notes extends \App\Application
             }
         } else {
             $result = isset($response['duration']) ?? '';
-        }
-var_dump($response);
-        //上传OSS
-        //uploadFileOss();
-        $url = $this->_uploadService->uploadFileOss($uid, $scene = 'audio', $audio_info);
+        }*/
+        if(is_array($response)&& isset($response['duration'])){
+            //上传OSS
+            $url = $this->_uploadService->uploadFileOss($uid, $scene = 'audio', $audio_info);
 
-var_dump($url);exit();
+            var_dump($url);exit();
+        }
+
         $response = [];
         return $this->json(ECODE_SUCCESS, $response);
     }

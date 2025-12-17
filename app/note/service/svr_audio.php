@@ -21,7 +21,7 @@ class SvrAudio
      * @return void
      */
     public function __construct(){
-        $this->_daoVnNotesModel = \Lsf\Loader::model('DaoVnNotes',TRUE);
+        //$this->_daoVnNotesModel = \Lsf\Loader::model('DaoVnNotes',TRUE);
     }
 
     /**
@@ -74,10 +74,21 @@ class SvrAudio
             return -3;
         }
 
-        $r = $this->get($file['tmp_name']);
-        var_dump($r);exit();
+        $duration = $this->get($file['tmp_name']);
+        if ($duration > $config['max_duration']) {
+            \Lsf\Loader::plugin('Log')->error(9011500, [
+                'tmp_name' => $file['tmp_name'],
+                'duration' => (float)$duration,
+                'error' => '音频时长超出限制'
+            ]);
+            return -6;
+        }
+        return [
+            'duration' => (float)$duration
+        ];
+        //var_dump($r);exit();
         //音频时长校验
-        try {
+        /*try {
             $getID3 = new GetId3();
             $fileInfo = $getID3->analyze($file['tmp_name']);
 
@@ -121,7 +132,7 @@ class SvrAudio
                 'error' => '音频解析失败:'.$e->getMessage(),
             ]);
             return -7;
-        }
+        }*/
     }
 
     /**
