@@ -13,10 +13,13 @@ class Curl
     protected $userAgent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:28.0) Gecko/20100101 Firefox/28.0';
     protected $reqHeader = [];
     public $info;
+    public $body;
+    public $rawHeaders;
     public $debug = FALSE;
     public $errMsg;
     public $errCode;
     public $httpCode;
+
 
     /**
      * 初始化
@@ -43,6 +46,8 @@ class Curl
         // set url to post to
         \curl_setopt($this->ch, CURLOPT_URL, $url);
         // return into a variable rather than displaying it
+        //同时获取 header 和 body
+        \curl_setopt($this->ch, CURLOPT_HEADER, TRUE);
         \curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, TRUE);
         // set curl function timeout to $timeout
         \curl_setopt($this->ch, CURLOPT_TIMEOUT, $timeout);
@@ -135,14 +140,14 @@ class Curl
         // clear buffer before exec
         $this->_clearBufferBefore();
         // and finally send curl request
-        $result = \curl_exec($this->ch);
+        $fullResponse = \curl_exec($this->ch);
         // clear buffer after exec
         $this->_clearBufferAfter();
         // after exec logic
-        $this->info = \curl_getinfo($this->ch);
-        if($this->info){
-            $this->httpCode = $this->info['http_code'];
-        }
+        $this->httpCode    = \curl_getinfo($this->ch, CURLINFO_HTTP_CODE);
+        $this->info = \curl_getinfo($this->ch, CURLINFO_HEADER_SIZE);
+        $this->body         = substr($fullResponse, $this->info);
+        $this->rawHeaders   = substr($fullResponse, 0, $this->info);
         if(\curl_errno($this->ch)){
             $result         = FALSE;
             $this->errCode  = \curl_errno($this->ch);
@@ -154,14 +159,36 @@ class Curl
         }else{
             $logInfo = [
                 'curl_info'     => $this->info,
-                'result'        => $result,
+                'result'        => $fullResponse,
                 'run_time'      => \Lsf\Performance::formatTime($this->info['total_time'])
             ];
         }
         \curl_reset($this->ch);
         // write end log
         \Lsf\Loader::plugin('Log')->info('', $logInfo, 'curl_request_end');
-        return $result;
+        $headersArray = $this->parseRawHeaders($this->rawHeaders);
+
+        return [
+            'http_code' => $this->httpCode,
+            'headers'   => $headersArray,
+            'body'      => $this->body,
+        ];
+    }
+
+    /**
+     * 解析原始 HTTP 响应头为关联数组（key 小写）
+     */
+    private function parseRawHeaders(string $rawHeaders): array
+    {
+        $headers = [];
+        $lines = explode("\r\n", trim($rawHeaders));
+        foreach ($lines as $line) {
+            if (strpos($line, ':') !== false) {
+                [$key, $value] = explode(':', $line, 2);
+                $headers[strtolower(trim($key))] = trim($value);
+            }
+        }
+        return $headers;
     }
 
     /**

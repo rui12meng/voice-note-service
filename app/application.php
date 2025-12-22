@@ -57,6 +57,8 @@ class Application extends \Lsf\Controller
         // 帐号
         '/user/oauth/login_or_signup'                    => 1,
         '/user/user/token_refresh'                      => 1,
+        //test
+        '/note/notes/add_audio'                          => 1,
     ];
 
     /**

@@ -6,12 +6,12 @@ namespace Note\Service;
 //use JamesHeinrich\GetID3\GetID3;
 
 /**
- * 语音笔记服务
+ * 语音上传服务
  * @author mengrui
- * $Id: svr_audio.php $
+ * $Id: svr_audio_upload.php $
  */
 
-class SvrAudio
+class Upload
 {
     private $_daoVnNotesModel;
 

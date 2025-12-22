@@ -6,24 +6,20 @@ namespace Model;
  * $Id: svr_base.php $
  * @author mengrui
  */
-class SvrBase extends \Lsf\Model
+class SvrBase //extends \Lsf\Model
 {
     /**
      * @var mixed
      */
     private $_curl;
     /**
-     * @var mixed
+     * @var array
      */
-    private $_configUrls;
+    private $_configUrls = [];
     /**
      * @var mixed
      */
     private $groupName;
-    /**
-     * @var array
-     */
-    private $_urls = [];
     /**
      * @var string
      */
@@ -34,112 +30,37 @@ class SvrBase extends \Lsf\Model
     private $_timeout = 0;
 
     /**
-     * @var array
-     */
-    protected $_paramsData = [];
-
-    /**
      * 构造函数
      * @param  void
      * @return void
      */
     public function __construct()
     {
-        parent::__construct();
+        //parent::__construct();
         $this->_curl       = \Lsf\Loader::plugin('Curl');
         $this->_configUrls = \Lsf\Loader::config('rpc_url', true, 2);
     }
 
     /**
-     * curl post_rpc
-     * @param  string    $urlkey
-     * @param  array     $params
-     * @param  int       $headerGroup 1-usercenter 2-order
-     * @return array|int -1 curl_error -2 http_code_error -3 接口响应数据json解析失败
-     */
-    protected function post_asr($pathurl, $params, $header)
-    {
-        foreach($header as $headerK => $headerV){
-            // 跳过空键名
-            if (empty($headerK)) {
-                continue;
-            }
-
-            // 处理数组值（转换为字符串）
-            if (is_array($headerV)) {
-                $headerV = implode(', ', $headerV);
-            }
-
-            // 跳过空值
-            if ($headerV === null || $headerV === '') {
-                continue;
-            }
-
-            // 确保键名是字符串
-            $headerK = (string)$headerK;
-            $this->_curl->setHeader( $headerK, $headerV );
-        }
-
-        if(empty($params)){
-            $postData = json_encode((object)$params);
-        }else{
-            $postData = json_encode($params);
-        }
-
-        $response = $this->_curl->post($pathurl, $postData, $this->_timeout);
-
-        if ($this->_curl->errCode) {
-            \Lsf\Loader::plugin('Log')->error(9040503, [
-                'api_path'   => $pathurl,
-                'curl_errno' => $this->_curl->errCode,
-            ]);
-
-            return -101;
-        }
-        // http_code_error
-        if ($this->_curl->httpCode != 200) {
-            \Lsf\Loader::plugin('Log')->error(9040502, [
-                'api_path'  => $pathurl,
-                'http_code' => $this->_curl->httpCode,
-            ]);
-
-            return -102;
-        }
-        $data = json_decode($response, true);
-        if (json_last_error() > 0) {
-            \Lsf\Loader::plugin('Log')->error(9040504, [
-                'api_path'  => $pathurl,
-                'response'  => $response,
-                'errno'     => json_last_error(),
-                'error_msg' => json_last_error_msg(),
-            ]);
-
-            return -103;
-        }
-
-        return $data;
-    }
-
-    /**
      * curl get
-     * @param  string    $urlkey
+     * @param  string    $urlKey
      * @param  int       $headerGroup 1-usercenter 2-order
      * @param  array     $params      GET参数
      * @return array|int -1 curl_error -2 http_code_error -3 接口响应数据json解析失败
      */
 
-    protected function get($urlkey, $headerGroup, $params = [])
+    protected function get($urlKey, $headerGroup, $params = [])
     {
         $this->_setGlobalHeader($headerGroup);
         $this->_setGroupConfig($headerGroup);
-        $pathurl = $this->_domain . '/' . $this->_urls[$urlkey];
+        $pathUrl  = $this->_domain . '/' . $this->_configUrls[$this->groupName][$urlKey];
         if ( ! empty($params)) {
-            $pathurl = $pathurl . (strpos($pathurl, '?') === false ? '?' : '') . http_build_query($params, '', '&');
+            $pathUrl = $pathUrl . (strpos($pathUrl, '?') === false ? '?' : '') . http_build_query($params, '', '&');
         }
-        $response = $this->_curl->get($pathurl, $this->_timeout);
+        $response = $this->_curl->get($pathUrl, $this->_timeout);
         if ($this->_curl->errCode) {
             \Lsf\Loader::plugin('Log')->error(9040503, [
-                'api_path'   => $this->_urls[$urlkey],
+                'api_path'   => $this->_configUrls[$this->groupName][$urlKey],
                 'curl_errno' => $this->_curl->errCode,
             ]);
 
@@ -148,7 +69,7 @@ class SvrBase extends \Lsf\Model
         // http_code_error
         if ($this->_curl->httpCode != 200) {
             \Lsf\Loader::plugin('Log')->error(9040502, [
-                'api_path'  => $this->_urls[$urlkey],
+                'api_path'  => $this->_configUrls[$this->groupName][$urlKey],
                 'http_code' => $this->_curl->httpCode,
             ]);
 
@@ -157,7 +78,7 @@ class SvrBase extends \Lsf\Model
         $data = json_decode($response, true);
         if (json_last_error() > 0) {
             \Lsf\Loader::plugin('Log')->error(9040504, [
-                'api_path'  => $this->_urls[$urlkey],
+                'api_path'  => $this->_configUrls[$this->groupName][$urlKey],
                 'response'  => $response,
                 'errno'     => json_last_error(),
                 'error_msg' => json_last_error_msg(),
@@ -171,22 +92,25 @@ class SvrBase extends \Lsf\Model
 
     /**
      * curl post
-     * @param  string    $urlkey
+     * @param  string    $urlKey
      * @param  array     $params
+     * @param  array     $headers
      * @param  int       $headerGroup 1-usercenter 2-order
      * @return array|int -1 curl_error -2 http_code_error -3 接口响应数据json解析失败
      */
-    protected function post($urlkey, $params, $headerGroup = 1)
+    protected function post($urlKey, $params, $headers=[], $headerGroup = 1)
     {
-        $this->_setGlobalHeader($headerGroup);
+        $this->_setGlobalHeader($headerGroup , $headers);
         $this->_setGroupConfig($headerGroup);
-        $pathurl  = $this->_domain . '/' . $this->_urls[$urlkey];
-        $postData = $headerGroup == 4 || $headerGroup == 7 ? http_build_query($params) : json_encode($params);
-        if ($headerGroup == 10) {
-            $this->_curl->setHeader('Accept-Encoding', 'gzip');
-            $postData = gzencode(json_encode($params));
+        $pathUrl  = $this->_domain . '/' . $this->_configUrls[$this->groupName][$urlKey];
+
+        if(empty($params)){
+            $postData = json_encode((object)$params , JSON_UNESCAPED_UNICODE);
+        }else{
+            $postData = json_encode($params , JSON_UNESCAPED_UNICODE);
         }
-        $response = $this->_curl->post($pathurl, $postData, $this->_timeout);
+        $response = $this->_curl->post($pathUrl, $postData, $this->_timeout);
+
         /**
          * curl_errno
          * [1] => 'CURLE_UNSUPPORTED_PROTOCOL',
@@ -270,7 +194,7 @@ class SvrBase extends \Lsf\Model
         // curl_error
         if ($this->_curl->errCode) {
             \Lsf\Loader::plugin('Log')->error(9040503, [
-                'api_path'   => $this->_urls[$urlkey],
+                'api_path'   => $this->_configUrls[$this->groupName][$urlKey],
                 'curl_errno' => $this->_curl->errCode,
             ]);
 
@@ -279,16 +203,23 @@ class SvrBase extends \Lsf\Model
         // http_code_error
         if ($this->_curl->httpCode != 200) {
             \Lsf\Loader::plugin('Log')->error(9040502, [
-                'api_path'  => $this->_urls[$urlkey],
+                'api_path'  => $this->_configUrls[$this->groupName][$urlKey],
                 'http_code' => $this->_curl->httpCode,
             ]);
 
             return -102;
         }
-        $data = json_decode($response, true);
+        $result = [];
+        if(isset($response['body'])){
+            $result['body'] = json_decode($response['body'], true);
+        }
+        if(isset($response['headers'])){
+            $result['headers'] = $response['headers'];
+        }
+        //$data = json_decode($response, true);
         if (json_last_error() > 0) {
             \Lsf\Loader::plugin('Log')->error(9040504, [
-                'api_path'  => $this->_urls[$urlkey],
+                'api_path'  => $this->_configUrls[$this->groupName][$urlKey],
                 'response'  => $response,
                 'errno'     => json_last_error(),
                 'error_msg' => json_last_error_msg(),
@@ -297,116 +228,25 @@ class SvrBase extends \Lsf\Model
             return -103;
         }
 
-        return $data;
-    }
-
-    /**
-     * curl get_rpc
-     * @param  string    $urlkey
-     * @param  int       $headerGroup 1-usercenter 2-order
-     * @param  array     $params      GET参数
-     * @return array|int -1 curl_error -2 http_code_error -3 接口响应数据json解析失败
-     */
-
-    protected function get_rpc($urlkey, $params = [], $headerGroup = 1)
-    {
-        $this->_setGlobalHeader($headerGroup);
-        $this->_setGroupConfig($headerGroup);
-        $pathurl = $this->_domain . '/' . $this->_configUrls[$this->groupName][$urlkey];
-        if ( ! empty($params)) {
-            $pathurl = $pathurl . (strpos($pathurl, '?') === false ? '?' : '') . http_build_query($params, '', '&');
-        }
-        $response = $this->_curl->get($pathurl, $this->_timeout);
-        if ($this->_curl->errCode) {
-            \Lsf\Loader::plugin('Log')->error(9040503, [
-                'api_path'   => $this->_configUrls[$this->groupName][$urlkey],
-                'curl_errno' => $this->_curl->errCode,
-            ]);
-
-            return -101;
-        }
-        // http_code_error
-        if ($this->_curl->httpCode != 200) {
-            \Lsf\Loader::plugin('Log')->error(9040502, [
-                'api_path'  => $this->_configUrls[$this->groupName][$urlkey],
-                'http_code' => $this->_curl->httpCode,
-            ]);
-
-            return -102;
-        }
-        $data = json_decode($response, true);
-        if (json_last_error() > 0) {
-            \Lsf\Loader::plugin('Log')->error(9040504, [
-                'api_path'  => $this->_configUrls[$this->groupName][$urlkey],
-                'response'  => $response,
-                'errno'     => json_last_error(),
-                'error_msg' => json_last_error_msg(),
-            ]);
-
-            return -103;
-        }
-
-        return $data;
-    }
-
-    /**
-     * curl post_rpc
-     * @param  string    $urlkey
-     * @param  array     $params
-     * @param  int       $headerGroup 1-usercenter 2-order
-     * @return array|int -1 curl_error -2 http_code_error -3 接口响应数据json解析失败
-     */
-    protected function post_rpc($urlkey, $params, $headerGroup = 1)
-    {
-        $this->_setGlobalHeader($headerGroup);
-        $this->_setGroupConfig($headerGroup);
-        $pathurl  = $this->_domain . '/' . $this->_configUrls[$this->groupName][$urlkey];
-        $postData = $headerGroup == 4 || $headerGroup == 7 ? http_build_query($params) : json_encode($params);
-        if ($headerGroup == 10) {
-            $this->_curl->setHeader('Accept-Encoding', 'gzip');
-            $postData = gzencode(json_encode($params));
-        }
-        $response = $this->_curl->post($pathurl, $postData, $this->_timeout);
-        if ($this->_curl->errCode) {
-            \Lsf\Loader::plugin('Log')->error(9040503, [
-                'api_path'   => $this->_configUrls[$this->groupName][$urlkey],
-                'curl_errno' => $this->_curl->errCode,
-            ]);
-
-            return -101;
-        }
-        // http_code_error
-        if ($this->_curl->httpCode != 200) {
-            \Lsf\Loader::plugin('Log')->error(9040502, [
-                'api_path'  => $this->_configUrls[$this->groupName][$urlkey],
-                'http_code' => $this->_curl->httpCode,
-            ]);
-
-            return -102;
-        }
-        $data = json_decode($response, true);
-        if (json_last_error() > 0) {
-            \Lsf\Loader::plugin('Log')->error(9040504, [
-                'api_path'  => $this->_configUrls[$this->groupName][$urlkey],
-                'response'  => $response,
-                'errno'     => json_last_error(),
-                'error_msg' => json_last_error_msg(),
-            ]);
-
-            return -103;
-        }
-
-        return $data;
+        return $result;
     }
 
     /**
      * 设置通用HEADER
-     * @param  void
+     * @param  int    $headerGroup
+     * @param  string $headers
      * @return void
      */
-    private function _setGlobalHeader($headerGroup)
+    private function _setGlobalHeader($headerGroup, $headers=[])
     {
-        if ($headerGroup == 4 || $headerGroup == 7 || $headerGroup == 11) {
+        if(isset($headers) && !empty($headers)){
+            foreach ($headers as $k => $v){
+                if(!empty($v)){
+                    $this->_curl->setHeader($k, $v);
+                }
+            }
+        }
+        if ($headerGroup == 4) {
             $this->_curl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
         } else {
             $this->_curl->setHeader('Content-Type', 'application/json');
@@ -422,109 +262,25 @@ class SvrBase extends \Lsf\Model
     private function _setGroupConfig($type)
     {
         switch ($type) {
-            // 用户服务
+            // 火山ASR服务
             case 1:
-                $groupName = 'svr_user';
+                $groupName = 'svr_volc';
+                $config = 'SVR_VOLC_';
                 break;
-            // 发送验证码
-            case 3:
-                $groupName = 'svr_smscode';
+            case 2: // 火山AI TEXT服务
+                $groupName = 'svr_volc_text';
+                $config = 'SVR_VOLC_TEXT_';
                 break;
-            // 小鹅通
-            case 4:
-                $groupName = 'svr_xiaoetongapi';
-                break;
-            // oms
-            case 5:
-                $groupName = 'svr_oms';
-                break;
-            // 应用中心
-            case 6:
-                $groupName = 'svr_appcenter';
-                break;
-            //oauth 验证中心
-            case 7:
-                $groupName = 'svr_oauth';
-                break;
-            // 观象台
-            case 8:
-                $groupName = 'svr_stu';
-                break;
-            // 应用中心
-            case 9:
-                $groupName = 'svr_pms';
-                break;
-            // 上报日志
-            case 10:
-                $groupName = 'svr_logreport';
-                break;
-            // tool-web直播课服务
-            case 11:
-                $groupName = 'svr_toolweb';
-                break;
-            // 会员中心
-            case 12:
-                $groupName = 'svr_member';
-                break;
-            // 会员中心
-            case 13:
-                $groupName = 'svr_toolkit';
-                break;
-            // OCR
-            case 14:
-                $groupName = 'svr_ocr';
-                break;
-            // ailearn 智能批改
-            case 15:
-                $groupName = 'svr_ailearn';
-                break;
-            // resource 资源中心
-            case 16:
-                $groupName = 'svr_resource';
-                break;
-            // 教学工具
-            case 17:
-                $groupName = 'svr_teachtool';
-                break;
-            // 统一资源上传
-            case 19:
-                $groupName = 'svr_uploads';
-                break;
-            // ailearn 智能批改(教工)
-            case 20:
-                $groupName = 'svr_aifreestyle';
-                break;
-            // markwrong 错号识别
-            case 21:
-                $groupName = 'svr_mark';
-                break;
-            case 22:
-                $groupName = 'svr_msg';
-                break;
-            case 23:
-                $groupName = 'svr_device';
-                break;
-            case 24:
-                $groupName = 'svr_im';
-                break;
-            case 25:
-                $groupName = 'svr_productcenter';
-                break;
-            //oauth 验证中心 new,新的传参方式
-            case 26:
-                $groupName = 'svr_oauthnew';
-                break;
-            case 27:
-                $groupName = 'svr_bizops';
-                break;
+
+//            case 3:
+//                $groupName = '';
+//                $config = '';
+//                break;
         }
-        $groupConfig = \Lsf\Loader::plugin('ConfigCenter')->group($groupName);
+        $groupConfig = \Lsf\Env::group($config);
         if (empty($groupConfig)) {
             \Lsf\Loader::plugin('Log')->error(9040505, ['group_name' => $groupName]);
             throw new \Exception('ConfigCenter custom group ' . $groupName . ' not exists');
-        } elseif ( ! isset($groupConfig['urls']) || empty($groupConfig['urls'])) {
-            \Lsf\Loader::plugin('Log')->error(9040506, ['group_name' => $groupName]);
-            throw new \Exception('ConfigCenter custom group ' . $groupName . ' key urls not exists');
         } elseif ( ! isset($groupConfig['domain']) || empty($groupConfig['domain'])) {
             \Lsf\Loader::plugin('Log')->error(9040507, ['group_name' => $groupName]);
             throw new \Exception('ConfigCenter custom group ' . $groupName . ' key domain not exists');
@@ -535,16 +291,6 @@ class SvrBase extends \Lsf\Model
             $this->groupName = $groupName;
             $this->_domain   = $groupConfig['domain'];
             $this->_timeout  = $groupConfig['timeout'];
-            $this->_urls     = json_decode($groupConfig['urls'], true);
-            if (json_last_error() > 0) {
-                \Lsf\Loader::plugin('Log')->error(9040509, [
-                    'group_name' => $groupName,
-                    'urls'       => $groupConfig['urls'],
-                    'errno'      => json_last_error(),
-                    'error'      => json_last_error_msg(),
-                ]);
-                throw new \Exception('ConfigCenter custom group ' . $groupName . ' key urls json decode fail');
-            }
         }
     }
 }
