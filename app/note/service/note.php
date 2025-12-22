@@ -24,7 +24,7 @@ class Note
      */
     public function __construct()
     {
-        $this->_daoVnNoteModel  = \Lsf\Loader::model('DaoVnNote', true);
+        $this->_daoVnNoteModel  = \Lsf\Loader::model('DaoVnNotes', false, APP_NAME_NOTE);
     }
 
     /**
@@ -39,7 +39,7 @@ class Note
         $data = [
             'user_id' => $uid,
             'note_type' => self::NOTE_TYPE_AUDIO,
-            'context' => $noteText,
+            'content' => $noteText,
             'media_url' => json_encode($audioUrls),
             'created_at' => date("Y-m-d H:i:s"),
         ];
