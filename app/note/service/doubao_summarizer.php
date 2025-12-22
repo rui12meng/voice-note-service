@@ -16,8 +16,6 @@ class DoubaoSummarizer
 
     /**
      * 构造函数
-     * @param  void
-     * @return void
      */
     public function __construct(){
         $this->_svrVolcModel = \Lsf\Loader::Model('SvrVolc', false, APP_NAME_NOTE);
@@ -29,7 +27,7 @@ class DoubaoSummarizer
      *
      * @param string $text 原文（≤1000 字符）
      * @param int $userId 触发分析的用户ID
-     * @param int $noteId 关联 notes.id（可为空，如测试调用）
+     * @param int $noteId 关联 notes.id（可为空）
      * @return array{title: string, summary: string, compliance_status: int, compliance_reason: string}
      */
     public function summarize(string $text, int $userId, int $noteId = 0): array
@@ -128,6 +126,7 @@ class DoubaoSummarizer
             'summary' => $summary,
             'compliance_status' => $status,
             'compliance_reason' => $reason,
+            'analyzed_at' => $response['created'] ? date('Y-m-d H:i:s' , $response['created']) : date('Y-m-d H:i:s'),
         ];
     }
 
