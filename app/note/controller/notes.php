@@ -55,14 +55,11 @@ Budget-wise, I’ve set ¥80,000 (~$550) for lodging, food, transport, and small
 
 Most importantly: no work emails, minimal social media. Just wandering, observing, and soaking in the autumn colors. If plans change? That’s okay—spontaneity is part of the joy. Can’t wait to recharge!';
         $noteId = $this->_noteService->addAudioNote($this->uid,$text,$audioUrl = 'https://dashscope.oss-cn-beijing.aliyuncs.com/samples/audio/paraformer/hello_world_female2.wav');
-//var_dump($result);exit();
+
         $result = $this->_doubaoSummarizerService->summarize($text, $this->uid, $noteId);
 
-        //更新表
-        //$this->_noteService->updateNote($noteId , $result['title'], $result['summary'], $result['status']);
-        //存储分析表
-//var_dump($result);exit();
-        $r = $this->_noteService->updateNoteAiData($noteId, $result['title'], $result['summary'], $result['analyzed_at'], $result['compliance_status'], 1);
+
+        $r = $this->_noteService->saveNoteAiResult($noteId, $result['title'], $result['summary'], $result['analyzed_at'], $result['compliance_status']);
         var_dump( [$noteId, $result , $r]);exit();
 
 //        $url ='https://dashscope.oss-cn-beijing.aliyuncs.com/samples/audio/paraformer/hello_world_female2.wav';

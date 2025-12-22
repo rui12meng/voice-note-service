@@ -15,6 +15,7 @@ class Note
      * @var mixed
      */
     private $_daoVnNoteModel;
+    private $_noteAiAnalysisService;
 
     /**
      * 构造函数
@@ -25,6 +26,7 @@ class Note
     public function __construct()
     {
         $this->_daoVnNoteModel  = \Lsf\Loader::model('DaoVnNotes', false, APP_NAME_NOTE);
+        $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
     }
 
     /**
@@ -83,6 +85,28 @@ class Note
         } else {
             return $result;
         }
+    }
+
+    /**
+     * 统一处理AI分析结果
+     * @param int $noteId
+     * @param string $title
+     * @param string $summary
+     * @param string $analyzedAt
+     * @param int $complianceStatus
+     * @return mixed
+     */
+    public function saveNoteAiResult($noteId, $title, $summary, $analyzedAt, $complianceStatus)
+    {
+        // 更新笔记主表
+        $result = $this->updateNoteAiData($noteId, $title, $summary, $analyzedAt, $complianceStatus);
+
+        // 如果更新成功，记录到AI分析表
+        if ($result !== -6 && $result !== false) {
+            $this->_noteAiAnalysisService->addNoteAiAnalysis($noteId, $title, $summary, $analyzedAt);
+        }
+
+        return $result;
     }
 
 }
