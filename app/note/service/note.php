@@ -17,7 +17,7 @@ class Note
     private $_daoVnNoteModel;
     private $_noteAiAnalysisService;
     private $_daoVnAiPromptTemplatesModel;
-    private $_daoVnAiAnalyseTypesModel;
+    private $_daoVnAiAnalysisTypesModel;
 
     /**
      * 构造函数
@@ -30,7 +30,7 @@ class Note
         $this->_daoVnNoteModel  = \Lsf\Loader::model('DaoVnNotes', false, APP_NAME_NOTE);
         $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
         $this->_daoVnAiPromptTemplatesModel = \Lsf\Loader::model('DaoVnAiPromptTemplates', false, APP_NAME_NOTE);
-        $this->_daoVnAiAnalyseTypesModel = \Lsf\Loader::model('DaoVnAiAnalyseTypes', false, APP_NAME_NOTE);
+        $this->_daoVnAiAnalysisTypesModel = \Lsf\Loader::model('DaoVnAiAnalysisTypes', false, APP_NAME_NOTE);
     }
 
     /**
@@ -86,7 +86,7 @@ class Note
 
 
 
-        $AnalyseType = $this->_daoVnAiAnalyseTypesModel->select('name , json_schema',['is_active' => 1],'order by id asc');
+        $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1],'order by id asc');
         if ($AnalyseType === false) {
             //查询失败
             return -7;
