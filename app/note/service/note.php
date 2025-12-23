@@ -18,6 +18,7 @@ class Note
     private $_noteAiAnalysisService;
     private $_daoVnAiPromptTemplatesModel;
     private $_daoVnAiAnalysisTypesModel;
+    private $_daoVnNoteTagsModel;
 
     /**
      * 构造函数
@@ -31,6 +32,7 @@ class Note
         $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
         $this->_daoVnAiPromptTemplatesModel = \Lsf\Loader::model('DaoVnAiPromptTemplates', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisTypesModel = \Lsf\Loader::model('DaoVnAiAnalysisTypes', false, APP_NAME_NOTE);
+        $this->_daoVnNoteTagsModel = \Lsf\Loader::model('DaoVnNoteTags', false, APP_NAME_NOTE);
     }
 
     /**
@@ -53,6 +55,39 @@ class Note
         } else {
             return $result;
         }
+    }
+
+    /**
+     * 根据noteId获取笔记详情
+     * @param   string  $columns
+     * @param   int     $uid
+     * @param   int     $noteId
+     * @return  void
+     */
+    public function getNoteInfo($columns = '*', $uid, $noteId){
+        $where = [
+            'user_id' => $uid,
+            'id' => $noteId,
+        ];
+        $result = $this->_daoVnNoteModel->select($columns, $where);
+
+        if ($result === false) {
+            //查询失败
+            return -7;
+        }
+        $tags = $this->_daoVnNoteTagsModel->select('id,name' , ['note_id' => $noteId]);
+        if ($tags === false) {
+            //查询失败
+            return -7;
+        }
+        if(empty($tags)){
+            $tags = [];
+        }
+        $noteInfo['tags'] = $tags;
+        if(isset($result[0]) && !empty($result[0])){
+            $noteInfo = $result[0];
+        }
+        return $noteInfo;
     }
 
     /**
@@ -86,7 +121,7 @@ class Note
 
 
 
-        $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1],'order by id asc');
+        $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1]);
         if ($AnalyseType === false) {
             //查询失败
             return -7;

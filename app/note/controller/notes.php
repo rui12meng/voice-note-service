@@ -180,10 +180,30 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
         if(!empty($text)){
             //分析
             $promptMessage = $this->_noteService->getNotePrompt($text);
+
             $this->_doubaoSummarizerService->aiAnalysis($promptMessage, $this->uid, $noteId);
         }else{
             return [];
         }
+
+    }
+
+    /**
+     * 用户获取日记详情
+     * @param  void
+     * @return void
+     */
+    public function noteInfo(){
+        $uid = $this->uid;
+        //优先判断用户是否有权限
+
+        $noteId = $this->post('note_id', true);
+        if ( ! isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+        $columns = '*';
+        $result = $this->_noteService->getNoteInfo($columns, $uid, $noteId);
+var_dump($result);exit();
 
     }
 }

@@ -36,7 +36,6 @@ class DoubaoSummarizer
      */
     public function aiAnalysis(array $prompt, int $userId, int $noteId = 0){
         $startTime = microtime(true);
-        $prompt = trim($prompt);
         if (empty($prompt)) {
             return [];
         }
