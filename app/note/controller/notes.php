@@ -203,7 +203,7 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
         }*/
         $uid = 101;
         $noteId = 7;
-        $columns = 'id,title,summary,content,note_type,images,audios,created_at';
+        $columns = 'id,title,summary,content,note_type,media_url,is_analyzed,created_at';
         $result = $this->_noteService->getNoteInfo($columns, $uid, $noteId);
 
         $eCode  = ECODE_SUCCESS;
@@ -227,8 +227,8 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
             $returnData['note_type'] = $result['note_type'];
             $returnData['title'] = $result['title'];
             $returnData['tags'] = $result['tags'];
-            $returnData['images'] = $result['images'];
-            $returnData['audios'] = $result['audios'];
+            $returnData['media_url'] = $result['media_url'];
+            $returnData['status'] = $result['is_analyzed']; //0=未分析，1=已分析
             $returnData['content'] = $result['content'];
             $returnData['summary'] = $result['summary'];
             $returnData['created_at'] = $result['created_at'];
