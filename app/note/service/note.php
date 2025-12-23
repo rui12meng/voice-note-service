@@ -138,10 +138,7 @@ class Note
                 'content' => $userPrompt,
             ],
         ];
-print_r($messages);exit();
         return $messages;
-
-
     }
 
     /**
@@ -218,7 +215,7 @@ print_r($messages);exit();
 
         // 如果更新成功，记录到AI分析表
         if ($result !== -6 && $result !== false) {
-            $this->_noteAiAnalysisService->addNoteAiAnalysis($noteId, $title, $summary, $analyzedAt);
+            $this->_noteAiAnalysisService->addNoteAiAnalysis($noteId, $analyzedAt);
         }
 
         return $result;

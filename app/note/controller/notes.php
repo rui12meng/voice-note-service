@@ -179,7 +179,8 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
         $text = $result[0]['content'] ?? "";
         if(!empty($text)){
             //分析
-            $this->_noteService->getNotePrompt($text);
+            $promptMessage = $this->_noteService->getNotePrompt($text);
+            $this->_doubaoSummarizerService->aiAnalysis($promptMessage, $this->uid, $noteId);
         }else{
             return [];
         }

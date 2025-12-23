@@ -14,22 +14,29 @@ class NoteAiAnalysis
         $this->_daoVnNoteAiAnalysis = \Lsf\Loader::model('DaoVnNoteAiAnalysis', false, APP_NAME_NOTE);
     }
 
-    /**
-     * 添加AI分析记录
-     * @param int $noteId
-     * @param string $title
-     * @param string $summary
-     * @param string $analyzedAt
-     * @return mixed
-     */
-    public function addNoteAiAnalysis($noteId, $title, $summary, $analyzedAt)
+    public function addNoteAiAnalysis($noteId, $analyzedAt)
     {
         $data = [
             'note_id' => $noteId,
-            'title' => $title,
-            'summary' => $summary,
             'analyzed_at' => $analyzedAt,
         ];
         return $this->_daoVnNoteAiAnalysis->insert($data);
+    }
+
+    public function addBatchNoteAiAnalysis($noteId, $model, array $items, $analyzedAt)
+    {
+        $rows = [];
+        $now = date('Y-m-d H:i:s');
+        foreach ($items as $k => $v) {
+            $rows[] = [
+                'note_id' => $noteId,
+                'ai_model_version' => $model,
+                'analysis_type_name' => $k,
+                'analysis_data' => is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE),
+                'analyzed_at' => $analyzedAt,
+                'created_at' => $now,
+            ];
+        }
+        return $this->_daoVnNoteAiAnalysis->batchInsert($rows);
     }
 }

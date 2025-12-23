@@ -13,6 +13,8 @@ class DoubaoSummarizer
     private $_svrVolcModel;
     private $_daoVnAiAnalysisUsageModel;
     private $_model = 'doubao-seed-1-6-flash-250828';
+    private $_noteService;
+    private $_noteAiAnalysisService;
 
     /**
      * 构造函数
@@ -20,6 +22,88 @@ class DoubaoSummarizer
     public function __construct(){
         $this->_svrVolcModel = \Lsf\Loader::Model('SvrVolc', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisUsageModel = \Lsf\Loader::Model('DaoVnAiAnalysisUsage', false, APP_NAME_NOTE);
+        $this->_noteService = \Lsf\Loader::service('Note', false, APP_NAME_NOTE);
+        $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
+    }
+
+    /**
+     * 使用 JSON Schema 结构化输出深度分析【洞见/情绪/..】
+     *
+     * @param array $prompt 提示词（包括笔记&prompt）
+     * @param int $userId 触发分析的用户ID
+     * @param int $noteId 关联 notes.id（可为空）
+     * @return void
+     */
+    public function aiAnalysis(array $prompt, int $userId, int $noteId = 0){
+        $startTime = microtime(true);
+        $prompt = trim($prompt);
+        if (empty($prompt)) {
+            return [];
+        }
+        $payload = [
+            'model' => $this->_model,
+            'messages' => $prompt,
+            'max_tokens' => 1000,
+            'temperature' => 0.1,
+            'thinking' => ['type' => 'disabled'],
+        ];
+
+        try {
+            $response = $this->_svrVolcModel->aiSummarize($payload);
+        } catch (\Exception $e) {
+            return [];
+        }
+        $durationMs = round((microtime(true) - $startTime) * 1000);
+        $content = $response['choices'][0]['message']['content'] ?? '';
+        $final = [];
+        if (is_array($content)) {
+            $final = $content;
+        } elseif (is_string($content)) {
+            $try = json_decode($content, true);
+            if (is_array($try)) {
+                $final = $try;
+            } else {
+                $final = ['raw' => $content];
+            }
+        }
+        if (empty($final)) {
+            return [];
+        }
+        //全部存储分析表
+
+        $insight = $final['insight'] ?? '';
+        $emotion = $final['emotion'] ?? ($final['emotion_analysis'] ?? '');
+        $actions = $final['actions'] ?? ($final['action_suggestions'] ?? '');
+        $habits = $final['habits'] ?? ($final['habit_improvement'] ?? '');
+
+        //习惯&行动 再次存储至独立表
+
+        $analyzedAt = $response['created'] ? date('Y-m-d H:i:s' , $response['created']) : date('Y-m-d H:i:s');
+        $data = [
+            'note_id' => $noteId,
+            'user_id' => $userId,
+            'ai_model' => $response['model'] ?? $this->_model,
+            'prompt_tokens' => $response['usage']['prompt_tokens'] ?? 0,
+            'completion_tokens' => $response['usage']['completion_tokens'] ?? 0,
+            'cost_usd' => $response['usage']['cost_usd'] ?? null,
+            'duration_ms' => $durationMs,
+            'request_id' => $response['id'] ?? '',
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $this->_daoVnAiAnalysisUsageModel->insert($data);
+
+        if ($noteId > 0) {
+            $items = [
+                'insight' => is_array($insight) ? $insight : (string)$insight,
+                'emotion' => is_array($emotion) ? $emotion : (string)$emotion,
+                'actions' => is_array($actions) ? $actions : (string)$actions,
+                'habits' => is_array($habits) ? $habits : (string)$habits,
+            ];
+            $this->_noteAiAnalysisService->addBatchNoteAiAnalysis($noteId, $data['ai_model'], $items, $analyzedAt);
+        }
+        exit();
+        return $final;
     }
 
     /**
