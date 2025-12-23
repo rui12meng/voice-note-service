@@ -194,16 +194,47 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
      * @return void
      */
     public function noteInfo(){
-        $uid = $this->uid;
+        /*$uid = $this->uid;
         //优先判断用户是否有权限
 
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
-        }
-        $columns = '*';
+        }*/
+        $uid = 101;
+        $noteId = 7;
+        $columns = 'id,title,summary,content,note_type,images,audios,created_at';
         $result = $this->_noteService->getNoteInfo($columns, $uid, $noteId);
-var_dump($result);exit();
+
+        $eCode  = ECODE_SUCCESS;
+        $returnData = [];
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                //数据不存在
+                case -6:
+                    $eCode = ECODE_DATA_NOT_FOUND;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        } else {
+            $returnData['note_id'] = $result['id'];
+            $returnData['note_type'] = $result['note_type'];
+            $returnData['title'] = $result['title'];
+            $returnData['tags'] = $result['tags'];
+            $returnData['images'] = $result['images'];
+            $returnData['audios'] = $result['audios'];
+            $returnData['content'] = $result['content'];
+            $returnData['summary'] = $result['summary'];
+            $returnData['created_at'] = $result['created_at'];
+        }
+
+        return $this->json($eCode, $returnData);
 
     }
 }

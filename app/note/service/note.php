@@ -11,6 +11,7 @@ class Note
     const NOTE_TYPE_AUDIO   = 1;
     const NOTE_TYPE_TEXT    = 2;
     const NOTE_TYPE_IMAGE   = 3;
+    const NOTE_MODERATION_STATUS = 2;
     /**
      * @var mixed
      */
@@ -68,6 +69,7 @@ class Note
         $where = [
             'user_id' => $uid,
             'id' => $noteId,
+            'moderation_status' => self::NOTE_MODERATION_STATUS,
         ];
         $result = $this->_daoVnNoteModel->select($columns, $where);
 
