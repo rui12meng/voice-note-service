@@ -83,11 +83,15 @@ class Note
             return -7;
         }
         if(empty($tags)){
-            $tags = [];
+            $noteInfo['tags'] = [];
+        }else{
+            $noteInfo['tags'] = $tags;
         }
-        $noteInfo['tags'] = $tags;
+
         if(isset($result[0]) && !empty($result[0])){
-            $noteInfo = $result[0];
+            foreach($result[0] as $k => $v){
+                $noteInfo[$k] = $v;
+            }
         }
         return $noteInfo;
     }
