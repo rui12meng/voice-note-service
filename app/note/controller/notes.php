@@ -159,4 +159,30 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
             ];
         return $this->json(ECODE_SUCCESS, $response);
     }
+
+    /**
+     * 笔记分析
+     * @param  void
+     * @return void
+     */
+    public function noteAnalysis(){
+        $uid = $this->uid;
+        //优先判断用户是否有权限
+
+        $noteId = $this->post('note_id', true);
+        if ( ! isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+
+        // 获取笔记内容
+        $result = $this->_noteService->getNoteData($uid, $noteId);
+        $text = $result[0]['content'] ?? "";
+        if(!empty($text)){
+            //分析
+            $this->_noteService->getNotePrompt($text);
+        }else{
+            return [];
+        }
+
+    }
 }
