@@ -90,19 +90,11 @@ class AnalyzeNote extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'insights');
         }
 
-        // 解析并校验 insights 格式
-        $insightsData = json_decode($insights, true);
-        if (json_last_error() !== JSON_ERROR_NONE
-            || !isset($insightsData['problem'], $insightsData['cause'], $insightsData['inspire'])
-        ) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'insights 格式错误');
-        }
-
         // 组装入库 json：{"insight":"xxx","question":"xxx","root_cause":"xxx"}
         $insight = [
-            'insight'    => $insightsData['inspire'],
-            'question'   => $insightsData['problem'],
-            'root_cause' => $insightsData['cause'],
+            'insight'    => $insights['inspire'] ?? '',
+            'question'   => $insights['problem'] ?? '',
+            'root_cause' => $insights['cause'] ?? '',
         ];
 
         //更新数据并返回最新数据
