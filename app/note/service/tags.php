@@ -18,7 +18,7 @@ class Tags
      * @return void
      */
     public function __construct(){
-        $this->_daoNoteTagsModel = \Lsf\Loader::Model('DaoNoteTags', false, APP_NAME_NOTE);
+        $this->_daoNoteTagsModel = \Lsf\Loader::Model('DaoVnNoteTags', false, APP_NAME_NOTE);
     }
 
     /**
