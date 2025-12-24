@@ -53,9 +53,15 @@ class Tags
 
         $data = ['is_deleted' => 1];
         $result = $this->_daoNoteTagsModel->softDelete($data, $where);
-        var_dump($result);exit();
-        // 静默忽略标签不存在的情况，统一返回1
-        return 1;
+        if($result === false){
+            return -7;
+        }
+        if(is_int($result) && ($result == 1 || $result == 0)){
+            // 静默忽略标签不存在的情况，统一返回1
+            return 1;
+        }else{
+            return -6;
+        }
     }
 
 }

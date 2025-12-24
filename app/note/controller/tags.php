@@ -110,16 +110,12 @@ class Tags extends \App\Application
         }
 
         $result = $this->_tagsService->deleteTag($uid, $noteId, $tagId);
-
-        // 静默忽略标签不存在的情况
-        if ($result === -1) {
-            // 标签不存在，视为成功
-            return $this->json(ECODE_SUCCESS);
-        }
+        $eCode = ECODE_SUCCESS;
 
         if (is_int($result) && $result < 0) {
             switch ($result) {
                 //数据库异常
+                case -6:
                 case -7:
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
@@ -127,10 +123,9 @@ class Tags extends \App\Application
                 default:
                     $eCode = ECODE_UNDEFINED_ERROR;
             }
-            return $this->json($eCode);
         }
 
-        return $this->json(ECODE_SUCCESS);
+        return $this->json($eCode , []);
     }
 
 }
