@@ -191,6 +191,29 @@ class Model
     }
 
     /**
+     * softDelete
+     * [说明]
+     * 更新成功返回影响行数
+     * @param  array  $data
+     * @param  array  $where
+     * @return bool
+     */
+    private function softDelete($data, $where){
+        $sets = $this->build->parseUpdateData($data);
+        $where = $this->build->parseWhere($where);
+        $sql = 'UPDATE ';
+        $sql.= $this->table;
+        $sql.= ' SET' . $sets;
+        $sql.= ' WHERE ' . $where;
+        $result = $this->_query($sql, __FUNCTION__);
+        if($result !== FALSE){
+            return $this->_db->affectedRows($this->nodeName);
+        }else{
+            return FALSE;
+        }
+    }
+
+    /**
      * query
      * [说明]
      * 自定义查询，非特殊情况不建议使用

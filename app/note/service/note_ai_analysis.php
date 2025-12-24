@@ -47,7 +47,7 @@ class NoteAiAnalysis
      */
     public function softDeleteByNoteId($noteId)
     {
-        $result = $this->_daoVnNoteAiAnalysis->update(
+        $result = $this->_daoVnNoteAiAnalysis->softDelete(
             ['is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')],
             ['note_id' => $noteId]
         );
