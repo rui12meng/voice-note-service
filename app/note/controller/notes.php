@@ -275,11 +275,12 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
      */
     public function delete()
     {
-        $uid = $this->uid;
-        if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }
+//        $uid = $this->uid;
+//        if (!isset($uid) || empty($uid)) {
+//            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+//        }
 
+        $uid = 101;
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');

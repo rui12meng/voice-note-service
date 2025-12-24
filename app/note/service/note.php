@@ -333,7 +333,7 @@ class Note
         $this->_noteAiAnalysisService->softDeleteByNoteId($noteId);
 
         // 软删除关联的标签记录
-        $tagData = [
+        /*$tagData = [
             'is_deleted' => 1,
             'deleted_at' => date("Y-m-d H:i:s"),
         ];
@@ -341,7 +341,7 @@ class Note
             'note_id' => $noteId,
         ];
         $this->_daoVnNoteTagsModel->update($tagData, $tagWhere);
-
+*/
         return $result;
     }
 

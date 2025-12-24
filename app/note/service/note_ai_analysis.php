@@ -39,4 +39,19 @@ class NoteAiAnalysis
         }
         return $this->_daoVnNoteAiAnalysis->batchInsert($rows);
     }
+
+    /**
+     * 软删除笔记AI分析记录
+     * @param int $noteId 笔记ID
+     * @return int 影响行数
+     */
+    public function softDeleteByNoteId($noteId)
+    {
+        $result = $this->_daoVnNoteAiAnalysis->update(
+            ['is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')],
+            ['note_id' => $noteId]
+        );
+
+        return $result;
+    }
 }
