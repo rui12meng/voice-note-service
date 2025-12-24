@@ -112,7 +112,7 @@ class AnalyzeNote extends \App\Application
                     $eCode = ECODE_UNDEFINED_ERROR;
             }
         }else{
-            if(isset($result['analysis_data'])){
+            if(isset($result['note_id']) && isset($result['analysis_data'])){
                 $analysis_data = json_decode($result['analysis_data'], JSON_UNESCAPED_UNICODE);
             }
             $responseData = [
@@ -122,7 +122,7 @@ class AnalyzeNote extends \App\Application
                     'question' => $analysis_data['question'] ?? '',
                     'root_cause' => $analysis_data['root_cause'] ?? '',
                 ],
-                'created_at' => $result['created_at'] ?? '',
+                'update_time' => $result['updated_at'] ?? '',
             ];
         }
 

@@ -94,13 +94,14 @@ class NoteAiAnalysis
             return -7;
         }
         if (is_int($result) && ($result == 1 || $result == 0)) {
-            $columns = 'analysis_data, updated_at';
+            $columns = 'node_id, analysis_data, updated_at';
             $where = [
                 'note_id' => $noteId,
                 'analysis_type_name' => $structType,
                 'is_deleted' => 0,
             ];
             $noteAnal = $this->_daoVnNoteAiAnalysis->select($columns, $where);
+            var_dump($noteAnal);exit();
             if($noteAnal === false){
                 return -7;
             }
