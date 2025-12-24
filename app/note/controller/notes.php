@@ -193,7 +193,7 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
      * @param  void
      * @return void
      */
-    public function noteInfo(){
+    public function info(){
         /*$uid = $this->uid;
         //优先判断用户是否有权限
 
@@ -236,5 +236,47 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
 
         return $this->json($eCode, $returnData);
 
+    }
+
+    /**
+     * 用户获取日记列表
+     * @param  void
+     * @return void
+     */
+    public function list(){
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
+        $noteId = $this->post('note_id', true);
+        if ( ! isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+
+        $cursor = $this->post('cursor', true);
+        if ( ! isset($cursor) || empty($cursor) || $cursor < 0) {
+            //游标（Base64 编码的 (created_at, id)）
+            //$cursor = 1;
+        }
+        $pageSize = $this->post('limit', true);
+        if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0) {
+            $pageSize = 20;
+        }
+        // 调用服务层获取列表
+        $list = $this->_noteService->getNoteListByCursor($uid, $cursor, $pageSize);
+        if (is_int($list) && $list < 0) {
+            // 服务层返回错误码
+            return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
+        }
+
+        // 组装返回数据
+        $returnData = [
+            'list'       => $list['list'] ?? [],
+            'next_cursor'=> $list['next_cursor'] ?? '',
+            'has_more'   => $list['has_more'] ?? false,
+        ];
+
+        return $this->json(ECODE_SUCCESS, $returnData);
     }
 }

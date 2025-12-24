@@ -262,4 +262,49 @@ class Note
         return $result;
     }
 
+    /**
+     * 游标翻页获取笔记列表（按 id 倒序）
+     * - 游标为空：从最新开始
+     * - 游标不空：取 id < cursor 的下一页
+     * - 返回 list 与 pagination（是否有下一页、下一页游标）
+     * @param int         $uid       用户ID
+     * @param int|null    $cursor    当前页游标（上一页最后一条的 id）
+     * @param int         $pageSize  每页条数
+     * @param array       $filters   额外过滤条件
+     * @return array{list: array, pagination: array{has_next_page: bool, next_cursor: int|null}}
+     */
+    public function getNoteListByCursor($uid, $cursor = null, $pageSize = 20, $filters = [])
+    {
+        $where = array_merge(['user_id' => $uid , 'is_deleted' => 0], $filters);
+        if (!empty($cursor)) {
+            $where['id'] = ['LT', (int)$cursor];
+        }
+        $columns = 'id,title,summary,note_type,media_url,is_analyzed,analyzed_at,created_at';
+        $orderBy = 'id DESC';
+        $list = $this->_daoVnNoteModel->select($columns, $where, $orderBy, $pageSize + 1);
+        if ($list === false) {
+            return ['list' => [], 'pagination' => ['has_next_page' => false, 'next_cursor' => null]];
+        }
+        $hasNext = count($list) > $pageSize;
+        if ($hasNext) {
+            $list = array_slice($list, 0, $pageSize);
+        }
+        /*if (!empty($list)) {
+            $noteIds = array_column($list, 'id');
+            $tagsMap = $this->_getTagsByNoteIds($noteIds);
+            foreach ($list as &$note) {
+                $note['tags'] = isset($tagsMap[$note['id']]) ? $tagsMap[$note['id']] : [];
+            }
+            unset($note);
+        }*/
+        $nextCursor = $hasNext ? end($list)['id'] : null;
+        return [
+            'list' => $list,
+            'pagination' => [
+                'has_next_page' => $hasNext,
+                'next_cursor' => $nextCursor,
+            ],
+        ];
+    }
+
 }
