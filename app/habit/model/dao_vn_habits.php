@@ -9,13 +9,12 @@ class DaoVnHabits extends \Lsf\Model
 {
     public $primary = 'id';
     public $tablePrefix = '';
-    public $table = 'habits';
+    public $table = 'user_habits';
 
     public function __construct()
     {
         parent::__construct();
     }
-
 
 }
 

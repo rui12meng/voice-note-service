@@ -44,11 +44,12 @@ class Habit
      * @param int    $uid 用户ID
      * @param int    $noteId 笔记ID
      * @param string $habitName
-     * @param int    $intervalNum
-     * @param string $intervalUnit
+     * @param string $habitDesc
+     * @param string   $frequencyType
+     * @param array    $frequencyConfig
      * @return int
      */
-    public function addUserHabit($uid, $noteId, $habitName, $intervalNum, $intervalUnit){
+    public function addUserHabit($uid, $noteId, $habitName, $habitDesc, $frequencyType, $frequencyConfig){
         $result = $this->countUserActiveHabits($uid);
         if($result === false){
             return -7; //database
@@ -62,6 +63,7 @@ class Habit
         $data = [
             'user_id' => $uid,
             'habit_name' => $habitName,
+            'habit_desc' => $habitDesc,
         ];
         if($noteId > 0){
             array_push($data, ['note_id' => $noteId]);
@@ -73,8 +75,8 @@ class Habit
 
         $habitRule = [
             'habit_id' => $habitId,
-            'interval_value' => $intervalNum,
-            'interval_unit' => $intervalUnit,
+            'frequency_type' => $frequencyType,
+            'frequency_config' => json_encode($frequencyConfig, JSON_UNESCAPED_UNICODE),
             'anchor_date' => date('Y-m-d'),
         ];
         $habitRuleId = $this->_daoHabitSchedulesModel->insert($habitRule);

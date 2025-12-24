@@ -50,31 +50,36 @@ class Habits extends \App\Application
         if (!isset($habitName) || empty($habitName)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name');
         }
+
         if (mb_strlen($habitName) > 50) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name long');
         }
 
-        $intervalNum = (int)$this->post('interval_num', true);
-        if ($intervalNum <= 0) {
-            //$this->error('间隔数必须为正整数');
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'interval_num > 0');
-        }
-        if (!isset($intervalNum) || empty($intervalNum)) {
-            $intervalNum = 1;
+        $habitDesc = $this->post('description', true);
+        if (!isset($habitDesc) || empty($habitDesc)) {
+            $habitDesc = '';
         }
 
-        $intervalUnit= $this->post('interval_unit', true);
-        if (!isset($intervalUnit) || empty($intervalUnit)) {
-            $intervalUnit = 'day';
+        $frequencyType = $this->post('frequency_type', true);
+        if (!isset($frequencyType) || empty($frequencyType)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'frequency_type long');
         }
-        $allowedUnits = ['day', 'week', 'month'];
-        if (!in_array($intervalUnit, $allowedUnits, true)) {
-
+        $frequencyConfig = $this->post('frequency_config', true);
+        $allowedUnits = ['daily', 'weekly', 'monthly', 'interval'];
+        if (!in_array($frequencyType, $allowedUnits, true)) {
             return $this->json(1003004,[]);
+        }elseif(trim($frequencyType) == 'daily'){
+            $frequencyConfig = ["times_per_day" => 1];
+        }elseif(trim($frequencyType) == 'weekly'){
+            $frequencyConfig = ["week_days" => $frequencyConfig];
+        }elseif(trim($frequencyType) == 'monthly'){
+            $frequencyConfig = ["month_days" => $frequencyConfig];
+        }else{
+            $frequencyConfig = ["interval_days" => $frequencyConfig , "anchor_date" => date('Y-m-d')];
         }
 
         // 调用服务添加习惯
-        $result = $this->_habitsService->addUserHabit($uid, $noteId, $habitName, $intervalNum, $intervalUnit);
+        $result = $this->_habitsService->addUserHabit($uid, $noteId, $habitName, $habitDesc, $frequencyType, $frequencyConfig);
 
         $eCode = ECODE_SUCCESS;
 
@@ -179,6 +184,124 @@ class Habits extends \App\Application
         return $this->json(ECODE_SUCCESS, $responseData);
     }
 
+    /**
+     * 批量保存习惯（含新增、修改、删除）
+     * 用户可一次性提交全部习惯，系统对比后增量更新，最终保证启用状态≤50条
+     * @return void
+     */
+    public function batchSave()
+    {
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101;
+
+        $noteId = $this->post('note_id', true);
+        if (!isset($noteId) || empty($noteId)) {
+            $noteId = 0;
+        }
+        $habits = $this->post('habits');
+        if (!is_array($habits)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habits');
+        }
+
+        // 1. 先取出用户当前所有启用习惯
+        $existList = $this->_habitsService->getUserActiveHabits($uid);
+        if ($existList === false) {
+            return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
+        }
+        $existMap = array_column($existList, null, 'habit_id');   // 以 habit_id 为键
+
+        // 2. 分类：新增、修改、删除
+        $toAdd    = [];   // 新增
+        $toUpdate = [];   // 修改
+        $keepIds  = [];   // 需要保留的 habit_id
+        foreach ($habits as $row) {
+            // 统一校验
+            if (empty($row['habit_name']) || mb_strlen($row['habit_name']) > 50) {
+                return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name 非法');
+            }
+            $intervalNum = isset($row['interval_num']) ? (int)$row['interval_num'] : 1;
+            if ($intervalNum <= 0) {
+                return $this->errParamMissing(ECODE_PARAM_MISSING, 'interval_num 必须为正整数');
+            }
+            $intervalUnit = isset($row['interval_unit']) ? $row['interval_unit'] : 'day';
+            $allowedUnits = ['day', 'week', 'month'];
+            if (!in_array($intervalUnit, $allowedUnits, true)) {
+                return $this->errParamMissing(ECODE_PARAM_MISSING, 'interval_unit 非法');
+            }
+
+            if (empty($row['habit_id'])) {
+                // 新增
+                $toAdd[] = [
+                    'habit_name'    => $row['habit_name'],
+                    'interval_num'  => $intervalNum,
+                    'interval_unit' => $intervalUnit,
+                    'note_id'       => isset($row['note_id']) ? (int)$row['note_id'] : 0,
+                ];
+            } else {
+                // 修改 or 保留
+                if (!isset($existMap[$row['habit_id']])) {
+                    return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_id 不存在');
+                }
+                $toUpdate[] = [
+                    'habit_id'      => $row['habit_id'],
+                    'habit_name'    => $row['habit_name'],
+                    'interval_num'  => $intervalNum,
+                    'interval_unit' => $intervalUnit,
+                    'note_id'       => isset($row['note_id']) ? (int)$row['note_id'] : 0,
+                ];
+                $keepIds[]  = $row['habit_id'];
+            }
+        }
+
+        // 3. 计算最终启用数量是否超限
+        $finalCount = count($existList) + count($toAdd) - (count($existList) - count($keepIds));
+        if ($finalCount > 50) {
+            return $this->json(1003005, []);   // 超过50条
+        }
+
+        // 4. 执行数据库变更
+        $this->_habitsService->beginTransaction();
+        try {
+            // 4.1 删除未再提交的习惯（软删或真删，按业务）
+            $delIds = array_diff(array_keys($existMap), $keepIds);
+            if ($delIds) {
+                $this->_habitsService->deleteUserHabits($uid, $delIds);
+            }
+
+            // 4.2 批量新增
+            foreach ($toAdd as $add) {
+                $this->_habitsService->addUserHabit(
+                    $uid,
+                    $add['note_id'],
+                    $add['habit_name'],
+                    $add['interval_num'],
+                    $add['interval_unit']
+                );
+            }
+
+            // 4.3 批量修改
+            foreach ($toUpdate as $upd) {
+                $this->_habitsService->updateUserHabit(
+                    $uid,
+                    $upd['habit_id'],
+                    $upd['note_id'],
+                    $upd['habit_name'],
+                    $upd['interval_num'],
+                    $upd['interval_unit']
+                );
+            }
+
+            $this->_habitsService->commit();
+        } catch (\Exception $e) {
+            $this->_habitsService->rollback();
+            return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
+        }
+
+        return $this->json(ECODE_SUCCESS, []);
+    }
 
 }
 
