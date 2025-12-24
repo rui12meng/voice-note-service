@@ -48,7 +48,7 @@ class AnalyzeNote extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'struct_type');
         }
 
-        $result = $this->_noteAiAnalyzeService->delAiStructData($uid, $noteId, $structType);
+        $result = $this->_noteAiAnalyzeService->delAiStructData($noteId, $structType);
 
         $eCode = ECODE_SUCCESS;
 
