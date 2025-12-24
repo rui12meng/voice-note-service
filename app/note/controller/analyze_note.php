@@ -117,7 +117,7 @@ class AnalyzeNote extends \App\Application
             }
             $responseData = [
                 'note_id' => $result['note_id'] ?? 0,
-                'insight' => [
+                'insights' => [
                     'insight' => $analysis_data['insight'] ?? '',
                     'question' => $analysis_data['question'] ?? '',
                     'root_cause' => $analysis_data['root_cause'] ?? '',
@@ -131,16 +131,18 @@ class AnalyzeNote extends \App\Application
 
     /**
      * 编辑情绪数据
-     * 上行参数：note_id, emotions（json格式，包含 type、scores、analyze、trigger_factors、suggestion 字段）
+     * 上行参数：note_id, emotions（json格式，包含 type、scores、analyze、trigger、suggestion 字段）
+     * {
+            "emotion": "焦虑",        // 情绪类型 type
+            "trigger": "工作截止日期临近", // 触发原因 / 情绪诱因 trigger
+            "analysis": "你对即将到来的任务感到压力，担心无法按时完成。", // 情绪分析解读 analyze
+            "intensity": 0.85,       // 情绪强度 scores
+            "suggestion": "尝试将大任务拆解为小步骤，并设定中间节点，可减轻压力感。" // 行动建议 / 应对策略 suggestion
+        }
+     *
      */
     public function editEmotion()
     {
-        /*$uid = $this->uid;
-        if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101; // 临时固定 uid，后续接入登录态
-
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
@@ -152,9 +154,9 @@ class AnalyzeNote extends \App\Application
         }
         $emotion = [
             'emotion'    => $emotions['type'] ?? '',
-            'trigger'   => $emotions['scores'] ?? '',
+            'trigger'   => $emotions['trigger'] ?? '',
             'analysis' => $emotions['analyze'] ?? '',
-            'intensity' => $emotions['trigger_factors'],
+            'intensity' => $emotions['scores'],
             'suggestion' => $emotions['suggestion'],
         ];
 
@@ -182,7 +184,7 @@ class AnalyzeNote extends \App\Application
                     'type' => $analysis_data['emotion'] ?? '',
                     'scores' => $analysis_data['intensity'] ?? '',
                     'analyze' => $analysis_data['analysis'] ?? '',
-                    'trigger_factors' => $analysis_data['trigger'] ?? '',
+                    'trigger' => $analysis_data['trigger'] ?? '',
                     'suggestion' => $analysis_data['suggestion'] ?? '',
                 ],
                 'update_time' => $result['updated_at'] ?? '',
