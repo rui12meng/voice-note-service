@@ -307,4 +307,43 @@ class Note
         ];
     }
 
+    /**
+     * 软删除笔记及其关联数据
+     * @param int $uid 用户ID
+     * @param int $noteId 笔记ID
+     * @return int 成功返回影响的行数，失败返回-6
+     */
+    public function softDeleteNoteAndActions($uid, $noteId)
+    {
+        // 软删除笔记主表
+        $data = [
+            'is_deleted' => 1,
+            'deleted_at' => date("Y-m-d H:i:s"),
+        ];
+        $where = [
+            'id' => $noteId,
+            'user_id' => $uid,
+        ];
+        $result = $this->_daoVnNoteModel->update($data, $where);
+        if ($result === false) {
+            return -6;
+        }
+
+        // 软删除关联的AI分析记录
+        $this->_noteAiAnalysisService->softDeleteByNoteId($noteId);
+
+        // 软删除关联的标签记录
+        $tagData = [
+            'is_deleted' => 1,
+            'deleted_at' => date("Y-m-d H:i:s"),
+        ];
+        $tagWhere = [
+            'note_id' => $noteId,
+        ];
+        $this->_daoVnNoteTagsModel->update($tagData, $tagWhere);
+
+        return $result;
+    }
+
 }
+

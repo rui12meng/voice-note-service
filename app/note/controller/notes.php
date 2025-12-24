@@ -249,11 +249,6 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
 
-        $noteId = $this->post('note_id', true);
-        if ( ! isset($noteId) || empty($noteId)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
-        }
-
         $cursor = $this->post('cursor', true);
         if ( ! isset($cursor) || empty($cursor) || $cursor < 0) {
             //游标（Base64 编码的 (created_at, id)）
@@ -264,19 +259,50 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
             $pageSize = 20;
         }
         // 调用服务层获取列表
-        $list = $this->_noteService->getNoteListByCursor($uid, $cursor, $pageSize);
-        if (is_int($list) && $list < 0) {
+        $result = $this->_noteService->getNoteListByCursor($uid, $cursor, $pageSize);
+        if (is_int($result) && $result < 0) {
             // 服务层返回错误码
             return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
         }
 
-        // 组装返回数据
-        $returnData = [
-            'list'       => $list['list'] ?? [],
-            'next_cursor'=> $list['next_cursor'] ?? '',
-            'has_more'   => $list['has_more'] ?? false,
-        ];
+        return $this->json(ECODE_SUCCESS, $result);
+    }
 
-        return $this->json(ECODE_SUCCESS, $returnData);
+    /**
+     * 删除笔记（软删除）
+     * @param  void
+     * @return void
+     */
+    public function delete()
+    {
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
+        $noteId = $this->post('note_id', true);
+        if (!isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+
+        // 调用服务层执行软删除笔记及关联行动项
+        $result = $this->_noteService->softDeleteNoteAndActions($uid, $noteId);
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                case -6: // 数据不存在
+                    $eCode = ECODE_DATA_NOT_FOUND;
+                    break;
+                case -7: // 数据库异常
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+            return $this->json($eCode, []);
+        }
+
+        return $this->json(ECODE_SUCCESS, []);
     }
 }
+
