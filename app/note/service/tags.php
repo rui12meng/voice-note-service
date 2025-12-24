@@ -50,7 +50,9 @@ class Tags
             'note_id'=> $noteId,
             'tag_id' => $tagId
         ];
-        $result = $this->_daoNoteTagsModel->delete($where);
+        
+        $data = ['is_deleted' => 1];
+        $result = $this->_daoNoteTagsModel->softDelete($data, $where);
         var_dump($result);exit();
         // 静默忽略标签不存在的情况，统一返回1
         return 1;
