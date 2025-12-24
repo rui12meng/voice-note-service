@@ -129,4 +129,67 @@ class AnalyzeNote extends \App\Application
         return $this->json($eCode, $responseData);
     }
 
+    /**
+     * 编辑情绪数据
+     * 上行参数：note_id, emotions（json格式，包含 type、scores、analyze、trigger_factors、suggestion 字段）
+     */
+    public function editEmotion()
+    {
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101; // 临时固定 uid，后续接入登录态
+
+        $noteId = $this->post('note_id', true);
+        if (!isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+
+        $emotions = $this->post('emotions', true);
+        if (!isset($emotions) || empty($emotions)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'emotions');
+        }
+        $emotion = [
+            'emotion'    => $emotions['type'] ?? '',
+            'trigger'   => $emotions['scores'] ?? '',
+            'analysis' => $emotions['analyze'] ?? '',
+            'intensity' => $emotions['trigger_factors'],
+            'suggestion' => $emotions['suggestion'],
+        ];
+
+        //更新数据并返回最新数据
+        $result = $this->_noteAiAnalyzeService->getNewAiStructData($noteId, 'emotion', $emotion);
+
+        $eCode = ECODE_SUCCESS;
+        $responseData = [];
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                case -6:
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }else{
+            if(isset($result['note_id']) && isset($result['analysis_data'])){
+                $analysis_data = json_decode($result['analysis_data'], JSON_UNESCAPED_UNICODE);
+            }
+            $responseData = [
+                'note_id' => $result['note_id'] ?? 0,
+                'emotion' => [
+                    'type' => $analysis_data['emotion'] ?? '',
+                    'scores' => $analysis_data['intensity'] ?? '',
+                    'analyze' => $analysis_data['analysis'] ?? '',
+                    'trigger_factors' => $analysis_data['trigger'] ?? '',
+                    'suggestion' => $analysis_data['suggestion'] ?? '',
+                ],
+                'update_time' => $result['updated_at'] ?? '',
+            ];
+        }
+
+        return $this->json($eCode, $responseData);
+    }
+
 }
