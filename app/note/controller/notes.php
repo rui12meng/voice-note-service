@@ -326,7 +326,7 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
         $summary = $this->post('summary', true);  // 摘要
 
         // 至少传一个字段
-        if (!isset($text) || empty($text) || !isset($summary) ||empty($summary)) {
+        if ( (!isset($text) || empty($text)) && (!isset($summary) || empty($summary)) ) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'text or summary');
         }
 
