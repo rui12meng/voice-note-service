@@ -46,11 +46,11 @@ class Tags
     public function deleteTag($uid, $noteId, $tagId)
     {
         $where = [
-            'uid'    => $uid,
+            'id' => $tagId,
+            'user_id'    => $uid,
             'note_id'=> $noteId,
-            'tag_id' => $tagId
         ];
-        
+
         $data = ['is_deleted' => 1];
         $result = $this->_daoNoteTagsModel->softDelete($data, $where);
         var_dump($result);exit();
