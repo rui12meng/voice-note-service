@@ -305,5 +305,50 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
 
         return $this->json(ECODE_SUCCESS, []);
     }
+    /**
+     * 修改日记（仅支持文本与摘要）
+     * @return void
+     */
+    public function edit()
+    {
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
+        $noteId = $this->post('note_id', true);
+        if (!isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+
+        // 客户端可传 text / summary 之一或两者
+        $text   = $this->post('text', true);      // 日记正文
+        $summary = $this->post('summary', true);  // 摘要
+
+        // 至少传一个字段
+        if (!isset($text) || empty($text) || !isset(summary) || empry(summary)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'text or summary');
+        }
+
+        // 调用服务层更新
+        $result = $this->_noteService->updateNoteFields($uid, $noteId, $text, $summary);
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                case -6: // 笔记不存在
+                    $eCode = ECODE_DATA_NOT_FOUND;
+                    break;
+                case -7: // 数据库异常
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+            return $this->json($eCode, []);
+        }
+
+        return $this->json(ECODE_SUCCESS, []);
+    }
+}
 }
 

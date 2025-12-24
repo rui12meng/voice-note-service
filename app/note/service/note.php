@@ -345,5 +345,32 @@ class Note
         return $result;
     }
 
+    /**
+     * 更新笔记字段（文本或摘要）
+     * @param int    $uid     用户ID
+     * @param int    $noteId  笔记ID
+     * @param string $content 新的笔记内容（可选）
+     * @param string $summary 新的摘要内容（可选）
+     * @return int 成功返回影响的行数，失败返回-6
+     */
+    public function updateNoteFields($uid, $noteId, $content = '', $summary = '')
+    {
+        $data = [];
+        if (!empty($content)) {
+            $data['content'] = $content;
+        }
+        if (!empty($summary)) {
+            $data['summary'] = $summary;
+        }
+
+        $where = [
+            'id'     => $noteId,
+            'user_id'=> $uid,
+        ];
+
+        $result = $this->_daoVnNoteModel->update($data, $where);
+        return $result === false ? -6 : $result;
+    }
+
 }
 
