@@ -212,7 +212,7 @@ class Habits extends \App\Application
         }else{
             if(is_array($result) && !empty($result)){
                 $responseData = [
-                    'id' => $habitId,
+                    'id' => (int)$habitId,
                     'habit_name' => $result['habit_name'] ?? '',
                     'habit_desc' => $result['habit_desc'] ?? '',
                     'remind_time' => $result['remind_time'] ?? '',
