@@ -15,10 +15,14 @@
  */
 
 define('GLOBAL_NETWORK_EXCEPTION', ['网络不给力']);
+define('OPERATE_SUCCESS', ['操作成功']);
 
 return [
     0       => [
         'message' => 'success',
+        'desc' => [
+            'code' => OPERATE_SUCCESS,
+        ],
     ],
     1001000 => '缺少参数',
     1001001 => '参数值非法',
