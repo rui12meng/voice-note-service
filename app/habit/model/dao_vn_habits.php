@@ -24,7 +24,7 @@ class DaoVnHabits extends \Lsf\Model
      */
     public function getRowBySql($uid, $habitId){
 
-        $sql = "SELECT h.*, hs.frequency_type, hs.frequency_config
+        $sql = "SELECT h.note_id, h.habit_name, h.habit_desc, h.remind_time, h.status, hs.frequency_type, hs.frequency_config
                 FROM user_habits AS h
                 LEFT JOIN user_habit_schedules AS hs ON h.id = hs.habit_id
                 WHERE h.id = {$habitId} AND h.user_id = {$uid} AND h.is_deleted = 0

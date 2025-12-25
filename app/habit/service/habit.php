@@ -101,16 +101,19 @@ class Habit
         // 使用链表查询一次性取出习惯及对应规则
         $row = $this->_daoHabitsModel->getRowBySql($uid, $habitId);
 
-        if (!$row) {
-            return false;
+        if ($row === false) {
+            return -7;
         }
-
+        $result = [];
+        if(isset($row[0])){
+            $result = $row[0];
+        }
         // 解析频率配置
-        if ($row['frequency_config']) {
-            $row['frequency_config'] = json_decode($row['frequency_config'], true);
+        if ($result['frequency_config']) {
+            $result['frequency_config'] = json_decode($row['frequency_config'], true);
         }
 
-        return $row;
+        return $result;
     }
 
 }

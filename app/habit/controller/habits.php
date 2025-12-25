@@ -195,7 +195,9 @@ class Habits extends \App\Application
         }
         // 调用服务获取习惯详情（含主表与配置表）
         $result = $this->_habitsService->getUserHabitDetail($uid, $habitId);
+
         $eCode = ECODE_SUCCESS;
+        $responseData = [];
 
         if (is_int($result) && $result < 0) {
             switch ($result) {
@@ -207,9 +209,21 @@ class Habits extends \App\Application
                 default:
                     $eCode = ECODE_UNDEFINED_ERROR;
             }
+        }else{
+            if(is_array($result) && !empty($result)){
+                $responseData = [
+                    'id' => $result[''] ?? '',
+                    'habit_name' => $result['habit_name'] ?? '',
+                    'habit_desc' => $result['habit_desc'] ?? '',
+                    'remind_time' => $result['remind_time'] ?? '',
+                    'active' => (int)$result['status'] ?? 1,
+                    'frequency_type' => $result['frequency_type'] ?? '',
+                    'frequency_config' => $result['frequency_config'] ?? [],
+                ];
+            }
         }
 
-        return $this->json($eCode, []);
+        return $this->json($eCode, $responseData);
 
     }
 
