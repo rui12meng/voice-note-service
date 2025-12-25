@@ -265,12 +265,14 @@ class Habits extends \App\Application
         }
 
         //开关启用状态；默认开启（0/1）
-        $active = (int)$this->post('active', true);
-        if (!isset($active) || empty($active)) {
+        $active = $this->post('active', true);
+        // 允许0/1，但0不是“空值”，而是有效值；仅当未传参时才默认1
+        if ($active === null) {
             $active = 1;
-        }
-        if (!in_array($active, [0,1], true)) {
+        } elseif (!in_array((int)$active, [0,1], true)) {
             return $this->json(1003001,[]);
+        } else {
+            $active = (int)$active;
         }
 
         //提醒时间
