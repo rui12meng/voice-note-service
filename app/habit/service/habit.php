@@ -110,7 +110,7 @@ class Habit
         }
         // 解析频率配置
         if ($result['frequency_config']) {
-            $result['frequency_config'] = json_decode($row['frequency_config'], true);
+            $result['frequency_config'] = json_decode($result['frequency_config'], true);
         }
 
         return $result;
