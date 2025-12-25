@@ -41,7 +41,8 @@ class Model
         // 动态从连接池中获取新的db对象
         $this->_db = $this->_mysqlPool->db($this->nodeName);
         $result = call_user_func_array(array($this, $method), $args);
-        $this->_db->recycle($this->nodeName);
+        // 从每一次数据库操作都返回资源修改为每一次协程执行完成后再返回资源
+        // $this->_db->recycle($this->nodeName);
         return $result;
     }
 

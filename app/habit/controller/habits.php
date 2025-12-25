@@ -36,6 +36,7 @@ class Habits extends \App\Application
      */
     public function add()
     {
+        // 用户uid
         /*$uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
@@ -45,41 +46,112 @@ class Habits extends \App\Application
         if (!isset($noteId) || empty($noteId)) {
             $noteId = 0;
         }
-
+        //习惯名称（限制30字符，不可为空）
         $habitName = $this->post('habit_name', true);
         if (!isset($habitName) || empty($habitName)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name');
         }
 
-        if (mb_strlen($habitName) > 50) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name long');
+        if (mb_strlen($habitName) > 30) { //字符限制
+            return $this->json(1003000 , []);
         }
-
+        //习惯描述（限制50字符，可空）
         $habitDesc = $this->post('description', true);
         if (!isset($habitDesc) || empty($habitDesc)) {
             $habitDesc = '';
         }
+        if (mb_strlen($habitDesc) > 50) { //字符限制
+            return $this->json(1003000 , []);
+        }
 
+        //开关启用状态；默认开启（0/1）
+        $active = (int)$this->post('active', true);
+        if (!isset($active) || empty($active)) {
+            $active = 1;
+        }
+        if (!in_array($active, [0,1], true)) {
+            return $this->json(1003001,[]);
+        }
+
+        //提醒时间
+        $remindTime = $this->post('remind_time', true);
+        if (!isset($remindTime) || empty($remindTime)) {
+            $remindTime = "";
+        } elseif (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $remindTime)) {
+            return $this->json(1003002,[]);
+        }
+
+        //频率限制-类型
         $frequencyType = $this->post('frequency_type', true);
         if (!isset($frequencyType) || empty($frequencyType)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'frequency_type long');
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'frequency_type');
         }
-        $frequencyConfig = $this->post('frequency_config', true);
         $allowedUnits = ['daily', 'weekly', 'monthly', 'interval'];
         if (!in_array($frequencyType, $allowedUnits, true)) {
             return $this->json(1003004,[]);
-        }elseif(trim($frequencyType) == 'daily'){
-            $frequencyConfig = ["times_per_day" => 1];
-        }elseif(trim($frequencyType) == 'weekly'){
-            $frequencyConfig = ["week_days" => $frequencyConfig];
-        }elseif(trim($frequencyType) == 'monthly'){
-            $frequencyConfig = ["month_days" => $frequencyConfig];
-        }else{
-            $frequencyConfig = ["interval_days" => $frequencyConfig , "anchor_date" => date('Y-m-d')];
+        }
+
+        //频率限制-具体配置
+        $frequencyConfig = $this->post('frequency_config', true);
+    
+        // 根据 frequencyType 校验并格式化 frequencyConfig
+        switch ($frequencyType) {
+            case 'daily':
+                // 可为空，默认1次/天
+                if (empty($frequencyConfig)) {
+                    $frequencyConfig = ["times_per_day" => 1];
+                } else {
+                    $times = (int)$frequencyConfig;
+                    if ($times < 1) {
+                        return $this->json(1003003,[]);
+                    }
+                    $frequencyConfig = ["times_per_day" => $times];
+                }
+                break;
+
+            case 'weekly':
+                // 不可空，1～7之间的数字
+                if (empty($frequencyConfig)) {
+                    return $this->json(1003005,[]);
+                }
+                $day = (int)$frequencyConfig;
+                if ($day < 1 || $day > 7) {
+                    return $this->json(1003006,[]);
+                }
+                $frequencyConfig = ["week_days" => [$day]];
+                break;
+
+            case 'monthly':
+                // 不可空，1～当月天数之间的数字
+                if (empty($frequencyConfig)) {
+                    return $this->json(1003005,[]);
+                }
+                $day = (int)$frequencyConfig;
+                $maxDay = (int)date('t');
+                if ($day < 1 || $day > $maxDay) {
+                    return $this->json(1003007,[]);
+                }
+                $frequencyConfig = ["month_days" => [$day]];
+                break;
+
+            case 'interval':
+                // 不可空，1～7之间的数字
+                if (empty($frequencyConfig)) {
+                    return $this->json(1003005,[]);
+                }
+                $interval = (int)$frequencyConfig;
+                if ($interval < 1 || $interval > 7) {
+                    return $this->json(1003006,[]);
+                }
+                $frequencyConfig = ["interval_days" => $interval, "anchor_date" => date('Y-m-d')];
+                break;
+
+            default:
+                return $this->json(ECODE_UNDEFINED_ERROR , []);
         }
 
         // 调用服务添加习惯
-        $result = $this->_habitsService->addUserHabit($uid, $noteId, $habitName, $habitDesc, $frequencyType, $frequencyConfig);
+        $result = $this->_habitsService->addUserHabit($uid, $noteId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig);
 
         $eCode = ECODE_SUCCESS;
 
@@ -89,8 +161,9 @@ class Habits extends \App\Application
                 case -7:
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
+                    //超限制
                 case -5:
-                    $eCode = 1003005;
+                    $eCode = 1003008;
                     break;
                 //未知错误
                 default:

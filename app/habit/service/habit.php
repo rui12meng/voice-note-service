@@ -45,11 +45,13 @@ class Habit
      * @param int    $noteId 笔记ID
      * @param string $habitName
      * @param string $habitDesc
+     * @param string $remindTime
+     * @param int    $active
      * @param string   $frequencyType
      * @param array    $frequencyConfig
      * @return int
      */
-    public function addUserHabit($uid, $noteId, $habitName, $habitDesc, $frequencyType, $frequencyConfig){
+    public function addUserHabit($uid, $noteId, $habitName, $habitDesc = '', $remindTime, $active, $frequencyType, $frequencyConfig){
         $result = $this->countUserActiveHabits($uid);
         if($result === false){
             return -7; //database
@@ -57,32 +59,35 @@ class Habit
 
         if ($result >= 50) {
             return -5;
-            //$this->error('您已拥有50个启用状态的习惯，已达上限，请先停用或删除部分习惯后再添加');
         }
 
         $data = [
             'user_id' => $uid,
             'habit_name' => $habitName,
             'habit_desc' => $habitDesc,
+            'remind_time' => $remindTime,
+            'status' => (int)$active,
         ];
         if($noteId > 0){
-            array_push($data, ['note_id' => $noteId]);
+            $data['note_id'] = $noteId;
         }
+        $this->_daoHabitsModel->begin();
         $habitId = $this->_daoHabitsModel->insert($data);
         if($habitId === false){
-            return -7; //database
+            $this->_daoHabitsModel->rollback();
+            return -7;
         }
-
         $habitRule = [
             'habit_id' => $habitId,
             'frequency_type' => $frequencyType,
             'frequency_config' => json_encode($frequencyConfig, JSON_UNESCAPED_UNICODE),
-            'anchor_date' => date('Y-m-d'),
         ];
         $habitRuleId = $this->_daoHabitSchedulesModel->insert($habitRule);
         if($habitRuleId === false){
-            return -7; //database
+            $this->_daoHabitsModel->rollback();
+            return -7;
         }
+        $this->_daoHabitsModel->commit();
         return $habitId;
     }
 
