@@ -18,7 +18,7 @@ define('GLOBAL_NETWORK_EXCEPTION', ['网络不给力']);
 
 return [
     0       => [
-        'msg' => 'success',
+        'message' => 'success',
     ],
     1001000 => '缺少参数',
     1001001 => '参数值非法',
@@ -26,11 +26,11 @@ return [
     1001003 => '未登录',
     1001004 => '数据不存在',
     1001005 => [
-        'msg' => '接口网络请求失败',
+        'message' => '接口网络请求失败',
         'desc' => ['default' => GLOBAL_NETWORK_EXCEPTION],
     ],
     1001006 => [
-        'emsg' => '接口响应数据异常',
+        'message' => '接口响应数据异常',
         'desc' => ['default' => GLOBAL_NETWORK_EXCEPTION],
     ],
     1001007 => '调用内部方法参数错误',
