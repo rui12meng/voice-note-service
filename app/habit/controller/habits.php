@@ -159,7 +159,7 @@ class Habits extends \App\Application
             switch ($result) {
                 //数据库异常
                 case -7:
-                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    $eCode = ECODE_DATABASE_INSERT_FAIL;
                     break;
                     //超限制
                 case -5:

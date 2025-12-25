@@ -15,21 +15,19 @@ use Lsf\Env;
  */
 
 define('ECODE_SUCCESS', 0);                              // 成功
-define('ECODE_PARAM_MISSING', 1001001);                  // 缺失参数
-define('ECODE_PARAM_VALUE_INVALID', 1001002);            // 参数值非法
-define('ECODE_DATABASE_QUERY_FAIL', 1001003);            // 数据库查询失败
+define('ECODE_PARAM_MISSING', 1001000);                  // 缺失参数
+define('ECODE_PARAM_VALUE_INVALID', 1001001);            // 参数值非法
+define('ECODE_DATABASE_QUERY_FAIL', 1001002);            // 数据库查询失败
 define('ECODE_DATA_NOT_FOUND', 1001004);                 // 数据不存在
 define('ECODE_API_NETWORK_REQUEST_FAIL', 1001005);       // 接口网络请求失败
 define('ECODE_API_RESPONSE_DATA_EXCEPTION', 1001006);    // 接口响应数据异常
 define('ECODE_CALL_INNER_METHOD_PARAMS_ERROR', 1001007); // 调用内部方法参数错误
 define('ECODE_USER_ACCOUNT_DEACTIVATED', 1001008);       // 用户已注销
 define('ECODE_USER_LOGGED_OUT', 1001009);                // 用户已登出
-define('ECODE_UNDEFINED_ERROR', 1001000);                // 未知错误
+define('ECODE_UNDEFINED_ERROR', 1001010);                // 未知错误
 define('ECODE_API_RESPONSE_CODE_ERROR', 1001011);        // 接口响应错误
 define('ECODE_API_PASSPORT_NOT_FOUND', 1001012);         // 账号不存在
-define('ECODE_DATABASE_INSERT_FAIL', 1001013);           // 数据库存储失败
-define('ECODE_UPOLOAD_ERROR', 1001014);                  // 图片上传失败
-define('ECODE_PIC_YELLOW', 1001015);                     // 图片鉴定失败。被鉴定为黄色
+define('ECODE_DATABASE_INSERT_FAIL', 1001014);           // 数据库存储失败
 
 class Application extends \Lsf\Controller
 {
