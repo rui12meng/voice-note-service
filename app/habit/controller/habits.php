@@ -228,6 +228,153 @@ class Habits extends \App\Application
     }
 
     /**
+     * 用户修改习惯
+     * @param void
+     * @return void
+     */
+    public function edit()
+    {
+        // 用户uid
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101;
+
+        $habitId = $this->post('habit_id', true);
+        if (!isset($habitId) || empty($habitId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_id');
+        }
+        //习惯名称（限制30字符，不可为空）
+        $habitName = $this->post('habit_name', true);
+        if (!isset($habitName) || empty($habitName)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name');
+        }
+
+        if (mb_strlen($habitName) > 30) { //字符限制
+            return $this->json(1003000 , []);
+        }
+        //习惯描述（限制50字符，可空）
+        $habitDesc = $this->post('description', true);
+        if (!isset($habitDesc) || empty($habitDesc)) {
+            $habitDesc = '';
+        }
+        if (mb_strlen($habitDesc) > 50) { //字符限制
+            return $this->json(1003000 , []);
+        }
+
+        //开关启用状态；默认开启（0/1）
+        $active = (int)$this->post('active', true);
+        if (!isset($active) || empty($active)) {
+            $active = 1;
+        }
+        if (!in_array($active, [0,1], true)) {
+            return $this->json(1003001,[]);
+        }
+
+        //提醒时间
+        $remindTime = $this->post('remind_time', true);
+        if (!isset($remindTime) || empty($remindTime)) {
+            $remindTime = "";
+        } elseif (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $remindTime)) {
+            return $this->json(1003002,[]);
+        }
+
+        //频率限制-类型
+        $frequencyType = $this->post('frequency_type', true);
+        if (!isset($frequencyType) || empty($frequencyType)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'frequency_type');
+        }
+        $allowedUnits = ['daily', 'weekly', 'monthly', 'interval'];
+        if (!in_array($frequencyType, $allowedUnits, true)) {
+            return $this->json(1003004,[]);
+        }
+
+        //频率限制-具体配置
+        $frequencyConfig = $this->post('frequency_config', true);
+
+        // 根据 frequencyType 校验并格式化 frequencyConfig
+        switch ($frequencyType) {
+            case 'daily':
+                // 可为空，默认1次/天
+                if (empty($frequencyConfig)) {
+                    $frequencyConfig = ["times_per_day" => 1];
+                } else {
+                    $times = (int)$frequencyConfig;
+                    if ($times < 1) {
+                        return $this->json(1003003,[]);
+                    }
+                    $frequencyConfig = ["times_per_day" => $times];
+                }
+                break;
+
+            case 'weekly':
+                // 不可空，1～7之间的数字
+                if (empty($frequencyConfig)) {
+                    return $this->json(1003005,[]);
+                }
+                $day = (int)$frequencyConfig;
+                if ($day < 1 || $day > 7) {
+                    return $this->json(1003006,[]);
+                }
+                $frequencyConfig = ["week_days" => [$day]];
+                break;
+
+            case 'monthly':
+                // 不可空，1～当月天数之间的数字
+                if (empty($frequencyConfig)) {
+                    return $this->json(1003005,[]);
+                }
+                $day = (int)$frequencyConfig;
+                $maxDay = (int)date('t');
+                if ($day < 1 || $day > $maxDay) {
+                    return $this->json(1003007,[]);
+                }
+                $frequencyConfig = ["month_days" => [$day]];
+                break;
+
+            case 'interval':
+                // 不可空，1～7之间的数字
+                if (empty($frequencyConfig)) {
+                    return $this->json(1003005,[]);
+                }
+                $interval = (int)$frequencyConfig;
+                if ($interval < 1 || $interval > 7) {
+                    return $this->json(1003006,[]);
+                }
+                $frequencyConfig = ["interval_days" => $interval, "anchor_date" => date('Y-m-d')];
+                break;
+
+            default:
+                return $this->json(ECODE_UNDEFINED_ERROR , []);
+        }
+
+        // 调用服务添加习惯
+        $result = $this->_habitsService->editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig);
+
+        $eCode = ECODE_SUCCESS;
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_INSERT_FAIL;
+                    break;
+                //习惯不存在或无权限
+                case -4:
+                    $eCode = 1003011;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+
+        return $this->json($eCode, []);
+
+    }
+
+    /**
      * 批量添加习惯
      * 用户可手动添加自己的长期习惯（非AI生成），可与日记内容关联（可选），但独立存在。
      * 每用户限制50个习惯（启用状态）；如果满50，不可再添加。需要友好提示。

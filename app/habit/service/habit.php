@@ -113,7 +113,58 @@ class Habit
             $result['frequency_config'] = json_decode($result['frequency_config'], true);
         }
 
+        // 若 note_id 存在，补充查询笔记标题
+        if (!empty($result['note_id'])) {
+            $daoNote = \Lsf\Loader::Model('DaoVnNotes', false, APP_NAME_NOTE);
+            $note = $daoNote->find('title', ['id' => $result['note_id']]);
+            if ($note !== false && isset($note['title'])) {
+                $result['note_title'] = $note['title'];
+            }
+        }
+
         return $result;
     }
 
+    public function editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig){
+
+        // 检查习惯是否存在且属于该用户
+        $habit = $this->_daoHabitsModel->select('id', ['id' => $habitId, 'user_id' => $uid, 'is_deleted' => 0]);
+        if($habit === false){
+            return -7;
+        }
+        if (empty($habit)) {
+            return -4; // 习惯不存在或无权限
+        }
+
+        $this->_daoHabitsModel->begin();
+
+        // 更新习惯主表
+        $updateData = [
+            'habit_name'  => $habitName,
+            'habit_desc'  => $habitDesc,
+            'remind_time' => $remindTime,
+            'status'      => (int)$active,
+            'updated_at'  => date('Y-m-d H:i:s'),
+        ];
+        $res = $this->_daoHabitsModel->update($updateData, ['id' => $habitId, 'user_id' => $uid]);
+        if ($res === false) {
+            $this->_daoHabitsModel->rollback();
+            return -7; // 数据库错误
+        }
+
+        // 更新习惯规则表
+        $ruleUpdate = [
+            'frequency_type'   => $frequencyType,
+            'frequency_config' => json_encode($frequencyConfig, JSON_UNESCAPED_UNICODE),
+            'updated_at'       => date('Y-m-d H:i:s'),
+        ];
+        $res = $this->_daoHabitSchedulesModel->update($ruleUpdate, ['habit_id' => $habitId]);
+        if ($res === false) {
+            $this->_daoHabitsModel->rollback();
+            return -7; // 数据库错误
+        }
+
+        $this->_daoHabitsModel->commit();
+        return $habitId;
+    }
 }
