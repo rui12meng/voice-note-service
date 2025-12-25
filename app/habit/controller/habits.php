@@ -28,7 +28,7 @@ class Habits extends \App\Application
 
     }
     /**
-     * 添加用户习惯
+     * 用户添加习惯
      * 用户可手动添加自己的长期习惯（非AI生成），可与日记内容关联（可选），但独立存在。
      * 每用户限制50个习惯（启用状态）；如果满50，不可再添加。需要友好提示。
      *
@@ -164,6 +164,44 @@ class Habits extends \App\Application
                     //超限制
                 case -5:
                     $eCode = 1003008;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+
+        return $this->json($eCode, []);
+
+    }
+
+    /**
+     * 用户获取习惯详情
+     * @param void
+     * @return void
+     */
+    public function info()
+    {
+        // 用户uid
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101;
+        //habit_id 必传
+        $habitId = $this->post('habit_id', true);
+        if (!isset($habitId) || empty($habitId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_id');
+        }
+        // 调用服务获取习惯详情（含主表与配置表）
+        $result = $this->_habitsService->getUserHabitDetail($uid, $habitId);
+        $eCode = ECODE_SUCCESS;
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_INSERT_FAIL;
                     break;
                 //未知错误
                 default:

@@ -40,15 +40,15 @@ class Habit
 
     /**
      * 添加用户习惯
-     * 没用户限制50个习惯
+     * 每用户限制50个习惯
      * @param int    $uid 用户ID
      * @param int    $noteId 笔记ID
      * @param string $habitName
      * @param string $habitDesc
      * @param string $remindTime
      * @param int    $active
-     * @param string   $frequencyType
-     * @param array    $frequencyConfig
+     * @param string $frequencyType
+     * @param array  $frequencyConfig
      * @return int
      */
     public function addUserHabit($uid, $noteId, $habitName, $habitDesc = '', $remindTime, $active, $frequencyType, $frequencyConfig){
@@ -89,6 +89,28 @@ class Habit
         }
         $this->_daoHabitsModel->commit();
         return $habitId;
+    }
+
+    /**
+     * 根据习惯ID获取详情
+     * @param int    $uid 用户ID
+     * @param int    $habitId 习惯ID
+     * @return void
+     */
+    public function getUserHabitDetail($uid, $habitId){
+        // 使用链表查询一次性取出习惯及对应规则
+        $row = $this->_daoHabitsModel->getRowBySql($uid, $habitId);
+
+        if (!$row) {
+            return false;
+        }
+
+        // 解析频率配置
+        if ($row['frequency_config']) {
+            $row['frequency_config'] = json_decode($row['frequency_config'], true);
+        }
+
+        return $row;
     }
 
 }
