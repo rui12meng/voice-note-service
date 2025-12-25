@@ -219,6 +219,7 @@ class Habits extends \App\Application
                     'active' => (int)$result['status'] ?? 1,
                     'frequency_type' => $result['frequency_type'] ?? '',
                     'frequency_config' => $result['frequency_config'] ?? [],
+                    'note_title' => $result['note_title'] ?? '',
                 ];
             }
         }

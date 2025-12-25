@@ -116,7 +116,7 @@ class Habit
         // 若 note_id 存在，补充查询笔记标题
         if (!empty($result['note_id'])) {
             $daoNote = \Lsf\Loader::Model('DaoVnNotes', true);
-            $note = $daoNote->find('title', ['id' => $result['note_id']]);
+            $note = $daoNote->find('title', $result['note_id']);
             if ($note !== false && isset($note['title'])) {
                 $result['note_title'] = $note['title'];
             }
