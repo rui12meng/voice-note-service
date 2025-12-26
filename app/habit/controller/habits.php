@@ -461,9 +461,12 @@ class Habits extends \App\Application
                 'habit_id'       => (int)$row['id'],
                 'habit_name'     => $row['habit_name'] ?? '',
                 'remind_time'    => $row['remind_time'] ?? '',
-                'frequency_type' => $row['frequency_type'] ?? '',
-                'frequency_config' => $row['frequency_config'],
+                'frequency' => [
+                    'type' => $row['frequency_type'] ?? '',
+                    'config' => $row['frequency_config'] ?? [],
+                ],
                 'create_time'     => $row['created_at'] ?? '',
+
             ];
         }
 
