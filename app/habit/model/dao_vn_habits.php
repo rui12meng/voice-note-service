@@ -80,7 +80,7 @@ SELECT
     hs.frequency_type,
     hs.frequency_config
 FROM user_habits AS h
-JOIN habit_schedules AS hs
+JOIN user_habit_schedules AS hs
     ON hs.habit_id = h.id
 WHERE h.user_id = {$uid} AND h.is_deleted = 0
   {$keywordSql}
