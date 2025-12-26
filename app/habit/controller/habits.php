@@ -378,6 +378,108 @@ class Habits extends \App\Application
     }
 
     /**
+     * 根据 habit_id 软删除习惯（含规则数据）
+     * @return void
+     */
+    public function delete()
+    {
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101;
+
+        $habitId = $this->post('habit_id', true);
+        if (!isset($habitId) || empty($habitId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_id');
+        }
+
+        // 调用服务软删除
+        $result = $this->_habitsService->softDeleteUserHabit($uid, $habitId);
+
+        $eCode = ECODE_SUCCESS;
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                case -7:   // 数据库异常
+                    $eCode = ECODE_DATABASE_DELETE_FAIL;
+                    break;
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+
+        return $this->json($eCode, []);
+    }
+
+    /**
+     * 用户习惯列表（游标分页 + 文本搜索）
+     * 支持按名称/描述/日记摘要模糊搜索
+     * 每页默认20条，游标偏移分页
+     * @return void
+     */
+    public function list()
+    {
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101;
+
+        // 搜索关键词，可选
+        $keyword = $this->post('keyword', true);
+        if (!is_string($keyword)) {
+            $keyword = '';
+        }
+        $keyword = trim($keyword);
+
+        // 游标偏移：上一次返回的最后一条 habit_id，首次传 0
+        $cursor = (int)$this->post('cursor', true);
+        if ($cursor < 0) {
+            $cursor = 0;
+        }
+
+        // 每页条数
+        $pageSize = (int)$this->post('limit', true);
+        if ($pageSize < 0 || !isset($pageSize) || empty($pageSize)) {
+            $pageSize = 20;
+        }
+
+        // 调用服务获取列表
+        $result = $this->_habitsService->getUserHabitList($uid, $keyword, $cursor, $pageSize);
+
+        if ($result === false) {
+            return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
+        }
+
+        $list = $result['list'];
+        $pagination = $result['pagination'];
+
+        // 组装返回数据
+        $items = [];
+        foreach ($list as $row) {
+            $items[] = [
+                'habit_id'       => (int)$row['habit_id'],
+                'habit_name'     => $row['habit_name'] ?? '',
+                'habit_desc'     => $row['habit_desc'] ?? '',
+                'note_title'     => $row['note_title'] ?? '',
+                'remind_time'    => $row['remind_time'] ?? '',
+                'active'         => (int)($row['status'] ?? 1),
+                'frequency_type' => $row['frequency_type'] ?? '',
+                'frequency_config' => json_decode($row['frequency_config'] ?? '[]', true),
+                'created_at'     => $row['created_at'] ?? '',
+            ];
+        }
+
+        $responseData = [
+            'list'    => $items,
+            'cursor'  => $pagination['next_cursor'],
+            'has_more'=> $pagination['has_next_page'],
+        ];
+
+        return $this->json(ECODE_SUCCESS, $responseData);
+    }
+
+    /**
      * 批量添加习惯
      * 用户可手动添加自己的长期习惯（非AI生成），可与日记内容关联（可选），但独立存在。
      * 每用户限制50个习惯（启用状态）；如果满50，不可再添加。需要友好提示。

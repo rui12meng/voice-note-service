@@ -17,18 +17,73 @@ class DaoVnHabits extends \Lsf\Model
     }
 
     /**
-     * getRowBySql
+     * getDetailBySql
      * @param  int  $uid
      * @param  int  $habitId
      * @return mixed
      */
-    public function getRowBySql($uid, $habitId){
+    public function getDetailBySql($uid, $habitId){
 
-        $sql = "SELECT h.note_id, h.habit_name, h.habit_desc, h.remind_time, h.status, hs.frequency_type, hs.frequency_config
-                FROM user_habits AS h
-                LEFT JOIN user_habit_schedules AS hs ON h.id = hs.habit_id
-                WHERE h.id = {$habitId} AND h.user_id = {$uid} AND h.is_deleted = 0
-                LIMIT 1";
+        $sql = <<<SQL
+SELECT
+    h.note_id,
+    h.habit_name,
+    h.habit_desc,
+    h.remind_time,
+    h.status,
+    hs.frequency_type,
+    hs.frequency_config
+FROM user_habits AS h
+LEFT JOIN user_habit_schedules AS hs 
+    ON h.id = hs.habit_id
+WHERE h.id = {$habitId} 
+    AND h.user_id = {$uid} 
+    AND h.is_deleted = 0
+LIMIT 1
+SQL;
+
+        $result = $this->query($sql);
+        if($result === FALSE){
+            return FALSE;
+        }else{
+            return $result;
+        }
+    }
+
+    /**
+     * getListBySql
+     * @param   int  $uid
+     * @param   string  $keyword
+     * @param   int  $cursor
+     * @param   int $pageSize
+     * @return mixed
+     */
+    public function getListBySql($uid, $keyword, $cursor, $pageSize){
+
+        // 链表一次性查询习惯及对应规则，可按 habit_name/habit_desc/note_summary 全文索引搜索
+        $sql = <<<SQL
+SELECT
+    h.id,
+    h.habit_name,
+    h.remind_time,
+    hs.frequency_type,
+    hs.frequency_config
+FROM user_habits AS h
+JOIN habit_schedules AS hs
+    ON hs.habit_id = h.id
+WHERE h.user_id = {$uid} AND h.is_deleted = 0
+  AND (
+        {$keyword} IS NULL
+        OR MATCH(h.habit_name, h.habit_desc)
+           AGAINST({$keyword} IN NATURAL LANGUAGE MODE)
+      )
+  AND (
+        {$cursor} IS NULL
+        OR h.id < {$cursor}
+      )
+ORDER BY h.id DESC
+LIMIT {$pageSize}
+SQL;
 
         $result = $this->query($sql);
         if($result === FALSE){

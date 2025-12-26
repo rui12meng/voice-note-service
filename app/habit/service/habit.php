@@ -99,7 +99,7 @@ class Habit
      */
     public function getUserHabitDetail($uid, $habitId){
         // 使用链表查询一次性取出习惯及对应规则
-        $row = $this->_daoHabitsModel->getRowBySql($uid, $habitId);
+        $row = $this->_daoHabitsModel->getDetailBySql($uid, $habitId);
 
         if ($row === false) {
             return -7;
@@ -125,6 +125,18 @@ class Habit
         return $result;
     }
 
+    /**
+     * 根据习惯ID编辑习惯
+     * @param int    $uid 用户ID
+     * @param int    $habitId 习惯ID
+     * @param string $habitName
+     * @param string $habitDesc
+     * @param string $remindTime
+     * @param int    $active
+     * @param string $frequencyType
+     * @param array  $frequencyConfig
+     * @return void
+     */
     public function editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig){
 
         // 检查习惯是否存在且属于该用户
@@ -167,4 +179,83 @@ class Habit
         $this->_daoHabitsModel->commit();
         return $habitId;
     }
+
+    /**
+     * 软删除用户习惯
+     * @param int $uid      用户ID
+     * @param int $habitId  习惯ID
+     * @return int 0:成功；-4:习惯不存在或已删除；-7:数据库错误
+     */
+    public function softDeleteUserHabit($uid, $habitId){
+        // 检查习惯是否存在且属于该用户且未被删除
+        $habit = $this->_daoHabitsModel->select('id', ['id' => $habitId, 'user_id' => $uid, 'is_deleted' => 0]);
+        if($habit === false){
+            return -7;
+        }
+        //若习惯不存在，静默忽略
+        if (empty($habit)) {
+            // 习惯不存在或已删除，不报错
+            return 0;
+        }
+
+        $this->_daoHabitsModel->begin();
+        $res = $this->_daoHabitsModel->update(['is_deleted' => 1, 'updated_at' => date('Y-m-d H:i:s')], ['id' => $habitId, 'user_id' => $uid]);
+        if ($res === false) {
+            $this->_daoHabitsModel->rollback();
+            return -7;
+        }
+        $res = $this->_daoHabitSchedulesModel->update(['is_deleted' => 1, 'updated_at' => date('Y-m-d H:i:s')], ['habit_id' => $habitId]);
+        if ($res === false) {
+            $this->_daoHabitsModel->rollback();
+            return -7; // 数据库错误
+        }
+
+        $this->_daoHabitsModel->commit();
+        return 0;
+    }
+
+    /**
+     * 获取用户习惯列表
+     * @param   int $uid 用户ID
+     * @param   string  $keyword 搜索关键词
+     * @param   int $cursor 游标
+     * @param   int $pageSize limit数量
+     * @return int
+     */
+    public function getUserHabitList($uid, $keyword, $cursor, $pageSize){
+        if ($pageSize > 50) {
+            $pageSize = 50;
+        }
+
+        $list = $this->_daoHabitsModel->getListBySql($uid, $keyword, $cursor, $pageSize+1);
+
+        if ($list === false) {
+            return -7;
+        }
+
+        $hasNext = false;
+        $nextCursor = 0;
+        if (count($list) > $pageSize) {
+            $hasNext = true;
+            $lastItem = array_pop($list); // 移除多余的一条
+            $nextCursor = $lastItem['id'];
+        }
+
+        // 解析频率配置
+        foreach ($list as &$item) {
+            if ($item['frequency_config']) {
+                $item['frequency_config'] = json_decode($item['frequency_config'], true);
+            }
+        }
+        unset($item);
+
+        return [
+            'list' => $list,
+            'pagination' => [
+                'has_next_page' => $hasNext,
+                'next_cursor'   => $nextCursor
+            ]
+        ];
+    }
+
 }
