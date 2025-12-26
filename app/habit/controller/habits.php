@@ -427,7 +427,7 @@ class Habits extends \App\Application
 
         // 搜索关键词，可选
         $keyword = $this->post('keyword', true);
-        if (!is_string($keyword)) {
+        if (!is_string($keyword) || !isset($keyword) || empty($keyword)) {
             $keyword = '';
         }
         $keyword = trim($keyword);
