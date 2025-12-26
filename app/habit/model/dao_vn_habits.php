@@ -77,6 +77,7 @@ SELECT
     h.id,
     h.habit_name,
     h.remind_time,
+    h.created_at,
     hs.frequency_type,
     hs.frequency_config
 FROM user_habits AS h

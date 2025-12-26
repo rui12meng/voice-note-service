@@ -458,22 +458,22 @@ class Habits extends \App\Application
         $items = [];
         foreach ($list as $row) {
             $items[] = [
-                'habit_id'       => (int)$row['habit_id'],
+                'habit_id'       => (int)$row['id'],
                 'habit_name'     => $row['habit_name'] ?? '',
-                'habit_desc'     => $row['habit_desc'] ?? '',
-                'note_title'     => $row['note_title'] ?? '',
                 'remind_time'    => $row['remind_time'] ?? '',
-                'active'         => (int)($row['status'] ?? 1),
                 'frequency_type' => $row['frequency_type'] ?? '',
                 'frequency_config' => $row['frequency_config'],
-                'created_at'     => $row['created_at'] ?? '',
+                'create_time'     => $row['created_at'] ?? '',
             ];
         }
 
         $responseData = [
             'list'    => $items,
-            'cursor'  => $pagination['next_cursor'],
-            'has_more'=> $pagination['has_next_page'],
+            'pagination' => [
+                'has_next_page'=> $pagination['has_next_page'],
+                'next_cursor'  => $pagination['next_cursor'],
+            ],
+
         ];
 
         return $this->json(ECODE_SUCCESS, $responseData);
