@@ -58,7 +58,7 @@ SQL;
      * @param   int $pageSize
      * @return mixed
      */
-    public function getListBySql($uid, $keyword, $cursor, $pageSize){
+    public function getListBySql($uid, $keyword = '', $cursor = NULL, $pageSize = 20){
 
         // 链表一次性查询习惯及对应规则，可按 habit_name/habit_desc/note_summary 全文索引搜索
         $sql = <<<SQL
@@ -74,11 +74,13 @@ JOIN habit_schedules AS hs
 WHERE h.user_id = {$uid} AND h.is_deleted = 0
   AND (
         {$keyword} IS NULL
+        OR {$keyword} = ''
         OR MATCH(h.habit_name, h.habit_desc)
            AGAINST({$keyword} IN NATURAL LANGUAGE MODE)
       )
   AND (
         {$cursor} IS NULL
+        OR {$cursor} = 0
         OR h.id < {$cursor}
       )
 ORDER BY h.id DESC
