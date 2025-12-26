@@ -118,7 +118,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["days" => [$day]];
+                $frequencyConfig = ["days" => $day];
                 break;
 
             case 'monthly':
@@ -131,7 +131,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > $maxDay) {
                     return $this->json(1003007,[]);
                 }
-                $frequencyConfig = ["days" => [$day]];
+                $frequencyConfig = ["days" => $day];
                 break;
 
             case 'interval':
@@ -320,7 +320,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["days" => [$day]];
+                $frequencyConfig = ["days" => $day];
                 break;
 
             case 'monthly':
@@ -333,7 +333,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > $maxDay) {
                     return $this->json(1003007,[]);
                 }
-                $frequencyConfig = ["days" => [$day]];
+                $frequencyConfig = ["days" => $day];
                 break;
 
             case 'interval':
