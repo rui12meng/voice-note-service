@@ -143,7 +143,24 @@ class Habits extends \App\Application
                 if ($interval < 1 || $interval > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["days" => $interval, "anchor_date" => date('Y-m-d')];
+                $detail = $this->_habitsService->getUserHabitDetail($uid, $habitId);
+                $prevType = is_array($detail) ? ($detail['frequency_type'] ?? '') : '';
+                $prevCfg = is_array($detail) ? ($detail['frequency_config'] ?? []) : [];
+                $prevAnchor = '';
+                $prevInterval = 0;
+                if ($prevType === 'interval' && is_array($prevCfg)) {
+                    $prevAnchor = $prevCfg['anchor_date'] ?? ($prevCfg['date'] ?? '');
+                    $prevInterval = isset($prevCfg['days']) ? (int)$prevCfg['days'] : 0;
+                }
+                if (empty($prevAnchor)) {
+                    $prevAnchor = date('Y-m-d');
+                }
+                if ($prevInterval <= 0) {
+                    $prevInterval = $interval;
+                }
+                $lastExec = $this->post('last_executed_at', true);
+                $anchor = $this->_habitsService->calcIntervalAnchorDateOnEdit($prevAnchor, $prevInterval, $lastExec);
+                $frequencyConfig = ["days" => $interval, "anchor_date" => $anchor];
                 break;
 
             default:
@@ -668,4 +685,3 @@ class Habits extends \App\Application
     }
 
 }
-

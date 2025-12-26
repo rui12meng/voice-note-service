@@ -51,7 +51,8 @@ class Habit
      * @param array  $frequencyConfig
      * @return int
      */
-    public function addUserHabit($uid, $noteId, $habitName, $habitDesc = '', $remindTime, $active, $frequencyType, $frequencyConfig){
+    public function addUserHabit($uid, $noteId, $habitName, $habitDesc = '', $remindTime, $active, $frequencyType, $frequencyConfig): int
+    {
         $result = $this->countUserActiveHabits($uid);
         if($result === false){
             return -7; //database
@@ -137,7 +138,8 @@ class Habit
      * @param array  $frequencyConfig
      * @return void
      */
-    public function editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig){
+    public function editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig): int
+    {
 
         // 检查习惯是否存在且属于该用户
         $habit = $this->_daoHabitsModel->select('id', ['id' => $habitId, 'user_id' => $uid, 'is_deleted' => 0]);
@@ -147,6 +149,23 @@ class Habit
         if (empty($habit)) {
             return -4; // 习惯不存在或无权限
         }
+
+        //todo 补充逻辑[当$frequencyType = interval时，锚点数据需要算法更新]
+        if(trim($frequencyType) === 'interval'){
+
+            $habitSchedules = $this->_daoHabitSchedulesModel->select('frequency_type,frequency_config', ['habit_id' => $habitId]);
+            if($habitSchedules === false){
+                return -7;
+            }
+            //说明更新类型未变，仅改变规则间隔时间
+            if(isset($habitSchedules[0]['frequency_type']) && $habitSchedules[0]['frequency_type'] === 'interval'){
+                $config = json_decode($habitSchedules[0]['frequency_config'], true);
+                $latestDate = $this->_getLastOccurrenceDate($config['anchor_date'], $config['days']);
+                $frequencyConfig['anchor_date'] = $latestDate;
+            }
+
+        }
+
 
         $this->_daoHabitsModel->begin();
 
@@ -186,7 +205,8 @@ class Habit
      * @param int $habitId  习惯ID
      * @return int 0:成功；-4:习惯不存在或已删除；-7:数据库错误
      */
-    public function softDeleteUserHabit($uid, $habitId){
+    public function softDeleteUserHabit($uid, $habitId): int
+    {
         // 检查习惯是否存在且属于该用户且未被删除
         $habit = $this->_daoHabitsModel->select('id', ['id' => $habitId, 'user_id' => $uid, 'is_deleted' => 0]);
         if($habit === false){
@@ -220,9 +240,10 @@ class Habit
      * @param   string  $keyword 搜索关键词
      * @param   int $cursor 游标
      * @param   int $pageSize limit数量
-     * @return int
+     * @return  array
      */
-    public function getUserHabitList($uid, $keyword, $cursor, $pageSize){
+    public function getUserHabitList($uid, $keyword, $cursor, $pageSize): array
+    {
         if ($pageSize > 50) {
             $pageSize = 50;
         }
@@ -246,9 +267,7 @@ class Habit
             if ($item['frequency_config']) {
                 $item['frequency_config'] = json_decode($item['frequency_config'], true);
             }
-            $prompt = $this->_getExecutionPrompt($item['frequency_type'], $item['frequency_config']);
-            $item['next_execution_tip'] = $prompt['tip'];
-            $item['last_required_date'] = $prompt['last_date'];
+            $item['next_execution_tip'] = $this->_getExecutionPrompt($item['frequency_type'], $item['frequency_config']);
         }
         unset($item);
 
@@ -262,16 +281,47 @@ class Habit
     }
 
     /**
+     * 计算基于锚点和新间隔的“上一次（或当天）执行日期”
+     * @param string $anchorDate  原始锚点日期，格式 'Y-m-d'
+     * @param int    $interval       新的周期间隔（天）
+     * @return string                返回 'Y-m-d' 格式的日期
+     */
+    private function _getLastOccurrenceDate(string $anchorDate, int $interval): string
+    {
+        // 当前日期（00:00:00）
+        $today = new \DateTime('today');
+        // 解析锚点日期
+        $anchorDt = \DateTime::createFromFormat('Y-m-d', $anchorDate);
+        if (!$anchorDt) {
+            // 容错：解析失败则默认用今天
+            return $today->format('Y-m-d');
+        }
+        $anchorDt->setTime(0, 0, 0);
+
+        //计算今天与锚点的天数差（带符号）
+        $diff = $today->diff($anchorDate);
+        $diffDays = (int)$diff->format('%r%a'); // Signed days
+
+        if ($diffDays > 0) { //锚点在未来
+            return $anchorDate;
+        } else { //锚点在过去 或 今天
+            $passed = abs($diffDays); // 已经过了多少天（非负）
+            $k = intdiv($passed, $interval);
+            $lastTs = $anchorDt->getTimestamp() + ($k * $interval * 86400);
+        }
+        return $lastTs;
+    }
+
+    /**
      * 计算习惯下一次执行提示
      * @param string $type
      * @param array $config
      * @return string
      */
-    private function _getExecutionPrompt($type, $config)
+    private function _getExecutionPrompt($type, $config): string
     {
         if ($type === 'daily') {
-            $today = new \DateTime('today');
-            return ['tip' => '每天都执行', 'last_date' => $today->format('Y-m-d')];
+            return '每天都执行';
         }
 
         $days = isset($config['days']) ? (int)$config['days'] : 0;
@@ -280,7 +330,6 @@ class Habit
         $today = new \DateTime('today'); // Sets time to 00:00:00
 
         $daysUntil = null;
-        $lastDateStr = '';
 
         if ($type === 'weekly') {
             // $days is 1-7 (Mon-Sun)
@@ -290,10 +339,6 @@ class Habit
                 $diff += 7;
             }
             $daysUntil = $diff;
-            $lastOffset = ($days - $currentWeekDay <= 0) ? ($days - $currentWeekDay) : ($days - $currentWeekDay - 7);
-            $lastDate = clone $today;
-            $lastDate->modify(($lastOffset >= 0 ? '+' : '') . $lastOffset . ' days');
-            $lastDateStr = $lastDate->format('Y-m-d');
         } elseif ($type === 'monthly') {
             // $days is day of month（1～28/29/30/31）
             $currentDay = (int)$today->format('j');
@@ -301,9 +346,6 @@ class Habit
             //未到本月执行日期
             if ($days >= $currentDay) {
                 $daysUntil = $days - $currentDay;
-                $lastDate = clone $today;
-                $lastDate->setDate((int)$today->format('Y'), (int)$today->format('m'), $days);
-                $lastDateStr = $lastDate->format('Y-m-d');
             } else {
                 // Next month
                 $nextMonth = clone $today;
@@ -320,20 +362,11 @@ class Habit
                 //计算 $targetDate 和 $today 之间的天数差
                 $diff = $targetDate->diff($today)->days;
                 $daysUntil = $diff;
-                $prevMonth = clone $today;
-                $prevMonth->modify('first day of last month');
-                $prevYear = (int)$prevMonth->format('Y');
-                $prevMon = (int)$prevMonth->format('m');
-                $daysInPrevMonth = cal_days_in_month(CAL_GREGORIAN, $prevMon, $prevYear);
-                $prevTargetDay = min($days, $daysInPrevMonth);
-                $lastDate = clone $prevMonth;
-                $lastDate->setDate($prevYear, $prevMon, $prevTargetDay);
-                $lastDateStr = $lastDate->format('Y-m-d');
             }
         } elseif ($type === 'interval') {
             // config['days'] = interval, config['date'] = anchor
             $interval = $days;
-            $anchorStr = $config['anchor_date'] ?? ($config['date'] ?? $today->format('Y-m-d'));
+            $anchorStr = $config['anchor_date'] ?? $today->format('Y-m-d');
             $anchorDate = \DateTime::createFromFormat('Y-m-d', $anchorStr);
             if (!$anchorDate) $anchorDate = $today;
             $anchorDate->setTime(0, 0, 0);
@@ -344,32 +377,24 @@ class Habit
 
             if ($diffDays > 0) { //锚点在未来
                 $daysUntil = $diffDays;
-                $lastDateStr = $anchorDate->format('Y-m-d');
             } else { //锚点在过去 或 今天
                 $passed = abs($diffDays); // 已经过了多少天（非负）
                 $mod = $passed % $interval;
                 if ($mod == 0) {
                     $daysUntil = 0;
-                    $k = intdiv($passed, $interval);
-                    $lastTs = $anchorDate->getTimestamp() + ($k * $interval * 86400);
-                    $lastDateStr = date('Y-m-d', $lastTs);
                 } else {
                     $daysUntil = $interval - $mod;
-                    $k = intdiv($passed, $interval);
-                    $lastTs = $anchorDate->getTimestamp() + ($k * $interval * 86400);
-                    $lastDateStr = date('Y-m-d', $lastTs);
                 }
             }
         }
 
         if ($daysUntil === 0) {
-            return ['tip' => '今天执行', 'last_date' => ($lastDateStr ?: $today->format('Y-m-d'))];
+            return '今天执行';
         } elseif ($daysUntil > 0) {
-            return ['tip' => $daysUntil . '天后执行', 'last_date' => ($lastDateStr ?: $today->format('Y-m-d'))];
+            return $daysUntil . '天后执行';
         }
 
-        return ['tip' => '', 'last_date' => ($lastDateStr ?: $today->format('Y-m-d'))];
+        return '';
     }
-
 
 }
