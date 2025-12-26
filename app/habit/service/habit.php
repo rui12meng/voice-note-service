@@ -161,7 +161,7 @@ class Habit
             if(isset($habitSchedules[0]['frequency_type']) && $habitSchedules[0]['frequency_type'] === 'interval'){
                 $config = json_decode($habitSchedules[0]['frequency_config'], true);
                 $latestDate = $this->_getLastOccurrenceDate($config['anchor_date'], $config['days']);
-                $frequencyConfig['anchor_date'] = $latestDate;
+                $frequencyConfig['anchor_date'] = date("Y-m-d", $latestDate);
             }
 
         }
@@ -299,7 +299,7 @@ class Habit
         $anchorDt->setTime(0, 0, 0);
 
         //计算今天与锚点的天数差（带符号）
-        $diff = $today->diff($anchorDate);
+        $diff = $today->diff($anchorDt);
         $diffDays = (int)$diff->format('%r%a'); // Signed days
 
         if ($diffDays > 0) { //锚点在未来
