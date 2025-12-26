@@ -69,7 +69,7 @@ SQL;
         $cursorSql = '';
         if (!empty($cursor)) {
             $cursor = (int)$cursor;
-            $cursorSql = " and h.id < {$cursor} ";
+            $cursorSql = " and h.id LE {$cursor} ";
         }
 
         $sql = <<<SQL

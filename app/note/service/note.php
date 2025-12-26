@@ -277,7 +277,7 @@ class Note
     {
         $where = array_merge(['user_id' => $uid , 'is_deleted' => 0], $filters);
         if (!empty($cursor)) {
-            $where['id'] = ['LT', (int)$cursor];
+            $where['id'] = ['LE', (int)$cursor];
         }
         $columns = 'id,title,summary,note_type,media_url,is_analyzed,analyzed_at,created_at';
         $orderBy = 'id DESC';
