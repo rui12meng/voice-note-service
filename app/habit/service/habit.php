@@ -162,12 +162,8 @@ class Habit
                 $config = json_decode($habitSchedules[0]['frequency_config'], true);
                 $latestDate = $this->_getLastOccurrenceDate($config['anchor_date'], $config['days']);
 
-                if (is_numeric($latestDate)) {
-                    $frequencyConfig['anchor_date'] = date('Y-m-d', (int)$latestDate);
-                } else {
-                    // 处理无效输入
-                    return -3;
-                }
+                $frequencyConfig['anchor_date'] = $latestDate;//date('Y-m-d', (int)$latestDate);
+
             }
 
         }
@@ -315,7 +311,13 @@ class Habit
             $k = intdiv($passed, $interval);
             $lastTs = $anchorDt->getTimestamp() + ($k * $interval * 86400);
         }
-        return $lastTs;
+        $dt = DateTime::createFromFormat('U', $lastTs);
+        if ($dt === false) {
+            // 处理解析失败
+            return -4;
+            //throw new Exception('Invalid timestamp');
+        }
+        return $dt->format('Y-m-d');
     }
 
     /**
