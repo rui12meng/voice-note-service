@@ -64,7 +64,7 @@ SQL;
         $keywordSql = '';
         if (!empty($keyword)) {
             $keywordSql = " and MATCH(h.habit_name, h.habit_desc, h.note_summary)
-           AGAINST({$keyword} IN NATURAL LANGUAGE MODE) ";
+           AGAINST( '{$keyword}' IN NATURAL LANGUAGE MODE) ";
         }
         $cursorSql = '';
         if (!empty($cursor)) {
