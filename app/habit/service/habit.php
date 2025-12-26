@@ -161,7 +161,13 @@ class Habit
             if(isset($habitSchedules[0]['frequency_type']) && $habitSchedules[0]['frequency_type'] === 'interval'){
                 $config = json_decode($habitSchedules[0]['frequency_config'], true);
                 $latestDate = $this->_getLastOccurrenceDate($config['anchor_date'], $config['days']);
-                $frequencyConfig['anchor_date'] = date("Y-m-d", $latestDate);
+
+                if (is_numeric($latestDate)) {
+                    $frequencyConfig['anchor_date'] = date('Y-m-d', (int)$latestDate);
+                } else {
+                    // 处理无效输入
+                    return -3;
+                }
             }
 
         }
