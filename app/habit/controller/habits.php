@@ -454,24 +454,8 @@ class Habits extends \App\Application
         $list = $result['list'];
         $pagination = $result['pagination'];
 
-        // 组装返回数据
-        $items = [];
-        foreach ($list as $row) {
-            $items[] = [
-                'habit_id'       => (int)$row['id'],
-                'habit_name'     => $row['habit_name'] ?? '',
-                'remind_time'    => $row['remind_time'] ?? '',
-                'frequency' => [
-                    'type' => $row['frequency_type'] ?? '',
-                    'config' => $row['frequency_config'] ?? [],
-                ],
-                'create_time'     => $row['created_at'] ?? '',
-
-            ];
-        }
-
         $responseData = [
-            'list'    => $items,
+            'list'    => $list,
             'pagination' => [
                 'has_next_page'=> $pagination['has_next_page'],
                 'next_cursor'  => $pagination['next_cursor'],

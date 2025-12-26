@@ -246,6 +246,7 @@ class Habit
             if ($item['frequency_config']) {
                 $item['frequency_config'] = json_decode($item['frequency_config'], true);
             }
+            $item['next_execution_tip'] = $this->_getExecutionPrompt($item['frequency_type'], $item['frequency_config']);
         }
         unset($item);
 
@@ -257,5 +258,91 @@ class Habit
             ]
         ];
     }
+
+    /**
+     * 计算下一次执行提示
+     * @param string $type
+     * @param array $config
+     * @return string
+     */
+    private function _getExecutionPrompt($type, $config)
+    {
+        if ($type === 'daily') {
+            return '每天都执行';
+        }
+
+        $days = isset($config['days']) ? (int)$config['days'] : 0;
+        if ($days <= 0 && $type !== 'interval') return '';
+
+        $today = new \DateTime('today'); // Sets time to 00:00:00
+
+        $daysUntil = null;
+
+        if ($type === 'weekly') {
+            // $days is 1-7 (Mon-Sun)
+            $currentWeekDay = (int)$today->format('N'); //获取今天是星期几
+            $diff = $days - $currentWeekDay;
+            if ($diff < 0) {
+                $diff += 7;
+            }
+            $daysUntil = $diff;
+        } elseif ($type === 'monthly') {
+            // $days is day of month（1～28/29/30/31）
+            $currentDay = (int)$today->format('j');
+
+            //未到本月执行日期
+            if ($days >= $currentDay) {
+                $daysUntil = $days - $currentDay;
+            } else {
+                // Next month
+                $nextMonth = clone $today;
+                $nextMonth->modify('first day of next month');//将日期设为 下个月的第一天
+                $targetDate = clone $nextMonth;
+                $year = (int)$nextMonth->format('Y');
+                $month = (int)$nextMonth->format('m');
+                //计算 下个月有多少天
+                $daysInNextMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+                //如果 $days（比如 31）大于下个月的天数（比如 28），就取下个月的最后一天（28）
+                $targetDay = min($days, $daysInNextMonth);
+                //将 $targetDate 设置为 下个月的目标日期
+                $targetDate->setDate($year, $month, $targetDay);
+                //计算 $targetDate 和 $today 之间的天数差
+                $diff = $targetDate->diff($today)->days;
+                $daysUntil = $diff;
+            }
+        } elseif ($type === 'interval') {
+            // config['days'] = interval, config['date'] = anchor
+            $interval = $days;
+            $anchorStr = $config['anchor_date'] ?? $today->format('Y-m-d');
+            $anchorDate = \DateTime::createFromFormat('Y-m-d', $anchorStr);
+            if (!$anchorDate) $anchorDate = $today;
+            $anchorDate->setTime(0, 0, 0);
+
+            //计算今天与锚点的天数差（带符号）
+            $diff = $today->diff($anchorDate);
+            $diffDays = (int)$diff->format('%r%a'); // Signed days
+
+            if ($diffDays > 0) { //锚点在未来
+                $daysUntil = $diffDays;
+            } else { //锚点在过去 或 今天
+                $passed = abs($diffDays); // 已经过了多少天（非负）
+                $mod = $passed % $interval;
+                if ($mod == 0) {
+                    $daysUntil = 0;
+                } else {
+                    $daysUntil = $interval - $mod;
+                }
+            }
+        }
+
+        if ($daysUntil === 0) {
+            return '今天执行';
+        } elseif ($daysUntil > 0) {
+            return $daysUntil . '天后执行';
+        }
+
+        return '';
+    }
+
 
 }
