@@ -311,7 +311,7 @@ class Habit
             $k = intdiv($passed, $interval);
             $lastTs = $anchorDt->getTimestamp() + ($k * $interval * 86400);
         }
-        $dt = DateTime::createFromFormat('U', $lastTs);
+        $dt = \DateTime::createFromFormat('U', $lastTs);
         if ($dt === false) {
             // 处理解析失败
             return -4;
