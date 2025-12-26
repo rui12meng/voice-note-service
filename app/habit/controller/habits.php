@@ -99,13 +99,13 @@ class Habits extends \App\Application
             case 'daily':
                 // 可为空，默认1次/天
                 if (empty($frequencyConfig)) {
-                    $frequencyConfig = ["times_per_day" => 1];
+                    $frequencyConfig = ["days" => 1];
                 } else {
                     $times = (int)$frequencyConfig;
                     if ($times < 1) {
                         return $this->json(1003003,[]);
                     }
-                    $frequencyConfig = ["times_per_day" => $times];
+                    $frequencyConfig = ["days" => $times];
                 }
                 break;
 
@@ -118,7 +118,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["week_days" => [$day]];
+                $frequencyConfig = ["days" => [$day]];
                 break;
 
             case 'monthly':
@@ -131,7 +131,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > $maxDay) {
                     return $this->json(1003007,[]);
                 }
-                $frequencyConfig = ["month_days" => [$day]];
+                $frequencyConfig = ["days" => [$day]];
                 break;
 
             case 'interval':
@@ -143,7 +143,7 @@ class Habits extends \App\Application
                 if ($interval < 1 || $interval > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["interval_days" => $interval, "anchor_date" => date('Y-m-d')];
+                $frequencyConfig = ["days" => $interval, "anchor_date" => date('Y-m-d')];
                 break;
 
             default:
@@ -301,13 +301,13 @@ class Habits extends \App\Application
             case 'daily':
                 // 可为空，默认1次/天
                 if (empty($frequencyConfig)) {
-                    $frequencyConfig = ["times_per_day" => 1];
+                    $frequencyConfig = ["days" => 1];
                 } else {
                     $times = (int)$frequencyConfig;
                     if ($times < 1) {
                         return $this->json(1003003,[]);
                     }
-                    $frequencyConfig = ["times_per_day" => $times];
+                    $frequencyConfig = ["days" => $times];
                 }
                 break;
 
@@ -320,7 +320,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["week_days" => [$day]];
+                $frequencyConfig = ["days" => [$day]];
                 break;
 
             case 'monthly':
@@ -333,7 +333,7 @@ class Habits extends \App\Application
                 if ($day < 1 || $day > $maxDay) {
                     return $this->json(1003007,[]);
                 }
-                $frequencyConfig = ["month_days" => [$day]];
+                $frequencyConfig = ["days" => [$day]];
                 break;
 
             case 'interval':
@@ -345,7 +345,7 @@ class Habits extends \App\Application
                 if ($interval < 1 || $interval > 7) {
                     return $this->json(1003006,[]);
                 }
-                $frequencyConfig = ["interval_days" => $interval, "anchor_date" => date('Y-m-d')];
+                $frequencyConfig = ["days" => $interval, "anchor_date" => date('Y-m-d')];
                 break;
 
             default:
