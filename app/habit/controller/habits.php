@@ -465,7 +465,7 @@ class Habits extends \App\Application
                 'remind_time'    => $row['remind_time'] ?? '',
                 'active'         => (int)($row['status'] ?? 1),
                 'frequency_type' => $row['frequency_type'] ?? '',
-                'frequency_config' => json_decode($row['frequency_config'] ?? '[]', true),
+                'frequency_config' => $row['frequency_config'],
                 'created_at'     => $row['created_at'] ?? '',
             ];
         }
