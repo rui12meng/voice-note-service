@@ -20,7 +20,7 @@ class Actions
      * @return void
      */
     public function __construct(){
-        $this->_daoVnActionsModel = \Lsf\Loader::Model('DaoVnActions', false, APP_NAME_NOTE);
+        $this->_daoVnActionsModel = \Lsf\Loader::Model('DaoVnActions');
         $this->_daoVnNoteAiAnalyzeModel = \Lsf\Loader::Model('DaoVnNoteAiAnalysis', true);
         $this->_daoVnNotesModel = \Lsf\Loader::Model('DaoVnNotes', true);
     }
