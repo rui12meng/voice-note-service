@@ -48,7 +48,13 @@ SELECT
         AND status = 1
         AND is_deleted = 0
         AND DATEDIFF({$execTime}, anchor_date) >= 0
-        AND MOD(DATEDIFF({$execTime}, anchor_date), interval_days) = 0
+        AND MOD(DATEDIFF({$execTime}, anchor_date), 
+        CASE interval_unit
+            WHEN 'day'   THEN interval_num
+            WHEN 'week'  THEN interval_num * 7
+            WHEN 'month' THEN interval_num * 30
+        END
+        ) = 0
         LIMIT {$limit};
 SQL;
 
@@ -71,6 +77,42 @@ WHERE h.user_id = {$uid}
 LIMIT {$limit}
 SQL;
 */
+        $habits = $this->query($sql);
+
+        if($habits === FALSE){
+            return FALSE;
+        }else{
+            return $habits;
+        }
+
+    }
+
+    public function editHabitsByStreak($habit_id, $execDate){
+
+        $sql = <<<SQL
+UPDATE user_habits
+SET
+  last_done_date = {$execDate},
+
+  streak_count = streak_count + 1,
+
+  current_streak = CASE
+    WHEN last_done_date IS NULL
+      THEN 1
+    WHEN DATEDIFF({$execDate}, last_done_date) = (
+    CASE interval_unit
+            WHEN 'day'   THEN interval_num
+            WHEN 'week'  THEN interval_num * 7
+            WHEN 'month' THEN interval_num * 30
+        END
+    )
+      THEN current_streak + 1
+    ELSE
+      1
+  END
+WHERE id = {$habit_id};
+
+SQL;
         $habits = $this->query($sql);
 
         if($habits === FALSE){

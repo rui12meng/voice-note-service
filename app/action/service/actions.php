@@ -15,6 +15,7 @@ class Actions
     private $_daoVnActionsModel;
     private $_daoVnNoteAiAnalyzeModel;
     private $_daoVnNotesModel;
+    private $_daoVnHabitsModel;
 
     /**
      * 构造函数
@@ -25,6 +26,7 @@ class Actions
         $this->_daoVnActionsModel = \Lsf\Loader::Model('DaoVnActions',true);
         $this->_daoVnNoteAiAnalyzeModel = \Lsf\Loader::Model('DaoVnNoteAiAnalysis', true);
         $this->_daoVnNotesModel = \Lsf\Loader::Model('DaoVnNotes', true);
+        $this->_daoVnHabitsModel = \Lsf\Loader::Model('DaoVnHabits', true);
     }
 
     /**
@@ -145,6 +147,30 @@ class Actions
      * @return void
      */
     public function editActionStatus($uid, $actionId, $status){
+        // todo 优先查询该行动是否为习惯任务
+        $actionInfo = $this->_daoVnActionsModel->find('habit_id, due_time, status, is_deleted',['id' => $actionId]);
+        // todo 说明已删除
+        if(isset($actionInfo['is_deleted']) && (int)$actionInfo['is_deleted'] === 1){
+            //直接返回成功
+            return 0;
+
+        }
+        // todo 说明已打卡
+        if(isset($actionInfo['status']) && (int)$actionInfo['status'] === 1){
+            //直接返回成功
+            return 0;
+
+        }
+
+        //todo 说明是习惯，需要维护 current_streak 的标准逻辑
+        if( isset($actionInfo['habit_id']) && is_numeric($actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
+            $execDate = (new DateTime($actionInfo['due_time']))->format('Y-m-d');
+            if($execDate === date('Y-m-d')){
+                //todo 更新 user_habits（核心逻辑）
+                $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_time']);
+            }
+        }
+
         $data = ['status' => (int)$status];
         $where = [
             'id' => $actionId,
