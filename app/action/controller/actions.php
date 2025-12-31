@@ -314,7 +314,7 @@ class Actions extends \App\Application
      * @param  void
      * @return void
      */
-    public function saveActions(){
+    public function save(){
         $uid = 101;
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
@@ -327,26 +327,36 @@ class Actions extends \App\Application
         }
         // 过滤掉 content 或 due_date 为空的任务
         $validActions = [];
+        
         foreach ($actions as $item) {
+            // 检查并修正 status 字段
+            if (!isset($item['status'])) {
+                $item['status'] = 0;
+            } elseif (!in_array((int)$item['status'], [0, 1], true)) {
+                $item['status'] = 0;
+            }
             // 必填字段缺失
-            if (empty($item['title']) || empty($item['date']) || empty(item['status'])) {
-                return $this->errParamMissing(ECODE_PARAM_MISSING, 'title/ date/ status 缺失');
+            var_dump($item);
+            if (empty($item['title']) || empty($item['date'])) {
+                return $this->errParamMissing(ECODE_PARAM_MISSING, 'title/ date 缺失');
             }
             // title 长度超限
             if (mb_strlen($item['title']) > 100) {
                 return $this->errParamMissing(ECODE_PARAM_MISSING, 'title 超过100字符');
             }
-            // date 范围校验：仅允许前后一个月
+            // date 范围校验：仅允许当天到将来一个月内
             $date = \DateTime::createFromFormat('Y-m-d', $item['date']);
             if (!$date) {
                 return $this->errParamMissing(ECODE_PARAM_MISSING, 'date 格式非法');
             }
             $now = new \DateTime();
+            // 重置时分秒，确保只比较日期部分
+            $now->setTime(0, 0, 0);
+            $date->setTime(0, 0, 0);
             $interval = $now->diff($date);
-            if ($interval->days > 30 || $interval->invert > 0) {
-                return $this->errParamMissing(ECODE_PARAM_MISSING, 'date 不在一个月时间范围内');
+            if ($interval->invert > 0 || $interval->days > 30) {
+                return $this->errParamMissing(ECODE_PARAM_MISSING, 'date 不在当天到将来一个月时间范围内');
             }
-
             $validActions[] = $item;
         }
         if (count($validActions) > 50) {
