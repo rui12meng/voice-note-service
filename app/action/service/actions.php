@@ -178,7 +178,7 @@ class Actions
             $where['id'] = ['LE', (int)$cursor];
         }
 
-        $columns = 'id, name, note_id, title, status, due_time';
+        $columns = 'id, title, status, due_time';
         $orderBy = 'id DESC';
         $result = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
