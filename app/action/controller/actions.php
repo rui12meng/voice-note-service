@@ -38,7 +38,7 @@ class Actions extends \App\Application
      * @param  void
      * @return void
      */
-    public function delBlock(){
+    public function delByNote(){
         //1. 首先软删除分析模块 2. 在删除关联行动
         $uid = 101;
         $noteId = $this->post('note_id', true);
@@ -336,7 +336,6 @@ class Actions extends \App\Application
                 $item['status'] = 0;
             }
             // 必填字段缺失
-            var_dump($item);
             if (empty($item['title']) || empty($item['date'])) {
                 return $this->errParamMissing(ECODE_PARAM_MISSING, 'title/ date 缺失');
             }
@@ -361,6 +360,19 @@ class Actions extends \App\Application
         }
         if (count($validActions) > 50) {
             return $this->json(1004000, []);
+        }
+        
+        // 校验当日行动数量：数据库当日行动 + 当前添加的当日行动 不能超过50个
+        $today = date('Y-m-d');
+        $todayCnt = 0;
+        foreach ($validActions as $item) {
+            if ($item['date'] === $today) {
+                $todayCnt++;
+            }
+        }
+        $actionsCnt = $this->_actionsService->countTodayActions($uid, $today);
+        if (($actionsCnt + $todayCnt) >= 50) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, '当日行动总数超过50个限制');
         }
 
         // 调用服务层：全量更新（含新增、编辑、删除）

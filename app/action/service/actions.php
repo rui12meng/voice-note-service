@@ -28,6 +28,27 @@ class Actions
     }
 
     /**
+     * 获取用户当日行动总数量
+     * @param  int $uid    用户ID
+     * @param  string $execDay  行动日期
+     * @return void
+     */
+    public function countTodayActions($uid, $execDay){
+        $where = [
+            'user_id' => $uid,
+            'due_date' => $execDay,
+            'is_deleted' => 0,
+        ];
+        //先查询日记是否属于该用户
+        $actionsNum = $this->_daoVnNotesModel->count('id', $where);
+        if($actionsNum === false){
+            return -7;
+        }
+        return $actionsNum;
+
+    }
+
+    /**
      * 根据笔记id删除笔记下关联的全部行动
      * @param  int $uid    用户ID
      * @param  int $noteId 日记ID
