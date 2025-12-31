@@ -246,7 +246,7 @@ class Actions
     public function syncExecHabitsToActions($uid, $execTime)
     {
         //todo 先查询是否已经同步，（仅同步一次），因为习惯修改与后续添加对历史数据不影响；
-        $habits = $this->_daoVnActionsModel->count('habit_id',['user_id' => $uid, 'due_date' => $execTime, 'habit_id' => 'GT 0']);
+        $habits = $this->_daoVnActionsModel->count('habit_id',['user_id' => $uid, 'due_date' => $execTime, 'habit_id' => ['GT', 0]]);
         if($habits === false){
             return -7;
         }
