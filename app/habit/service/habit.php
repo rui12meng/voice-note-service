@@ -171,12 +171,15 @@ class Habit
 
         $this->_daoHabitsModel->begin();
 
+        //todo 规则修改后：连续打卡重新计算，且不继承旧规则下的 streak
         // 更新习惯主表
         $updateData = [
             'habit_name'  => $habitName,
             'habit_desc'  => $habitDesc,
             'remind_time' => $remindTime,
             'status'      => (int)$active,
+            'current_streak' => 0,
+            'last_done_date' => NULL,
             'updated_at'  => date('Y-m-d H:i:s'),
         ];
         $res = $this->_daoHabitsModel->update($updateData, ['id' => $habitId, 'user_id' => $uid]);
