@@ -124,11 +124,11 @@ SQL;
             return -7;
         }
 
-        $data = ['status' => (int)$status];
-                $where = [
-                    'id' => $actionId,
-                    'user_id' => $uid,
-                ];
+        $data = ['status' => (int)$status , 'streak' => ['exp', 'streak + 1']];
+        $where = [
+            'id' => $actionId,
+            'user_id' => $uid,
+        ];
         $_daoVnActionsModel =\Lsf\Loader::Model('DaoVnActions',true);
         $result = $_daoVnActionsModel->update($data, $where);
 
