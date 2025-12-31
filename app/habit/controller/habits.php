@@ -328,7 +328,106 @@ class Habits extends \App\Application
      * @param void
      * @return void
      */
-    public function edit()
+    public function editV2()
+    {
+        // 用户uid
+        /*$uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }*/
+        $uid = 101;
+
+        $habitId = $this->post('habit_id', true);
+        if (!isset($habitId) || empty($habitId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_id');
+        }
+        //习惯名称（限制30字符，不可为空）
+        $habitName = $this->post('habit_name', true);
+        if (!isset($habitName) || empty($habitName)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'habit_name');
+        }
+
+        if (mb_strlen($habitName) > 30) { //字符限制
+            return $this->json(1003000 , []);
+        }
+        //习惯描述（限制50字符，可空）
+        $habitDesc = $this->post('description', true);
+        if (!isset($habitDesc) || empty($habitDesc)) {
+            $habitDesc = '';
+        }
+        if (mb_strlen($habitDesc) > 50) { //字符限制
+            return $this->json(1003000 , []);
+        }
+
+        //开关启用状态；默认开启（0/1）
+        $active = $this->post('active', true);
+        // 允许0/1，但0不是“空值”，而是有效值；仅当未传参时才默认1
+        if ($active === null) {
+            $active = 1;
+        } elseif (!in_array((int)$active, [0,1], true)) {
+            return $this->json(1003001,[]);
+        } else {
+            $active = (int)$active;
+        }
+
+        //提醒时间
+        $remindTime = $this->post('remind_time', true);
+        if (!isset($remindTime) || empty($remindTime)) {
+            $remindTime = "";
+        } elseif (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $remindTime)) {
+            return $this->json(1003002,[]);
+        }
+
+        //频率配置（v0.1版本仅支持时间间隔配置）
+        $intervalNum =  $this->post('interval_num', true);
+        if (!isset($intervalNum) || empty($intervalNum)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'interval_num');
+        }
+        // 验证 intervalNum 为 1～30 之间的数字（包含 1 和 30）
+        if (!is_numeric($intervalNum) || $intervalNum < 1 || $intervalNum > 30) {
+            return $this->json(1003009, []);
+        }
+
+        $intervalUnit =  $this->post('interval_unit', true);
+        if (!isset($intervalUnit) || empty($intervalUnit)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'interval_unit');
+        }
+        $allowedUnits = ['day', 'week', 'month'];
+        if (!in_array($intervalUnit, $allowedUnits, true)) {
+            return $this->json(1003010, []);
+        }
+
+        // 调用服务添加习惯
+        $result = $this->_habitsService->editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $intervalNum, $intervalUnit);
+
+        $eCode = ECODE_SUCCESS;
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_INSERT_FAIL;
+                    break;
+                //习惯不存在或无权限
+                case -4:
+                    $eCode = 1003011;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+
+        return $this->json($eCode, []);
+
+    }
+
+    /**
+     * 用户修改习惯
+     * @param void
+     * @return void
+     */
+    public function editV2()
     {
         // 用户uid
         /*$uid = $this->uid;

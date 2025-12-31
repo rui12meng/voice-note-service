@@ -144,7 +144,7 @@ class Habit
             //如果习惯来源日记，需要返回日记标题
             if(isset($result['note_id']) && (int)$result['note_id'] > 0){
                 $noteModel = \Lsf\Loader::Model('DaoVnNotes', true);
-                $note = $noteModel->find($result['note_id']);
+                $note = $noteModel->find('title', $result['note_id']);
                 $result['note_title'] = $note['title'];
             }
         }
