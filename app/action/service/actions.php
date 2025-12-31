@@ -192,22 +192,12 @@ class Actions
      * @param array $filters 查询条件数组
      * @return void
      */
-    public function noteActionList($uid, $cursor = null, $pageSize = 20, $filters = []){
-
-        //todo 1. 先验证模块是否存在
-        $result = $this->_daoVnNoteAiAnalyzeModel->select('is_deleted',['note_id' =>$filters['note_id'], 'analysis_type_name' => 'actions']);
-        if($result === false){
-            return -7;
-        }
-        if(isset($result[0]['is_deleted']) && $result[0]['is_deleted'] === 1){
-            return [];
-        }
+    public function actionList($uid, $cursor = null, $pageSize = 20, $filters = []){
         $where = [
             'user_id' => $uid,
             'is_deleted' => 0,
         ];
         $where = array_merge($where, $filters);
-
         if (!empty($cursor)) {
             $where['id'] = ['LE', (int)$cursor];
         }
@@ -234,7 +224,28 @@ class Actions
                 'next_cursor' => $nextCursor,
             ],
         ];
+    }
 
+    /**
+     * 用户笔记级行动列表
+     * @param  int $uid    用户ID
+     * @param  int $cursor  游标
+     * @param  int $pageSize 每页数量
+     * @param array $filters 查询条件数组
+     * @return void
+     */
+    public function noteActionList($uid, $cursor = null, $pageSize = 20, $filters = []){
+
+        //todo 1. 先验证模块是否存在
+        $result = $this->_daoVnNoteAiAnalyzeModel->select('is_deleted',['note_id' =>$filters['note_id'], 'analysis_type_name' => 'actions']);
+        if($result === false){
+            return -7;
+        }
+        if(isset($result[0]['is_deleted']) && $result[0]['is_deleted'] === 1){
+            return [];
+        }
+        $result = $this->actionList($uid, $cursor , $pageSize , $filters);
+        return $result;
     }
 
     /**

@@ -237,14 +237,14 @@ class Actions extends \App\Application
             $cursor = '';
         }
         $pageSize = $this->post('limit', true);
-        if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0 || !is_int($pageSize)) {
+        if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0 || !is_numeric($pageSize)) {
             $pageSize = 20;
         }
         $filters = [
             'due_date' => $actionDate,
             'status' => $status,
         ];
-        $result = $this->_actionsService->actionList($uid, $cursor, $pageSize = 20, $filters);
+        $result = $this->_actionsService->actionList($uid, $cursor, $pageSize, $filters);
         $eCode = ECODE_SUCCESS;
 
         if (is_int($result) && $result < 0) {
