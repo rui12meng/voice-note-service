@@ -277,13 +277,24 @@ class Actions extends \App\Application
         }
 
         $cursor = $this->post('cursor', true);
-        if ( ! isset($cursor) || empty($cursor) || $cursor < 0 || !is_int($cursor)) {
-            //游标（Base64 编码的 (created_at, id)）
+        if (!isset($cursor) || empty($cursor) || !is_numeric($cursor) || (int)$cursor < 0) {
+            //游标（Base64 编码的 (created_at, id)）
             $cursor = null;
+        } else {
+            $cursor = (int)$cursor;
+            if ($cursor < 0) {
+                $cursor = null;
+            }
         }
+        
         $pageSize = $this->post('limit', true);
-        if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0 || !is_int($pageSize)) {
+        if (!isset($pageSize) || empty($pageSize) || !is_numeric($pageSize) || (int)$pageSize < 0) {
             $pageSize = 20;
+        } else {
+            $pageSize = (int)$pageSize;
+            if ($pageSize < 0) {
+                $pageSize = 20;
+            }
         }
 
         $filters = [
