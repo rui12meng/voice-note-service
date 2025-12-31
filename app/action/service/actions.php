@@ -167,8 +167,8 @@ class Actions
             $execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
             $today    = new \DateTime('today');
             if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) {
-                //todo 更新 user_habits（核心逻辑）
-                $result = $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_date']);
+                //todo 更新 user_habits（核心逻辑）事务处理
+                $result = $this->_daoVnHabitsModel->editHabitsByStreak($uid, $actionId, $actionInfo['habit_id'], $actionInfo['due_date'], (int)$status);
             }else{
                 $data = ['status' => (int)$status];
                 $where = [
