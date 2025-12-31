@@ -307,14 +307,13 @@ class Habits extends \App\Application
             }
         }else{
             if(is_array($result) && !empty($result)){
+
                 $responseData = [
                     'id' => (int)$habitId,
                     'habit_name' => $result['habit_name'] ?? '',
                     'habit_desc' => $result['habit_desc'] ?? '',
-                    'remind_time' => $result['remind_time'] ?? '',
-                    'active' => (int)$result['status'] ?? 1,
-                    'frequency_type' => $result['frequency_type'] ?? '',
-                    'frequency_config' => $result['frequency_config'] ?? [],
+                    'interval_num' => $result['interval_num'] ?? '',
+                    'interval_unit' => $result['interval_unit'] ?? '',
                     'note_title' => $result['note_title'] ?? '',
                 ];
             }

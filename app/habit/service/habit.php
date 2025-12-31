@@ -131,7 +131,7 @@ class Habit
             'is_deleted' => 0,
         ];
 
-        $columns = 'id, habit_name, habit_desc, interval_num, interval_unit, note_summary';
+        $columns = 'id, note_id, habit_name, habit_desc, interval_num, interval_unit, note_summary';
         $row = $this->_daoHabitsModel->select($columns, $where);
 
         if ($row === false) {
@@ -140,6 +140,13 @@ class Habit
         $result = [];
         if(isset($row[0])){
             $result = $row[0];
+
+            //如果习惯来源日记，需要返回日记标题
+            if(isset($result['note_id']) && (int)$result['note_id'] > 0){
+                $noteModel = \Lsf\Loader::Model('DaoVnNotes', true);
+                $note = $noteModel->find($result['note_id']);
+                $result['note_title'] = $note['title'];
+            }
         }
         return $result;
     }
