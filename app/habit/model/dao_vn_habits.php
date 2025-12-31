@@ -85,7 +85,7 @@ FROM user_habits
 WHERE user_id = {$uid} AND is_deleted = 0
   {$keywordSql}
   {$cursorSql}
-ORDER BY h.id DESC
+ORDER BY id DESC
 LIMIT {$pageSize}
 SQL;
 

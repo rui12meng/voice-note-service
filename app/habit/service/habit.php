@@ -280,9 +280,9 @@ class Habit
      * @param   string  $keyword 搜索关键词
      * @param   int $cursor 游标
      * @param   int $pageSize limit数量
-     * @return  array
+     * @return  void
      */
-    public function getUserHabitList($uid, $keyword, $cursor, $pageSize): array
+    public function getUserHabitList($uid, $keyword, $cursor, $pageSize)
     {
         if ($pageSize > 50) {
             $pageSize = 50;
