@@ -248,7 +248,7 @@ class Habits extends \App\Application
         }
 
         // 调用服务添加习惯
-        $result = $this->_habitsService->addUserHabit($uid, $noteId, $habitName, $habitDesc, $remindTime, $active, $frequencyType, $frequencyConfig);
+        $result = $this->_habitsService->addUserHabit($uid, $noteId, $habitName, $habitDesc, $remindTime, $active, $intervalNum, $intervalUnit);
 
         $eCode = ECODE_SUCCESS;
 
