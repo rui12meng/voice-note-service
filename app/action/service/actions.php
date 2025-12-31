@@ -202,7 +202,7 @@ class Actions
             $where['id'] = ['LE', (int)$cursor];
         }
 
-        $columns = 'id, title, status, due_date';
+        $columns = 'id, title, streak, status, due_date';
         $orderBy = 'id DESC';
         $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
