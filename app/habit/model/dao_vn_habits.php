@@ -60,30 +60,29 @@ SQL;
      */
     public function getListBySql($uid, $keyword = '', $cursor = 0, $pageSize = 20){
 
-        // 链表一次性查询习惯及对应规则，可按 habit_name/habit_desc/note_summary 全文索引搜索
+        // 可按 habit_name/habit_desc/note_summary 全文索引搜索
         $keywordSql = '';
         if (!empty($keyword)) {
-            $keywordSql = " and MATCH(h.habit_name, h.habit_desc, h.note_summary)
+            $keywordSql = " and MATCH(habit_name, habit_desc, note_summary)
            AGAINST( '{$keyword}' IN NATURAL LANGUAGE MODE) ";
         }
         $cursorSql = '';
         if (!empty($cursor)) {
             $cursor = (int)$cursor;
-            $cursorSql = " and h.id <= {$cursor} ";
+            $cursorSql = " and id <= {$cursor} ";
         }
 
         $sql = <<<SQL
 SELECT
-    h.id,
-    h.habit_name,
-    h.remind_time,
-    h.created_at,
-    hs.frequency_type,
-    hs.frequency_config
-FROM user_habits AS h
-JOIN user_habit_schedules AS hs
-    ON hs.habit_id = h.id
-WHERE h.user_id = {$uid} AND h.is_deleted = 0
+    id,
+    habit_name,
+    habit_desc,
+    remind_time,
+    interval_num,
+    interval_unit,
+    created_at
+FROM user_habits 
+WHERE user_id = {$uid} AND is_deleted = 0
   {$keywordSql}
   {$cursorSql}
 ORDER BY h.id DESC
