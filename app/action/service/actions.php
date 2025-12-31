@@ -148,7 +148,7 @@ class Actions
      */
     public function editActionStatus($uid, $actionId, $status){
         // todo 优先查询该行动是否为习惯任务
-        $actionInfo = $this->_daoVnActionsModel->find('habit_id, due_date, status, is_deleted',['id' => $actionId]);
+        $actionInfo = $this->_daoVnActionsModel->find('habit_id, due_date, status, is_deleted',$actionId);
         // todo 说明已删除
         if(isset($actionInfo['is_deleted']) && (int)$actionInfo['is_deleted'] === 1){
             //直接返回成功
