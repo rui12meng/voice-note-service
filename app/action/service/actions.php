@@ -126,7 +126,7 @@ class Actions
      * @return void
      */
     public function editActionById($uid, $actionId, $actionDate){
-        $data = ['due_time' => $actionDate];
+        $data = ['due_date' => $actionDate];
         $where = [
             'id' => $actionId,
             'user_id' => $uid,
@@ -148,7 +148,7 @@ class Actions
      */
     public function editActionStatus($uid, $actionId, $status){
         // todo 优先查询该行动是否为习惯任务
-        $actionInfo = $this->_daoVnActionsModel->find('habit_id, due_time, status, is_deleted',['id' => $actionId]);
+        $actionInfo = $this->_daoVnActionsModel->find('habit_id, due_date, status, is_deleted',['id' => $actionId]);
         // todo 说明已删除
         if(isset($actionInfo['is_deleted']) && (int)$actionInfo['is_deleted'] === 1){
             //直接返回成功
@@ -164,10 +164,10 @@ class Actions
 
         //todo 说明是习惯，需要维护 current_streak 的标准逻辑
         if( isset($actionInfo['habit_id']) && is_numeric($actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
-            $execDate = (new DateTime($actionInfo['due_time']))->format('Y-m-d');
+            $execDate = (new DateTime($actionInfo['due_date']))->format('Y-m-d');
             if($execDate === date('Y-m-d')){
                 //todo 更新 user_habits（核心逻辑）
-                $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_time']);
+                $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_date']);
             }
         }
 
@@ -202,7 +202,7 @@ class Actions
             $where['id'] = ['LE', (int)$cursor];
         }
 
-        $columns = 'id, title, status, due_time';
+        $columns = 'id, title, status, due_date';
         $orderBy = 'id DESC';
         $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
@@ -310,7 +310,7 @@ class Actions
      *                           [
      *                               'name'  => '行动名称',
      *                               'title' => '行动标题（可选）',
-     *                               'due_time' => '截止日期（Y-m-d，可选）',
+     *                               'due_date' => '截止日期（Y-m-d，可选）',
      *                           ]
      * @return int 成功返回1，失败返回-7
      */
@@ -351,7 +351,7 @@ class Actions
                 'note_id'  => $noteId,
                 'title'    => $item['title']  ?? '',
                 'status'   => $item['status']  ?? 0,
-                'due_time' => $item['date'] ?? null,
+                'due_date' => $item['date'] ?? null,
             ];
             $insertData[] = $row;
         }
