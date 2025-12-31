@@ -185,7 +185,7 @@ class Habit
         // todo 如果用户更新规则（时间间隔变更），锚点数据需要算法更新
         if($intervalNum != $habit[0]['interval_num'] || $intervalUnit!= $habit[0]['interval_unit']){
             $days = $this->_intervalIndays($habit[0]['interval_num'] , $habit[0]['interval_unit']);
-            $latestDate = $this->_getLastOccurrenceDate($habit[0]['anchor_date'], $days);
+            $latestDate = $this->_getLastOccurrenceDate($habit[0]['anchor_date'], $days['days']);
             $frequencyConfig['anchor_date'] = $latestDate;
 
             //todo 规则修改后：连续打卡重新计算，且不继承旧规则下的 streak
@@ -194,6 +194,9 @@ class Habit
                 'habit_desc'  => $habitDesc,
                 'remind_time' => $remindTime,
                 'status'      => (int)$active,
+                'interval_num' => $intervalNum,
+                'interval_unit' => $intervalUnit,
+                'anchor_date' => $latestDate,
                 'current_streak' => 0,
                 'last_done_date' => NULL,
                 'updated_at'  => date('Y-m-d H:i:s'),
