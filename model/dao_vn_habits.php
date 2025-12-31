@@ -39,8 +39,11 @@ SELECT
             habit_name,
         CASE
             WHEN last_done_date IS NULL THEN 0
-            WHEN DATEDIFF({$execTime}, last_done_date) = interval_days
-            THEN current_streak
+            WHEN DATEDIFF({$execTime}, last_done_date) = (CASE interval_unit
+                WHEN 'day'   THEN interval_num
+                WHEN 'week'  THEN interval_num * 7
+                WHEN 'month' THEN interval_num * 30
+            END)THEN current_streak
             ELSE 0
         END AS streak
         FROM user_habits
