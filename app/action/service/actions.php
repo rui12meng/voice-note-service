@@ -165,7 +165,8 @@ class Actions
         //todo 说明是习惯，需要维护 current_streak 的标准逻辑
         if( isset($actionInfo['habit_id']) && is_numeric($actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
             $execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
-            if($execDate === date('Y-m-d')){
+            $today    = new \DateTime('today');
+            if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) {
                 //todo 更新 user_habits（核心逻辑）
                 $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_date']);
             }
