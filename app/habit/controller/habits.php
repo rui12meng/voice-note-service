@@ -328,7 +328,7 @@ class Habits extends \App\Application
      * @param void
      * @return void
      */
-    public function editV2()
+    public function edit()
     {
         // 用户uid
         /*$uid = $this->uid;
@@ -423,7 +423,7 @@ class Habits extends \App\Application
     }
 
     /**
-     * 用户修改习惯
+     * 用户修改习惯V2
      * @param void
      * @return void
      */
