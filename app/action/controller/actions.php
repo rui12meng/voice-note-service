@@ -289,7 +289,8 @@ class Actions extends \App\Application
         $filters = [
             'note_id' => $noteId,
         ];
-        $result = $this->_actionsService->actionList($uid, $cursor, $pageSize, $filters);
+
+        $result = $this->_actionsService->noteActionList($uid, $cursor, $pageSize, $filters);
         $eCode = ECODE_SUCCESS;
 
         if (is_int($result) && $result < 0) {
