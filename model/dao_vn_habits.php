@@ -90,7 +90,7 @@ SQL;
 
     }
 
-    public function editHabitsByStreak($habit_id, $execDate){
+    public function editHabitsByStreak($uid, $actionId, $habitId, $execDate, $status){
 
         $sql = <<<SQL
 UPDATE user_habits
@@ -113,16 +113,31 @@ SET
     ELSE
       1
   END
-WHERE id = {$habit_id};
+WHERE id = {$habitId};
 
 SQL;
-        $habits = $this->query($sql);
 
-        if($habits === FALSE){
-            return FALSE;
-        }else{
-            return $habits;
+        $this->begin();
+        $result = $this->query($sql);
+        if($result === false){
+            $this->rollback();
+            return -7;
         }
+
+        $data = ['status' => (int)$status];
+                $where = [
+                    'id' => $actionId,
+                    'user_id' => $uid,
+                ];
+        $_daoVnActionsModel =\Lsf\Loader::Model('DaoVnActions',true);
+        $result = $_daoVnActionsModel->update($data, $where);
+
+        if($result === false){
+            $this->rollback();
+            return -7;
+        }
+        $this->commit();
+        return $result;
 
     }
 

@@ -168,21 +168,32 @@ class Actions
             $today    = new \DateTime('today');
             if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) {
                 //todo 更新 user_habits（核心逻辑）
-                $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_date']);
+                $result = $this->_daoVnHabitsModel->editHabitsByStreak($actionInfo['habit_id'], $actionInfo['due_date']);
+            }else{
+                $data = ['status' => (int)$status];
+                $where = [
+                    'id' => $actionId,
+                    'user_id' => $uid,
+                ];
+                $result = $this->_daoVnActionsModel->update($data, $where);
+
             }
+
+        }else{
+            $data = ['status' => (int)$status];
+            $where = [
+                'id' => $actionId,
+                'user_id' => $uid,
+            ];
+            $result = $this->_daoVnActionsModel->update($data, $where);
+
         }
-
-        $data = ['status' => (int)$status];
-        $where = [
-            'id' => $actionId,
-            'user_id' => $uid,
-        ];
-        $result = $this->_daoVnActionsModel->update($data, $where);
-
         if($result === false){
             return -7;
         }
         return $result;
+
+
     }
 
     /**
