@@ -225,7 +225,7 @@ class Actions extends \App\Application
         }
 
         //todo 同步今日习惯到任务表（仅待办需要同步）
-        if($status === self::USER_ACTION_CANCEL){
+        if($status === self::USER_ACTION_CANCEL && $actionDate <= date('Y-m-d')){
             // todo 调用服务：获取今日需展示的习惯并自动落库到 actions
             $this->_actionsService->syncExecHabitsToActions($uid, $actionDate);
             // todo 如果同步习惯失败，不报错，不阻塞

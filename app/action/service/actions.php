@@ -288,7 +288,7 @@ class Actions
                 'title'      => $habit['habit_name'],
                 'streak'     => $habit['streak'],
                 'status'     => 0,          // 0: 待执行
-                'due_time'   => $execTime,
+                'due_date'   => $execTime,
             ];
         }
         if(!empty($actionData)){
