@@ -50,8 +50,8 @@ SELECT
         WHERE user_id = {$uid}
         AND status = 1
         AND is_deleted = 0
-        AND DATEDIFF({$execTime}, anchor_date) >= 0
-        AND MOD(DATEDIFF({$execTime}, anchor_date), 
+        AND DATEDIFF('{$execTime}', anchor_date) >= 0
+        AND MOD(DATEDIFF('{$execTime}', anchor_date), 
         CASE interval_unit
             WHEN 'day'   THEN interval_num
             WHEN 'week'  THEN interval_num * 7
