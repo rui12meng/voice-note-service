@@ -95,14 +95,14 @@ SQL;
         $sql = <<<SQL
 UPDATE user_habits
 SET
-  last_done_date = {$execDate},
+  last_done_date = '{$execDate}',
 
   streak_count = streak_count + 1,
 
   current_streak = CASE
     WHEN last_done_date IS NULL
       THEN 1
-    WHEN DATEDIFF({$execDate}, last_done_date) = (
+    WHEN DATEDIFF('{$execDate}', last_done_date) = (
     CASE interval_unit
             WHEN 'day'   THEN interval_num
             WHEN 'week'  THEN interval_num * 7
