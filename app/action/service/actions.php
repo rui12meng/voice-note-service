@@ -188,21 +188,21 @@ class Actions
 
         $columns = 'id, title, status, due_time';
         $orderBy = 'id DESC';
-        $result = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
+        $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
-        if($result === false){
+        if($list === false){
             return -7;
         }
 
-        $hasNext = count($result) > $pageSize;
+        $hasNext = count($list) > $pageSize;
         if ($hasNext) {
-            $list = array_slice($result, 0, $pageSize);
+            $list = array_slice($list, 0, $pageSize);
         }
 
         $nextCursor = $hasNext ? end($list)['id'] : null;
 
         return [
-            'list' => $result,
+            'list' => $list,
             'pagination' => [
                 'has_next_page' => $hasNext,
                 'next_cursor' => $nextCursor,
