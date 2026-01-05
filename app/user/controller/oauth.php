@@ -1,6 +1,9 @@
 <?php
 namespace User\Controller;
 
+require_once LSFPATH . '/lib/ramsey/autoload.php';
+
+use Ramsey\Uuid\Uuid;
 /**
  * 用户控制器
  * $Id: oauth.php $
@@ -33,6 +36,9 @@ class Oauth extends \App\Application
      * @return string
      */
     public function loginOrSignUp(){
+        $uuid4 = Uuid::uuid7()->toString();
+        echo $uuid4; exit();
+
         $result = [];
         $params = $this->post('', true);
         if ( ! isset($params['login_mode']) || empty($params['login_mode'])) {
@@ -102,27 +108,31 @@ class Oauth extends \App\Application
         }
 
         //校验identityToken合法性且未过期
-        $data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
+        try {
+            $data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
+        } catch (\Exception $e) {
+            return -1; // id_token 无效
+        }
 
-        //临时测试
-        $data['apple_uid'] = 'test_'.random_int(10000, 99999);
         if(isset($data['apple_uid']) && !empty($data['apple_uid'])){ //说明授权成功
             $user_info=[
                 'apple_uid'=> $data['apple_uid'],
                 'identifier' => $params['id_token'],
                 'credential' => $params['auth_code'],
                 'username' => $params['username'] ?? '',
-                'email' => $params['email'] ?? '',
+                'email' => $data['email'] ?? '',
                 'provider' => 'apple',
-                'user_agent' => $params['user_agent'],
+                'user_agent' => $params['user_agent'] ?? '',
+                'ip_address' => $params['ip_address'] ?? '',
+                'device_id' => $params['device_id'] ?? '',
             ];
             //登录or注册逻辑
             $result = $this->_oauthService->appleLoginOrSignUp($user_info);
             if($result === false){
-                return -1;
+                return -2;
             }
         }else{
-            return -2;
+            return -1 ; //id_token 无效
         }
 
         return $result;

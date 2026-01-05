@@ -11,7 +11,6 @@ require_once LSFPATH . '/lib/php-jwt/autoload.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
-use Service\Base;
 
 class Oauth extends \Service\Base
 {
@@ -63,7 +62,6 @@ class Oauth extends \Service\Base
         // === 4. 验证并解码 id_token ===
         try {
             $decoded = JWT::decode($id_token, $keys);
-
             if ($decoded->iss !== 'https://appleid.apple.com') {
                 throw new \Exception("Invalid issuer");
             }
@@ -88,6 +86,7 @@ class Oauth extends \Service\Base
                 'emsg'      => $e->getMessage()
             ];
             \Lsf\Loader::plugin('Log')->error(9010511, $errData);
+            throw new \Exception("invalid id_token");
         }
         return $data;
     }
@@ -119,7 +118,7 @@ class Oauth extends \Service\Base
             if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
                 $uid = $result[0]['user_id'];
                 $is_deleted = $result[0]['is_deleted'];
-                if($is_deleted === 1){
+                if($is_deleted === 1){ //注销用户，重新走注册流程【新建uid，重新绑定oauth】
                     $new_uid = $this->createUser($data);
                     //更新auth表
                     $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $new_uid],['auth_type' => $auth_type , 'identifier' => $auth_sub]);
@@ -190,12 +189,13 @@ class Oauth extends \Service\Base
             $uid = $result[0]['user_id'];
             $is_deleted = $result[0]['is_deleted'];
             if($is_deleted === 1){ // 注销用户
-                $new_uid = $this->createUser($data);
-                //更新auth表
-                $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $new_uid],['auth_type' => $data['provider'] , 'identifier' => $data['device_id']]);
+                $uid = $this->createUser($data, 're-registered');
+                if(is_int($uid) && $uid < 0){
+                    return $uid;
+                }
                 //记录log
                 $logData = [
-                    'user_id' => $new_uid,
+                    'user_id' => $uid,
                     'device_id' => $data['device_id'],
                     'log_type' => 'login(signed up with a new account using this provider)',
                     'action' => 'guestLoginOrSignUp',
@@ -203,30 +203,38 @@ class Oauth extends \Service\Base
                     'ip_address' => $data['ip_address'],
                     'user_agent' => $data['user_agent'],
                 ];
-                $result = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
-                if($result === false){
-                    return false;
-                }
-                $uid = $new_uid;
+            }else{ //登录
+                //记录log
+                $logData = [
+                    'user_id' => $uid,
+                    'device_id' => $data['device_id'],
+                    'log_type' => 'User login',
+                    'action' => 'guestLoginOrSignUp',
+                    'description' => 'User login with Guest (oauth_type=guest). ',
+                    'ip_address' => $data['ip_address'],
+                    'user_agent' => $data['user_agent'],
+                ];
             }
 
         }else{//找不到则自动注册绑定
             $uid = $this->createUser($data);
-            $authData = [
-                'user_id' => $uid,
-                'auth_type' => $data['provider'] ?? '',
-                'identifier' => $data['device_id'] ?? '',
-                'last_login_at' => date('Y-m-d H:i:s'),
-            ];
-            $auth_id = $this->_svrDaoVnUserAuthModel->insert($authData);
-            if ($auth_id === false) {
-                \Lsf\Loader::plugin('Log')->error(9040511, [
-                    'call'      => 'mysql user auth insert',
-                    'result'    => $auth_id,
-                    'message'   => 'Insert user auth failed',
-                ]);
-                return false;
+            if(is_int($uid) && $uid < 0){
+                return $uid;
             }
+            $logData = [
+                'user_id' => $uid,
+                'device_id' => $data['device_id'],
+                'log_type' => 'login(signed up with a new account using this provider)',
+                'action' => 'guestLoginOrSignUp',
+                'description' => 'User registered with Guest (oauth_type=guest).',
+                'ip_address' => $data['ip_address'],
+                'user_agent' => $data['user_agent'],
+            ];
+        }
+        //记录log
+        $result = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
+        if($result === false){
+            return false;
         }
 
         $result_data = $this->recordSessionContext($uid, $data);
@@ -237,24 +245,24 @@ class Oauth extends \Service\Base
     /**
      * 注册新用户（内部方法）
      * @param array $data
+     * @param string $type
      * @return string
      */
-    private function createUser($data){
+    private function createUser($data , $type = 'registered'){
+
         $userData = [
-            'user_uid' => random_int(100000000, 999999999),//uuid_create(UUID_TYPE_RANDOM),
+            'uuid' => '',
             'username' => $data['username'] ?? '',
             'email' => $data['email'] ?? '',
             'register_type' => $data['provider'] ?? '',
             'is_guest' => 0,
         ];
 
-        $uid = $this->_svrDaoVnUserModel->storeData($userData); // 返回主键id
-        if ($uid  === false ) {
-            \Lsf\Loader::plugin('Log')->error(9040511, [
-                'call'      => 'mysql user insert',
-                'result'    => $uid,
-                'message'   => 'Insert user failed',
-            ]);
+        $this->_svrDaoVnUserModel->begin();
+        $uid = $this->_svrDaoVnUserModel->insert($userData);
+        if($uid === false){
+            $this->_svrDaoVnUserModel->rollback();
+            return -7;
         }
 
         $userInfoData = [
@@ -263,14 +271,34 @@ class Oauth extends \Service\Base
             'nickname' => isset($data['username']) ?? '',
         ];
 
-        $info_id = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
-        if ($info_id === false) {
-            \Lsf\Loader::plugin('Log')->error(9040511, [
-                'call'      => 'mysql user info insert',
-                'result'    => $info_id,
-                'message'   => 'Insert user info failed',
-            ]);
+        $infoId = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
+
+        if($infoId === false){
+            $this->_svrDaoVnUserModel->rollback();
+            return -7;
         }
+
+        $authData = [
+            'user_id' => $uid,
+            'auth_type' => $data['provider'] ?? '',
+            'identifier' => $data['device_id'] ?? '',
+            'last_login_at' => date('Y-m-d H:i:s'),
+        ];
+        if($type == 're-registered'){ //说明是注销用户重新注册
+            //更新auth表
+            $row = $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $uid],['auth_type' => $data['provider'] , 'identifier' => $data['device_id']]);
+            if($row === false){
+                $this->_svrDaoVnUserModel->rollback();
+                return -7;
+            }
+        }else{ //新用户
+            $authId = $this->_svrDaoVnUserAuthModel->insert($authData);
+            if($authId === false){
+                $this->_svrDaoVnUserModel->rollback();
+                return -7;
+            }
+        }
+        $this->_svrDaoVnUserModel->commit();
         return $uid;
     }
 
