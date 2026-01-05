@@ -1,9 +1,6 @@
 <?php
 namespace User\Controller;
 
-require_once LSFPATH . '/lib/ramsey/autoload.php';
-
-use Ramsey\Uuid\Uuid;
 /**
  * 用户控制器
  * $Id: oauth.php $
@@ -36,7 +33,7 @@ class Oauth extends \App\Application
      * @return string
      */
     public function loginOrSignUp(){
-        $uuid4 = Uuid::uuid7()->toString();
+        $uuid4 = \Lsf\Uuid::v7();
         echo $uuid4; exit();
 
         $result = [];
