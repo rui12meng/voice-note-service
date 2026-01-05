@@ -170,20 +170,21 @@ class WebServer extends \Lsf\Protocol\HttpServer
             }
         }
         // 创建redis连接池
-        /*if(isset($this->_serverConfig['module']['redis']) && $this->_serverConfig['module']['redis'] === TRUE){
+        if(isset($this->_serverConfig['module']['redis']) && $this->_serverConfig['module']['redis'] === TRUE) {
             $nodeNameArr = isset($this->_serverConfig['redis']['node_name']) ? $this->_serverConfig['redis']['node_name'] : ['redis'];
-            foreach($nodeNameArr as $nodeName){
+            foreach ($nodeNameArr as $nodeName) {
                 //$redisConfig = \Lsf\Loader::plugin('ConfigCenter')->group($nodeName);
-                $redisConfig =\Lsf\Env::group('REDIS_');
+                $redisConfig = \Lsf\Env::group('REDIS_');
                 \Lsf\Loader::plugin('RedisPool')->createRedisPool($nodeName, $redisConfig);
                 \Lsf\Loader::plugin('Log')->error(9000024, $redisConfig, LSF_ERROR_TAG);
             }
+        }
 
 //            $redisConfig = \Lsf\Loader::plugin('ConfigCenter')->group('redis');
 //            \Lsf\Loader::plugin('RedisPool')->createRedisPool($redisConfig);
-        }*/
+
         // 创建mysql连接池
-        /*if(isset($this->_serverConfig['module']['mysql']) && $this->_serverConfig['module']['mysql'] === TRUE){
+        if(isset($this->_serverConfig['module']['mysql']) && $this->_serverConfig['module']['mysql'] === TRUE){
             $nodeNameArr = isset($this->_serverConfig['mysql']['node_name']) ? $this->_serverConfig['mysql']['node_name'] : ['mysql'];
             foreach($nodeNameArr as $nodeName){
                // $mysqlConfig = \Lsf\Loader::plugin('ConfigCenter')->group($nodeName);
@@ -192,7 +193,7 @@ class WebServer extends \Lsf\Protocol\HttpServer
 
                 \Lsf\Loader::plugin('Log')->error(9000024, $mysqlConfig, LSF_ERROR_TAG);
             }
-        }*/
+        }
         // 非配置中心占用
         if($server->taskworker === TRUE && $this->_swooleConfig['worker_num'] != $workerId){
             // crontab已开启
