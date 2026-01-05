@@ -53,10 +53,32 @@ class Application extends \Lsf\Controller
      */
     protected $noNeedCheckTokenRouter = [ // 无需检查token的路由
         // 帐号
-        '/user/oauth/login_or_signup'                    => 1,
+        '/user/oauth/login_or_sign_up'                  => 1,
         '/user/user/token_refresh'                      => 1,
-        //test
-        '/note/notes/add_audio'                          => 1,
+
+        // test -- 服务端临时测试，暂不验证token，生产环境全部验证
+        '/note/notes/add_audio'                         => 1,
+        '/note/notes/note_info'                         => 1,
+        '/note/notes/note_analysis'                     => 1,
+        '/note/notes/list'                              => 1,
+        '/note/notes/delete'                            => 1,
+        '/note/notes/edit'                              => 1,
+        '/note/tags/add'                                => 1,
+        '/note/tags/delete'                             => 1,
+        '/note/analyze_note/delete'                     => 1,
+        '/note/analyze_note/edit_insight'               => 1,
+        '/note/analyze_note/edit_emotion'               => 1,
+        '/habit/habits/add'                             => 1,
+        '/habit/habits/batchAdd'                        => 1,
+        '/habit/habits/info'                            => 1,
+        '/habit/habits/edit'                            => 1,
+        '/habit/habits/delete'                          => 1,
+        '/habit/habits/list'                            => 1,
+        '/action/actions/del_by_note'                   => 1,
+        '/action/actions/save'                          => 1,
+        '/action/actions/n_list'                        => 1,
+        '/action/actions/u_list'                        => 1,
+        '/action/actions/complete'                      => 1,
     ];
 
     /**

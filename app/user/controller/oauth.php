@@ -32,7 +32,7 @@ class Oauth extends \App\Application
      * @param  void
      * @return string
      */
-    public function loginOrSignup(){
+    public function loginOrSignUp(){
         $result = [];
         $params = $this->post('', true);
         if ( ! isset($params['login_mode']) || empty($params['login_mode'])) {
@@ -85,7 +85,7 @@ class Oauth extends \App\Application
     public function loginWithApple($params){
 
         $user_info = [];
-        //第三方授权登录必传
+        //apple授权登录必传
         if ( !isset($params['id_token']) || empty($params['id_token'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'id_token');
         }
@@ -102,7 +102,7 @@ class Oauth extends \App\Application
         }
 
         //校验identityToken合法性且未过期
-        //$data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
+        $data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
 
         //临时测试
         $data['apple_uid'] = 'test_'.random_int(10000, 99999);
