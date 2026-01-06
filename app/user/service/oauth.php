@@ -230,8 +230,8 @@ class Oauth extends \Service\Base
 
         $userInfoData = [
             'user_id' => $uid,
-            'email' => isset($data['email']) ?? '',
-            'nickname' => isset($data['username']) ?? '',
+            'email' => $data['email'] ?? '',
+            'nickname' => $data['username'] ?? '',
         ];
 
         $infoId = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
@@ -314,12 +314,13 @@ class Oauth extends \Service\Base
             return false;
         }
 
+        $deviceExtra = []; //设备扩展信息
         $data = [
             'os_version'     => $data['device_id'] ?? '',
-            'app_version'     => $data['device_type'] ?? '',
+            'app_version'    => $data['device_type'] ?? '',
             'push_token'     => $data['device_name'] ?? '',
-            'last_login_at'     => date('Y-m-d H:i:s'),
-            'device_info' => (object)[],
+            'last_login_at'  => date('Y-m-d H:i:s'),
+            'device_info'    => isset($deviceExtra) ? json_encode($deviceExtra, JSON_UNESCAPED_UNICODE): json_encode((object)[], JSON_UNESCAPED_UNICODE), //设备扩展信息
         ];
 
         // 存储用户设备信息
