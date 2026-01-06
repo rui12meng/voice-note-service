@@ -98,7 +98,7 @@ class Oauth extends \Service\Base
      * @return string
      */
     public function appleLoginOrSignUp($data){
-
+        $data['id_guest'] = 0;
         if(!isset($data['provider']) || empty($data['provider'])){
             $data['provider'] = 'apple';
         }
@@ -128,6 +128,7 @@ class Oauth extends \Service\Base
      * @return string
      */
     public function guestLoginOrSignUp($data){
+        $data['id_guest'] = 1;
         if(!isset($data['provider']) || empty($data['provider'])){
             $data['provider'] = 'guest';
         }
@@ -209,7 +210,7 @@ class Oauth extends \Service\Base
             'username' => $data['username'] ?? '',
             'email' => $data['email'] ?? '',
             'register_type' => $data['provider'] ?? '',
-            'is_guest' => 0,
+            'is_guest' => $data['is_guest'],
         ];
 
         $this->_svrDaoVnUserModel->begin();
@@ -307,7 +308,8 @@ class Oauth extends \Service\Base
 
         $deviceExtra = []; //设备扩展信息
         $data = [
-            'os_version'     => $data['device_id'] ?? '',
+            'device_id'     => $data['device_id'] ?? '',
+            'os_version'     => $data['os_version'] ?? '',
             'app_version'    => $data['device_type'] ?? '',
             'push_token'     => $data['device_name'] ?? '',
             'last_login_at'  => date('Y-m-d H:i:s'),
@@ -402,13 +404,13 @@ class Oauth extends \Service\Base
     /**
      * 存储用户设备信息
      * @param int $uid
-     * @param string $device_id
+     * @param string $deviceId
      * @param array $data
      * @return string
      */
-    public function storeUserDevicesInfo($uid, $device_id, $data){
+    public function storeUserDevicesInfo($uid, $deviceId, $data){
         //uid+deviceId 为唯一索引，无则新增；有则更新
-        $result = $this->_svrDaoVnUserDevicesModel->storeDevices($uid,$device_id,$data);
+        $result = $this->_svrDaoVnUserDevicesModel->storeDevices($uid,$deviceId,$data);
         // 返回布尔型，true 为成功，false为失败
         return $result;
     }
