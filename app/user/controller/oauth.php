@@ -57,20 +57,20 @@ class Oauth extends \App\Application
         $eCode = ECODE_SUCCESS;
         if (is_int($response) && $response < 0) {
             switch ($response) {
-                case -1: // 注册失败
+                case -101: // Apple - id_token无效
                     $eCode = 1008013;
                     break;
-                case -2: // apple授权信息无效
+                case -201: // guest登录参数异常
                     $eCode = 1008016;
                     break;
-                case -3: //guest 登录失败
+                case -7: // 数据库异常
                     $eCode = 1008017;
                     break;
-                case -12:
+                case -1: //获取token 失败
                     $eCode = 1008018;
                     break;
-                default:
-                    //$result['code'] = $this->erroneous($response);
+                default: // 未知错误
+                    $eCode = 1008019;
                     break;
             }
         } else {
@@ -104,9 +104,6 @@ class Oauth extends \App\Application
         }
         //登录or注册逻辑
         $result = $this->_oauthService->appleLoginOrSignUp($params);
-        if($result === false){
-            return -2;
-        }
 
         return $result;
     }
@@ -137,21 +134,11 @@ class Oauth extends \App\Application
      */
     public function loginWithGuest($params){
 
-        $result = [];
         if ( !isset($params['device_id']) || empty($params['device_id'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'device_id');
         }
-
-        $user_info=[
-            'device_id' => $params['device_id'],
-            'provider' => 'guest',
-            'user_agent' => isset($params['user_agent']) ?? '',
-        ];
         //登录or注册逻辑
-        $result = $this->_oauthService->guestLoginOrSignUp($user_info);
-        if($result === false){
-            return -3; // guest 注册失败
-        }
+        $result = $this->_oauthService->guestLoginOrSignUp($params);
 
         return $result;
     }

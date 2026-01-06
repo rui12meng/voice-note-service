@@ -110,11 +110,11 @@ class Oauth extends \Service\Base
                 if(isset($decoded['email'])) $data['email'] = $decoded['email'];
             }catch(\Exception $e){
                 //log
-                return false;// id_token 无效
+                return -101;// id_token 无效
             }
         }
         if(!isset($data['sub']) || empty($data['sub'])){
-            return false; // id_token 无效
+            return -101; // id_token 无效
         }
         $identifier = $data['sub'];
         $action = 'appleLoginOrSignUp';
@@ -132,7 +132,7 @@ class Oauth extends \Service\Base
             $data['provider'] = 'guest';
         }
         if(!isset($data['device_id']) || empty($data['device_id'])){
-            return false;
+            return -201;
         }
         $identifier = $data['device_id'];
         $action = 'guestLoginOrSignUp';
@@ -141,16 +141,7 @@ class Oauth extends \Service\Base
     }
 
     private function _loginOrSignUpByIdentifier($provider, $identifier, $data, $action){
-        /*
-         * $user_info=[
-            //'identifier' => $params['id_token'],
-            //'credential' => $params['auth_code'],
-            'username' => $params['username'] ?? '',
-            'user_agent' => $params['user_agent'] ?? '',
-            'ip_address' => $params['ip_address'] ?? '',
-            'device_id' => $params['device_id'] ?? '',
-        ];
-         * */
+
         $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($provider, $identifier);
         //todo 存在记录
         if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
@@ -199,7 +190,7 @@ class Oauth extends \Service\Base
         }
         $resultLog = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
         if($resultLog === false){
-            return false;
+            return -7;
         }
         $result_data = $this->recordSessionContext($uid, $data);
         return $result_data;
@@ -288,7 +279,7 @@ class Oauth extends \Service\Base
                 'result'    => $result_token,
                 'message'   => 'generate jwt token failed',
             ]);
-            return false;
+            return -1; // 获取token 失败
         }else{
             $result_data['token'] = $result_token['access_token'];
             $result_data['refresh_token'] = $result_token['refresh_token'];
@@ -311,7 +302,7 @@ class Oauth extends \Service\Base
                 'result'    => $sessionId,
                 'message'   => 'Insert user session failed',
             ]);
-            return false;
+            return -7;
         }
 
         $deviceExtra = []; //设备扩展信息
@@ -331,16 +322,13 @@ class Oauth extends \Service\Base
                 'result'    => $device_id,
                 'message'   => 'Insert user device failed',
             ]);
+            return -7;
         }
-
-        //记录登录日志
-        $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $data);
-
         //查询用户信息返回给客户端
         $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
 
         if($userInfo === false){
-            return false;
+            return -7;
         }else{
             $result_data['nickname'] = $userInfo[0]['nickname'] ?? '';
             $result_data['email'] = $userInfo[0]['email'] ?? '';
