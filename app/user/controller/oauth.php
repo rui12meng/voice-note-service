@@ -33,9 +33,6 @@ class Oauth extends \App\Application
      * @return string
      */
     public function loginOrSignUp(){
-        $uuid4 = \Lsf\Uuid::v7();
-        echo $uuid4; exit();
-
         $result = [];
         $params = $this->post('', true);
         if ( ! isset($params['login_mode']) || empty($params['login_mode'])) {
@@ -103,33 +100,10 @@ class Oauth extends \App\Application
                 $user_info['email'] = $params['email'];
             }
         }
-
-        //校验identityToken合法性且未过期
-        try {
-            $data = $this->_oauthService->checkAppleIdentityToken($params['id_token']);
-        } catch (\Exception $e) {
-            return -1; // id_token 无效
-        }
-
-        if(isset($data['apple_uid']) && !empty($data['apple_uid'])){ //说明授权成功
-            $user_info=[
-                'apple_uid'=> $data['apple_uid'],
-                'identifier' => $params['id_token'],
-                'credential' => $params['auth_code'],
-                'username' => $params['username'] ?? '',
-                'email' => $data['email'] ?? '',
-                'provider' => 'apple',
-                'user_agent' => $params['user_agent'] ?? '',
-                'ip_address' => $params['ip_address'] ?? '',
-                'device_id' => $params['device_id'] ?? '',
-            ];
-            //登录or注册逻辑
-            $result = $this->_oauthService->appleLoginOrSignUp($user_info);
-            if($result === false){
-                return -2;
-            }
-        }else{
-            return -1 ; //id_token 无效
+        //登录or注册逻辑
+        $result = $this->_oauthService->appleLoginOrSignUp($params);
+        if($result === false){
+            return -2;
         }
 
         return $result;

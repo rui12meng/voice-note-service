@@ -11,6 +11,7 @@ require_once LSFPATH . '/lib/php-jwt/autoload.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
+use Lsf\Env;
 
 class Oauth extends \Service\Base
 {
@@ -44,7 +45,7 @@ class Oauth extends \Service\Base
      * @param void
      * @return string
      */
-    public function checkAppleIdentityToken($id_token = ''){
+    private function _checkAppleIdentityToken($id_token = ''){
         $data =[];
         //示例
         if (empty($id_token)) {
@@ -74,7 +75,7 @@ class Oauth extends \Service\Base
                 throw new \Exception("expired token");
             }
 
-            $data['apple_uid'] = $decoded->sub;
+            $data['sub'] = $decoded->sub;
             $data['email'] = $decoded->email ?? '';
 
 
@@ -98,76 +99,27 @@ class Oauth extends \Service\Base
      */
     public function appleLoginOrSignUp($data){
 
-        $result_data = [];
-
-        if(!isset($data['provider']) && empty($data['provider'])){
+        if(!isset($data['provider']) || empty($data['provider'])){
             $data['provider'] = 'apple';
         }
-        $result_data['log_mode'] = $data['provider'];
-        //根据 sub（苹果用户唯一ID）查找本地用户
-        if(isset($data['apple_uid']) && !empty($data['apple_uid'])){
-
-            //根据auth_type+sub唯一索引查询用户是否存在
-            $auth_type = $data['provider'];
-            $auth_sub = $data['apple_uid'];
-            $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($auth_type, $auth_sub);
-
-            //无记录	→ 创建新用户 + 新 OAuth 绑定
-            //有记录且 is_deleted = 0	→ 正常登录（该用户已存在）
-            //有记录且 is_deleted = 1	→ 删除该记录（或更新为无效），然后走“无记录”流程
-            if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
-                $uid = $result[0]['user_id'];
-                $is_deleted = $result[0]['is_deleted'];
-                if($is_deleted === 1){ //注销用户，重新走注册流程【新建uid，重新绑定oauth】
-                    $new_uid = $this->createUser($data);
-                    //更新auth表
-                    $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $new_uid],['auth_type' => $auth_type , 'identifier' => $auth_sub]);
-                    //记录log
-                    $logData = [
-                        'user_id' => $new_uid,
-                        'device_id' => $data['device_id'],
-                        'log_type' => 'login(signed up with a new account using this provider)',
-                        'action' => 'appleLoginOrSignUp',
-                        'description' => 'User re-registered with OAuth (oauth_type=apple). Previous binding was soft-deleted; new user ID created. old user ID is:'.$uid,
-                        'ip_address' => $data['ip_address'],
-                        'user_agent' => $data['user_agent'],
-                    ];
-                    $result = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
-                    if($result === false){
-                        return false;
-                    }
-                    $uid = $new_uid;
-                }
-
-            }else{//找不到则自动注册绑定
-                $uid = $this->createUser($data);
-                $authData = [
-                    'user_id' => $uid,
-                    'auth_type' => $data['provider'] ?? '',
-                    'identifier' => $data['apple_uid'] ?? '',
-                    'credential' => $data['credential'] ?? '',
-                    'last_login_at' => date('Y-m-d H:i:s'),
-                ];
-                $auth_id = $this->_svrDaoVnUserAuthModel->insert($authData);
-                if ($auth_id === false) {
-                    \Lsf\Loader::plugin('Log')->error(9040511, [
-                        'call'      => 'mysql user auth insert',
-                        'result'    => $auth_id,
-                        'message'   => 'Insert user auth failed',
-                    ]);
-                    return false;
-                }
+        if(isset($data['id_token']) && !empty($data['id_token'])){
+            //校验identityToken合法性且未过期
+            try{
+                $decoded = $this->_checkAppleIdentityToken($data['id_token']);
+                if(isset($decoded['sub'])) $data['sub'] = $decoded['sub'];
+                if(isset($decoded['email'])) $data['email'] = $decoded['email'];
+            }catch(\Exception $e){
+                //log
+                return false;// id_token 无效
             }
-
-            $result_data = $this->recordSessionContext($uid, $data);
-
-        }else{
-            //验证客户端授权信息失败
-            return false;
         }
-
-        return $result_data;
-
+        if(!isset($data['sub']) || empty($data['sub'])){
+            return false; // id_token 无效
+        }
+        $identifier = $data['sub'];
+        $action = 'appleLoginOrSignUp';
+        $res = $this->_loginOrSignUpByIdentifier($data['provider'], $identifier, $data, $action);
+        return $res;
     }
 
     /**
@@ -176,69 +128,80 @@ class Oauth extends \Service\Base
      * @return string
      */
     public function guestLoginOrSignUp($data){
-        $result_data = [];
-
-        if(!isset($data['provider']) && empty($data['provider'])){
+        if(!isset($data['provider']) || empty($data['provider'])){
             $data['provider'] = 'guest';
         }
-        $result_data['log_mode'] = $data['provider'];
+        if(!isset($data['device_id']) || empty($data['device_id'])){
+            return false;
+        }
+        $identifier = $data['device_id'];
+        $action = 'guestLoginOrSignUp';
+        $res = $this->_loginOrSignUpByIdentifier($data['provider'], $identifier, $data, $action);
+        return $res;
+    }
 
-        $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($data['provider'], $data['device_id']);
-
+    private function _loginOrSignUpByIdentifier($provider, $identifier, $data, $action){
+        /*
+         * $user_info=[
+            //'identifier' => $params['id_token'],
+            //'credential' => $params['auth_code'],
+            'username' => $params['username'] ?? '',
+            'user_agent' => $params['user_agent'] ?? '',
+            'ip_address' => $params['ip_address'] ?? '',
+            'device_id' => $params['device_id'] ?? '',
+        ];
+         * */
+        $result = $this->_svrDaoVnUserAuthModel->findOauthInfo($provider, $identifier);
+        //todo 存在记录
         if(isset($result[0]['user_id']) && isset($result[0]['is_deleted'])){
             $uid = $result[0]['user_id'];
             $is_deleted = $result[0]['is_deleted'];
-            if($is_deleted === 1){ // 注销用户
-                $uid = $this->createUser($data, 're-registered');
-                if(is_int($uid) && $uid < 0){
-                    return $uid;
+            if($is_deleted === 1){ //todo 注销用户重新注册/登录
+                $newUid = $this->createUser($data, 're-registered');
+                if($newUid === false){
+                    return -7;
                 }
-                //记录log
                 $logData = [
-                    'user_id' => $uid,
-                    'device_id' => $data['device_id'],
-                    'log_type' => 'login(signed up with a new account using this provider)',
-                    'action' => 'guestLoginOrSignUp',
-                    'description' => 'User re-registered with Guest (oauth_type=guest). Previous binding was soft-deleted; new user ID created. old user ID is:'.$uid,
-                    'ip_address' => $data['ip_address'],
-                    'user_agent' => $data['user_agent'],
+                    'user_id' => $newUid,
+                    'device_id' => $data['device_id'] ?? '',
+                    'log_type' => 'login(signed up with a new account using this provider)，old user id:'. $uid,
+                    'action' => $action,
+                    'description' => 'User re-registered with '.$provider.'.',
+                    'ip_address' => $data['ip_address'] ?? '',
+                    'user_agent' => $data['user_agent'] ?? '',
                 ];
-            }else{ //登录
-                //记录log
+                $uid = $newUid;
+            }else{ //todo 用户登录
                 $logData = [
                     'user_id' => $uid,
-                    'device_id' => $data['device_id'],
+                    'device_id' => $data['device_id'] ?? '',
                     'log_type' => 'User login',
-                    'action' => 'guestLoginOrSignUp',
-                    'description' => 'User login with Guest (oauth_type=guest). ',
-                    'ip_address' => $data['ip_address'],
-                    'user_agent' => $data['user_agent'],
+                    'action' => $action,
+                    'description' => 'User login with '.$provider.'.',
+                    'ip_address' => $data['ip_address'] ?? '',
+                    'user_agent' => $data['user_agent'] ?? '',
                 ];
             }
-
-        }else{//找不到则自动注册绑定
+        }else{ //todo 记录不存在；注册流程
             $uid = $this->createUser($data);
-            if(is_int($uid) && $uid < 0){
-                return $uid;
+            if($uid === false){
+                return -7;
             }
             $logData = [
                 'user_id' => $uid,
-                'device_id' => $data['device_id'],
+                'device_id' => $data['device_id'] ?? '',
                 'log_type' => 'login(signed up with a new account using this provider)',
-                'action' => 'guestLoginOrSignUp',
-                'description' => 'User registered with Guest (oauth_type=guest).',
-                'ip_address' => $data['ip_address'],
-                'user_agent' => $data['user_agent'],
+                'action' => $action,
+                'description' => 'User registered with '.$provider.'.',
+                'ip_address' => $data['ip_address'] ?? '',
+                'user_agent' => $data['user_agent'] ?? '',
             ];
         }
-        //记录log
-        $result = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
-        if($result === false){
+        $resultLog = $this->_svrDaoVnUserLogsModel->storeLogs($logData);
+        if($resultLog === false){
             return false;
         }
-
         $result_data = $this->recordSessionContext($uid, $data);
-
         return $result_data;
     }
 
@@ -251,7 +214,7 @@ class Oauth extends \Service\Base
     private function createUser($data , $type = 'registered'){
 
         $userData = [
-            'uuid' => '',
+            'uuid' => \Lsf\Uuid::v7(),
             'username' => $data['username'] ?? '',
             'email' => $data['email'] ?? '',
             'register_type' => $data['provider'] ?? '',
@@ -262,7 +225,7 @@ class Oauth extends \Service\Base
         $uid = $this->_svrDaoVnUserModel->insert($userData);
         if($uid === false){
             $this->_svrDaoVnUserModel->rollback();
-            return -7;
+            return false;
         }
 
         $userInfoData = [
@@ -275,27 +238,34 @@ class Oauth extends \Service\Base
 
         if($infoId === false){
             $this->_svrDaoVnUserModel->rollback();
-            return -7;
+            return false;
+        }
+
+        //todo 登录方式不同，取参不同[游客登录，唯一身份识别标志为device_id；apple/google 唯一身份标识为apple/google返回的唯一uid]
+        if($data['provider'] == 'guest'){
+            $identifier = $data['device_id'];
+        }else{
+            $identifier = $data['sub'];
         }
 
         $authData = [
             'user_id' => $uid,
             'auth_type' => $data['provider'] ?? '',
-            'identifier' => $data['device_id'] ?? '',
+            'identifier' => $identifier,
             'last_login_at' => date('Y-m-d H:i:s'),
         ];
         if($type == 're-registered'){ //说明是注销用户重新注册
             //更新auth表
-            $row = $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $uid],['auth_type' => $data['provider'] , 'identifier' => $data['device_id']]);
+            $row = $this->_svrDaoVnUserAuthModel->updateOauth(['is_deleted' => 0 , 'user_id' => $uid],['auth_type' => $data['provider'] , 'identifier' => $identifier]);
             if($row === false){
                 $this->_svrDaoVnUserModel->rollback();
-                return -7;
+                return false;
             }
         }else{ //新用户
             $authId = $this->_svrDaoVnUserAuthModel->insert($authData);
             if($authId === false){
                 $this->_svrDaoVnUserModel->rollback();
-                return -7;
+                return false;
             }
         }
         $this->_svrDaoVnUserModel->commit();
@@ -325,32 +295,35 @@ class Oauth extends \Service\Base
             $result_data['expires_in'] = $result_token['expires_at'];
         }
 
-        //存储用户会话信息
-        $device_info = [
-            //设备信息
+        $data = [
             'device_id'     => $data['device_id'] ?? '',
             'device_type'     => $data['device_type'] ?? '',
             'device_name'     => $data['device_name'] ?? '',
-            'device_info'     => $data['device_info'] ?? '',
             'user_agent'     => $data['user_agent'] ?? '',
-            'os_version' => '15.01.89',
-            'app_version' => '0.1',
-            'push_token' => 'dfsdfjieuewww983j',
-            'ip_address' => '127.0.0.1',
+            'ip_address'     => $data['ip_address'] ?? '',
         ];
 
-        $session_id = $this->storeUserSessionInfo($uid, $result_token['jti'],$result_token['access_token'], $result_token['refresh_token'], $device_info);
+        $sessionId = $this->storeUserSessionInfo($uid, $result_token['jti'],$result_token['access_token'], $result_token['refresh_token'], $data);
 
-        if ($session_id === false) {//session 信息存储失败
+        if ($sessionId === false) {//session 信息存储失败
             \Lsf\Loader::plugin('Log')->error(9040511, [
                 'call'      => 'mysql user session insert',
-                'result'    => $session_id,
+                'result'    => $sessionId,
                 'message'   => 'Insert user session failed',
             ]);
             return false;
         }
-        // 存储用户设备信息,
-        $device_id = $this->storeUserDevicesInfo($uid, $device_info['device_id'], $device_info);
+
+        $data = [
+            'os_version'     => $data['device_id'] ?? '',
+            'app_version'     => $data['device_type'] ?? '',
+            'push_token'     => $data['device_name'] ?? '',
+            'last_login_at'     => date('Y-m-d H:i:s'),
+            'device_info' => (object)[],
+        ];
+
+        // 存储用户设备信息
+        $device_id = $this->storeUserDevicesInfo($uid, $data['device_id'], $data);
         if ($device_id === false) {//session 信息存储失败
             \Lsf\Loader::plugin('Log')->error(9040511, [
                 'call'      => 'mysql user device insert',
@@ -360,7 +333,7 @@ class Oauth extends \Service\Base
         }
 
         //记录登录日志
-        $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $device_info);
+        $this->storeUserLogsInfo($uid,'appleLoginOrSignUp','oauth/loginWithApple','user login', $data);
 
         //查询用户信息返回给客户端
         $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
@@ -384,29 +357,28 @@ class Oauth extends \Service\Base
      * @params string $jti
      * @param string $access_token
      * @param string $refresh_token
-     * @param array $device_info
+     * @param array $data
      * @return string
      */
-    public function storeUserSessionInfo($uid, $jti, $access_token, $refresh_token, $device_info){
+    public function storeUserSessionInfo($uid, $jti, $access_token, $refresh_token, $data){
+
         $session_data = [
             'user_id'       => $uid,
             'jti'           => $jti,
             'refresh_token' => $refresh_token,
             'session_token'  => $access_token,
-            'expire_at'    => date('Y-m-d H:i:s', time() + 3600),
-            'refresh_expires_at'=> date('Y-m-d H:i:s', time() + 30*24*3600),
-            'ip_address'            => $_SERVER['REMOTE_ADDR'] ?? '',
+            'expire_at'    => date('Y-m-d H:i:s', time() + \Lsf\Env::get('TOKEN_ACCESS_TTL')),
+            'refresh_expires_at'=> date('Y-m-d H:i:s', time() + \Lsf\Env::get('TOKEN_REFRESH_TTL')),
+            'ip_address'            => $data['ip_address'] ?? '',
             //设备信息
-            'device_id'     => $device_info['device_id'] ?? '',
-            'device_type'     => $device_info['device_type'] ?? '',
-            'device_name'     => $device_info['device_name'] ?? '',
-            'device_info'     => json_encode($device_info ?: []), //$device_info['device_info'] ?? '',
-            'user_agent'     => $device_info['user_agent'] ?? '',
+            'device_id'     => $data['device_id'] ?? '',
+            'device_type'     => $data['device_type'] ?? '',
+            'device_name'     => $data['device_name'] ?? '',
+            'user_agent'     => $data['user_agent'] ?? '',
             'last_active_at'    => date('Y-m-d H:i:s')
         ];
-        $session_id = $this->_svrDaoVnUserSessionModel->storeData($session_data);
+        $session_id = $this->_svrDaoVnUserSessionModel->insert($session_data);
         if($session_id == FALSE){
-
             //记录log
             return false;
 
@@ -435,11 +407,7 @@ class Oauth extends \Service\Base
             'device_id' => $device_info['device_id'],
         ];
         $result = $this->_svrDaoVnUserLogsModel->storeLogs($data);
-        if($result == FALSE){
-
-            //记录log
-
-        }
+        return $result;
     }
 
     /**
@@ -450,16 +418,7 @@ class Oauth extends \Service\Base
      * @return string
      */
     public function storeUserDevicesInfo($uid, $device_id, $data){
-        $uid = 6;
-        $device_id = 'device_idjdjkjdjsldslslsssl_djfsdjf837473';
-        $data = [
-            'device_type' => isset($data['device_type']) ?? 'ios',
-            'device_name' => isset($data['device_type']) ?? 'mr iphone 15S',
-            'os_version' => isset($data['device_type']) ?? '15.01.89S',
-            'app_version' => isset($data['device_type']) ?? '0.1',
-            'push_token' => isset($data['push_token']) ?? 'dfsdfjieuewww983j',
-            'ip_address' => isset($data['ip_address']) ?? '127.0.0.1',
-        ];
+        //uid+deviceId 为唯一索引，无则新增；有则更新
         $result = $this->_svrDaoVnUserDevicesModel->storeDevices($uid,$device_id,$data);
         // 返回布尔型，true 为成功，false为失败
         return $result;
