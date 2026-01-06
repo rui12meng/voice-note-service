@@ -58,19 +58,19 @@ class Oauth extends \App\Application
         if (is_int($response) && $response < 0) {
             switch ($response) {
                 case -101: // Apple - id_token无效
-                    $eCode = 1008013;
+                    $eCode = 1002001;
                     break;
                 case -201: // guest登录参数异常
-                    $eCode = 1008016;
+                    $eCode = 1002002;
                     break;
                 case -7: // 数据库异常
-                    $eCode = 1008017;
+                    $eCode = 1001014;
                     break;
                 case -1: //获取token 失败
-                    $eCode = 1008018;
+                    $eCode = 1002003;
                     break;
                 default: // 未知错误
-                    $eCode = 1008019;
+                    $eCode = 1001010;
                     break;
             }
         } else {

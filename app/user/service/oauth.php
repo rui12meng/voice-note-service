@@ -98,7 +98,7 @@ class Oauth extends \Service\Base
      * @return string
      */
     public function appleLoginOrSignUp($data){
-        $data['id_guest'] = 0;
+        $data['is_guest'] = 0;
         if(!isset($data['provider']) || empty($data['provider'])){
             $data['provider'] = 'apple';
         }
@@ -128,7 +128,7 @@ class Oauth extends \Service\Base
      * @return string
      */
     public function guestLoginOrSignUp($data){
-        $data['id_guest'] = 1;
+        $data['is_guest'] = 1;
         if(!isset($data['provider']) || empty($data['provider'])){
             $data['provider'] = 'guest';
         }
