@@ -53,19 +53,21 @@ class Oauth extends \App\Application
                 break;
         }
 
+        $result = [];
+        $eCode = ECODE_SUCCESS;
         if (is_int($response) && $response < 0) {
             switch ($response) {
                 case -1: // 注册失败
-                    $result['code'] = 1008013;
+                    $eCode = 1008013;
                     break;
                 case -2: // apple授权信息无效
-                    $result['code'] = 1008016;
+                    $eCode = 1008016;
                     break;
                 case -3: //guest 登录失败
-                    $result['code'] = 1008017;
+                    $eCode = 1008017;
                     break;
                 case -12:
-                    $result['code'] = 1008018;
+                    $eCode = 1008018;
                     break;
                 default:
                     //$result['code'] = $this->erroneous($response);
@@ -74,7 +76,7 @@ class Oauth extends \App\Application
         } else {
             $result = $response;
         }
-        return $this->json(ECODE_SUCCESS, $result);
+        return $this->json($eCode, $result);
     }
 
     /**
