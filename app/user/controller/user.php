@@ -13,7 +13,6 @@ class User extends \App\Application
      * @var mixed
      */
     private $_userService;
-    private $_uploadService;
 
     /**
      * 构造函数
@@ -26,7 +25,6 @@ class User extends \App\Application
     {
         parent::__construct($appName, $controllerName, $actionName);
         $this->_userService = \Lsf\Loader::service('User', true);
-        $this->_uploadService = \Lsf\Loader::service('Upload', true);
     }
 
     /**
@@ -233,7 +231,7 @@ class User extends \App\Application
         // 头像信息
         $files_info = $this->files('avatar', true);
 
-        if ($files_info['error'] !== UPLOAD_ERR_OK || $files_info['size'] === 0) {
+        if ((int)$files_info['error'] != UPLOAD_ERR_OK || (int)$files_info['size'] === 0) {
             return $this->json(1002011, []);
         }
 
@@ -257,11 +255,26 @@ class User extends \App\Application
             return $this->json(1002012, []);
         }
 
-        $result = $this->_uploadService->uploadFileOss($uid, $scene = 'avatar', $files_info);
-        if($result === false){ //上传失败
-            return $this->json(1002015, []);
+        $url = $this->_userService->uploadAvatar($uid, $scene = 'avatar', $files_info);
+        //-1 上传失败
+        $eCode = ECODE_SUCCESS;
+        if(is_int($url)){
+            switch ($url){
+                case -1:
+                    $eCode = 1002015;
+                    break;
+                case -2:
+                    $eCode = 1002016;
+                    break;
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+                    break;
+            }
         }
-        return $this->json(0, []);
+        $response = [
+            'avatar_url' => $url,
+        ];
+        return $this->json($eCode, $response);
 
     }
 

@@ -30,4 +30,6 @@ return [
     1002013 => 'File upload oss error',
     1002014 => 'File upload general error',
     1002015 => '文件上传失败',
+    1002016 => '头像文件地址签名失败',
+
 ];

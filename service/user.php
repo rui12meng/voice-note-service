@@ -239,6 +239,33 @@ class User extends Base
 
     }
 
+    /**
+     * 用户头像上传
+     * @param int $uid
+     * @param string $scene
+     * @param array $fileInfo
+     * @return void
+     */
+    public function uploadAvatar($uid, $scene, $fileInfo){
+        $uploadService = \Lsf\Loader::service('Upload', true);
+        $url = $uploadService->uploadFileOss($uid, $scene, $fileInfo);
+        if($url === false){ //上传失败
+            return -1;
+        }
+        $data = [
+            'avatar_url' => $url,
+        ];
+        $where = ['user_id' => $uid];
+        $result = $this->_svrDaoVnUserInfoModel->update($data , $where);
+        if($result === false){
+            return -7;
+        }
+        $url = $uploadService->getSignUrl();
+        if($url === false){ //  头像文件签名失败
+            return -2;
+        }
+        return $url;
+    }
     /*
      * 设置缓存
      * @param  string  $redisKey

@@ -61,14 +61,13 @@ class Upload
             // $url = "https://{$bucket}.{$endpoint}/{$objectKey}";
 
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
-            $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600); // 3600秒 = 1小时
-            //echo $url;exit();
-var_dump($url);
+            //$url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600); // 3600秒 = 1小时
+
             // 7. 构造公开访问 URL
-            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
-            var_dump($publicUrl);exit();
+//            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
+//            var_dump($publicUrl);exit();
             // 返回结果
-            return $publicUrl;
+            return $objectKey;
 
         } catch (OssException $e) {
             \Lsf\Loader::plugin('Log')->error(1002013, [
@@ -86,5 +85,33 @@ var_dump($url);
             return false;
         }
 
+    }
+
+    public function getSignUrl($pathUrl){
+        try {
+            $ossClient = new OssClient($this->_aliyunOssConfig['access_key_id'], $this->_aliyunOssConfig['access_key_secret'], $this->_aliyunOssConfig['end_point']);
+
+            // ===== 生成访问 URL =====
+            // 方式 A：公开读 Bucket（不推荐，仅演示）
+            // $url = "https://{$bucket}.{$endpoint}/{$objectKey}";
+
+            // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
+            $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $pathUrl, 3600); // 3600秒 = 1小时
+
+            return $url;
+
+        } catch (OssException $e) {
+            \Lsf\Loader::plugin('Log')->error(1002016, [
+                'file_path' => $pathUrl,
+                'error' => 'OSS Error:'.$e->getMessage(),
+            ]);
+            return false;
+        } catch (Exception $e) {
+            \Lsf\Loader::plugin('Log')->error(1002016, [
+                'file_path' => $pathUrl,
+                'error' => 'General Error:'.$e->getMessage(),
+            ]);
+            return false;
+        }
     }
 }
