@@ -56,6 +56,9 @@ class Application extends \Lsf\Controller
         '/user/oauth/login_or_sign_up'                  => 1,
         '/user/user/token_refresh'                      => 1,
 
+        //TEST
+        '/home/page/index'                              => 1,
+
         // test -- 服务端临时测试，暂不验证token，生产环境全部验证
         '/note/notes/add_audio'                         => 1,
         '/note/notes/note_info'                         => 1,
