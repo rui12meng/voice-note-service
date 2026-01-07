@@ -250,12 +250,12 @@ class User extends Base
     /**
      * 用户头像上传
      * @param int $uid
-     * @param string $scene
      * @param array $fileInfo
+     * @param string $scene
      * @return void
      */
-    public function uploadAvatar($uid, $scene, $fileInfo){
-        $url = $this->_uploadService->uploadFileOss($uid, $scene, $fileInfo);
+    public function uploadAvatar($uid, $fileInfo, $scene){
+        $url = $this->_uploadService->uploadFileOss($fileInfo, $scene);
         if($url === false){ //上传失败
             return -1;
         }

@@ -29,12 +29,11 @@ class Upload
 
     /**
      * 上传文件(图片/音频)
-     * @param   int  $uid
-     * @param   string  $scene
      * @param   array $file_info
+     * @param   string  $scene
      * @return void
      */
-    public function uploadFileOss($uid, $scene = 'avatar', $file_info){
+    public function uploadFileOss($file_info, $scene = 'avatar'){
         // ===== 生成唯一文件名 =====
         $ext = pathinfo($file_info['name'], PATHINFO_EXTENSION);
         switch ($scene){

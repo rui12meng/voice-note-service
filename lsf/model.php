@@ -13,6 +13,7 @@ class Model
     public $primary     = 'id';
     public $tablePrefix = '';
     public $table       = '';
+    private $build;
     private $_db;
     private $_mysqlPool;
 
