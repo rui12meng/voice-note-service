@@ -21,11 +21,11 @@ class MysqlPool
 
     /**
      * 创建连接池
-     * @param  string  $nodeName
      * @param  array   $config
+     * @param  string  $nodeName
      * @return void
      */
-    public function createMysqlPool($nodeName, $config){
+    public function createMysqlPool($config, $nodeName){
         // 检查配置
         if(!isset($config['host']) || empty($config['host'])){
             throw new \Exception('Mysql node ' . $nodeName . ' config host empty');

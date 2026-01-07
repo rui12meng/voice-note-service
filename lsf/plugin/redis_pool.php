@@ -20,11 +20,11 @@ class RedisPool
 
     /**
      * 创建连接池
+     * * @param  array  $config
      * @param string  $nodeName
-     * @param  array  $config
      * @return void
      */
-    public function createRedisPool($nodeName='redis', $config){
+    public function createRedisPool($config, $nodeName='redis'){
         // 检查配置
         if(!isset($config['host']) || empty($config['host'])){
             throw new \Exception('Redis node ' . $nodeName . ' config host empty');

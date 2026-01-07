@@ -175,7 +175,7 @@ class WebServer extends \Lsf\Protocol\HttpServer
             foreach ($nodeNameArr as $nodeName) {
                 //$redisConfig = \Lsf\Loader::plugin('ConfigCenter')->group($nodeName);
                 $redisConfig = \Lsf\Env::group('REDIS_');
-                \Lsf\Loader::plugin('RedisPool')->createRedisPool($nodeName, $redisConfig);
+                \Lsf\Loader::plugin('RedisPool')->createRedisPool($redisConfig, $nodeName);
                 \Lsf\Loader::plugin('Log')->error(9000024, $redisConfig, LSF_ERROR_TAG);
             }
         }
@@ -189,7 +189,7 @@ class WebServer extends \Lsf\Protocol\HttpServer
             foreach($nodeNameArr as $nodeName){
                // $mysqlConfig = \Lsf\Loader::plugin('ConfigCenter')->group($nodeName);
                 $mysqlConfig =\Lsf\Env::group('DB_');
-                \Lsf\Loader::plugin('MysqlPool')->createMysqlPool($nodeName, $mysqlConfig);
+                \Lsf\Loader::plugin('MysqlPool')->createMysqlPool($mysqlConfig, $nodeName);
 
                 \Lsf\Loader::plugin('Log')->error(9000024, $mysqlConfig, LSF_ERROR_TAG);
             }
