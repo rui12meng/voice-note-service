@@ -24,4 +24,10 @@ return [
     1002007 => 'redis操作失败',
     1002008 => 'access token 获取失败',
     1002009 => '用户已登出',
+    1002010 => 'Only JPG/PNG/GIF allowed',
+    1002011 => 'Invalid or empty file',
+    1002012 => 'File too large (max 2MB)',
+    1002013 => 'File upload oss error',
+    1002014 => 'File upload general error',
+    1002015 => '文件上传失败',
 ];

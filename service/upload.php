@@ -63,22 +63,22 @@ class Upload
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
             $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600); // 3600秒 = 1小时
             //echo $url;exit();
-
+var_dump($url);
             // 7. 构造公开访问 URL
-            //$publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
-            //var_dump($publicUrl);exit();
+            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
+            var_dump($publicUrl);exit();
             // 返回结果
-            return $url;
+            return $publicUrl;
 
         } catch (OssException $e) {
-            \Lsf\Loader::plugin('Log')->error(9011500, [
+            \Lsf\Loader::plugin('Log')->error(1002013, [
                 'file' => $file_info,
                 'file_path' => $objectKey,
                 'error' => 'OSS Error:'.$e->getMessage(),
             ]);
             return false;
         } catch (Exception $e) {
-            \Lsf\Loader::plugin('Log')->error(9011500, [
+            \Lsf\Loader::plugin('Log')->error(1002014, [
                 'file' => $file_info,
                 'file_path' => $objectKey,
                 'error' => 'General Error:'.$e->getMessage(),

@@ -226,26 +226,20 @@ class User extends \App\Application
     public function updateAvatar()
     {
         // 用户id
-//        $uid = $this->uid;
-//        if (empty($uid)) {
-//            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-//        }
-        $uid = 1;
+        $uid = $this->uid;
+        if (empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
         // 头像信息
         $files_info = $this->files('avatar', true);
 
         if ($files_info['error'] !== UPLOAD_ERR_OK || $files_info['size'] === 0) {
-            throw new Exception("Invalid or empty file");
+            return $this->json(1002011, []);
         }
 
         if (empty($files_info['tmp_name']) || empty($files_info['size'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'avatar');
         }
-//        $fp = fopen($filesInfo['tmp_name'], "rb");
-//        $as = fread($fp, $filesInfo['size']);
-//        $avatar = base64_encode($as);
-
-// || $filesInfo['error'] !== UPLOAD_ERR_OK
 
         // 校验文件类型（MIME）
         $f_info = finfo_open(FILEINFO_MIME_TYPE);
@@ -254,20 +248,20 @@ class User extends \App\Application
 
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif']; // 允许的 MIME 类型
         if (!in_array($mimeType, $allowedMimes)) {
-            //格式错误
-            echo json_encode(['error' => 'Only JPG/PNG/GIF allowed']);
-            exit;
+            return $this->json(1002010, []);
         }
 
         // 校验文件大小（2MB）
         if ($files_info['size'] > 2 * 1024 * 1024) {
             //文件超过限制
-            http_response_code(400);
-            echo json_encode(['error' => 'File too large (max 5MB)']);
-            exit;
+            return $this->json(1002012, []);
         }
 
         $result = $this->_uploadService->uploadFileOss($uid, $scene = 'avatar', $files_info);
+        if($result === false){ //上传失败
+            return $this->json(1002015, []);
+        }
+        return $this->json(0, []);
 
     }
 
