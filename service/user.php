@@ -24,6 +24,7 @@ class User extends Base
     private $_svrDaoVnUserSessionsModel;
     private $_svrDaoVnUserInfoModel;
     private $_svrDaoVnUserLogsModel;
+    private $_uploadService;
 
     /**
      * 构造函数
@@ -37,6 +38,7 @@ class User extends Base
         $this->_svrDaoVnUserSessionsModel = \Lsf\Loader::model('DaoVnUserSessions', true);
         $this->_svrDaoVnUserInfoModel = \Lsf\Loader::model('DaoVnUserInfo', true);
         $this->_svrDaoVnUserLogsModel = \Lsf\Loader::model('DaoVnUserLogs', true);
+        $this->_uploadService = \Lsf\Loader::service('Upload', true);
     }
 
     /**
@@ -134,6 +136,12 @@ class User extends Base
         // 数据库操作失败
         if($result === FALSE){
             return -7;
+        }
+        if(isset($result[0]['avatar_url']) && !empty($result[0]['avatar_url'])){
+            $result[0]['avatar_url'] = $this->_uploadService->getSignUrl($result[0]['avatar_url']);
+            if($result[0]['avatar_url'] === false){ //  头像文件签名失败
+                $result[0]['avatar_url'] = '';
+            }
         }
         return $result;
     }
@@ -247,8 +255,7 @@ class User extends Base
      * @return void
      */
     public function uploadAvatar($uid, $scene, $fileInfo){
-        $uploadService = \Lsf\Loader::service('Upload', true);
-        $url = $uploadService->uploadFileOss($uid, $scene, $fileInfo);
+        $url = $this->_uploadService->uploadFileOss($uid, $scene, $fileInfo);
         if($url === false){ //上传失败
             return -1;
         }
@@ -260,7 +267,7 @@ class User extends Base
         if($result === false){
             return -7;
         }
-        $url = $uploadService->getSignUrl($url);
+        $url = $this->_uploadService->getSignUrl($url);
         if($url === false){ //  头像文件签名失败
             return -2;
         }

@@ -87,6 +87,11 @@ class Upload
 
     }
 
+    /**
+     * 文件(图片/音频)私有 Bucket + 临时签名 URL
+     * @param   string  $pathUrl
+     * @return void
+     */
     public function getSignUrl($pathUrl){
         try {
             $ossClient = new OssClient($this->_aliyunOssConfig['access_key_id'], $this->_aliyunOssConfig['access_key_secret'], $this->_aliyunOssConfig['end_point']);
