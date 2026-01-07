@@ -67,7 +67,7 @@ class Oauth extends \Service\Base
                 throw new \Exception("Invalid issuer");
             }
 
-            if ($decoded->aud !== '你的 Apple Service ID / Client ID') {
+            if ($decoded->aud != \Lsf\Env::get('APPLE_OAUTH_SERVICE_ID')) {//'你的 Apple Service ID / Client ID'
                 throw new \Exception("Invalid audience");
             }
 
