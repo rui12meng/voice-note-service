@@ -7,7 +7,7 @@ namespace App\Habit;
  * $Id: application.php $
  */
 
-define('APP_NAME_NOTE', 'habit');
+define('APP_NAME_HABIT', 'habit');
 
 class Application
 {

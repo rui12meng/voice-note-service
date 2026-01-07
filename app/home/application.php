@@ -2,12 +2,12 @@
 namespace App\Action;
 
 /**
- * 用户行动基类
+ * 框架测试基类
  * @author mengrui
  * $Id: application.php $
  */
 
-define('APP_NAME_ACTION', 'action');
+define('APP_NAME_HOME', 'home');
 
 class Application
 {
