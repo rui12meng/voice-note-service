@@ -260,7 +260,7 @@ class User extends Base
         if($result === false){
             return -7;
         }
-        $url = $uploadService->getSignUrl();
+        $url = $uploadService->getSignUrl($url);
         if($url === false){ //  头像文件签名失败
             return -2;
         }
