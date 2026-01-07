@@ -146,6 +146,7 @@ class Application extends \Lsf\Controller
                     $cacheStatus = \Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
                     if (is_numeric($cacheStatus)&& ctype_digit($cacheStatus)){
+                        \Lsf\Loader::plugin('Log')->info(1001016,['msg'=>'cache session status', 'status' => $cacheStatus]);
                         if((int)$cacheStatus === 0 ||(int) $cacheStatus === 2){
                             throw new FinishException($this->json(1001013, [], 'token失效'));
                         }
@@ -153,7 +154,7 @@ class Application extends \Lsf\Controller
                         $daoVnUserSessionsModel = \Lsf\Loader::model('DaoVnUserSessions', true);
                         $sessionInfo          = $daoVnUserSessionsModel->findSessionByJti('status', $payload['jti']);
                         // 无session数据，默认无效
-                        $status      = isset($sessionInfo[0]['status']) ? $sessionInfo[0]['status'] : 0;
+                        $status      = isset($sessionInfo[0]['status']) ? (int)$sessionInfo[0]['status'] : 0;
                         if($status != 1){ //无效
                             throw new FinishException($this->json(1001013, [], 'token失效'));
                         }
