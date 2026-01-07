@@ -97,7 +97,7 @@ class User extends Base
         //3. 颁发新的 access_token & refresh_token
         $result_token = $this->generateTokens($userId);
         if(!isset($result_token['access_token']) || !isset($result_token['refresh_token']) || !isset($result_token['expires_at'])) {
-            \Lsf\Loader::plugin('Log')->error(9040511, [
+            \Lsf\Loader::plugin('Log')->error(1002008, [
                 'call' => 'generateTokens',
                 'result' => $result_token,
                 'message' => 'generate jwt token failed',
@@ -178,23 +178,41 @@ class User extends Base
             $where = [
                 'user_id' => $uid,
             ];
-            $result_session = $this->_svrDaoVnUserSessionsModel->updateSession($data , $where);
+
+            $this->_svrDaoVnUserSessionsModel->begin();
+            $resultSession = $this->_svrDaoVnUserSessionsModel->updateSession($data , $where);
+            if($resultSession === false){
+                $this->_svrDaoVnUserSessionsModel->rollback();
+                return -7;
+            }
 
             //2. 用户第三方绑定信息失效
-            $result_auth = $this->_svrDaoVnUserAuthModel->updateOauth($data , $where);
+            $resultAuth = $this->_svrDaoVnUserAuthModel->updateOauth($data , $where);
+            if($resultAuth === false){
+                $this->_svrDaoVnUserSessionsModel->rollback();
+                return -7;
+            }
 
             //3. 用户扩展资料信息失效
             $dataInfo = [
                 'is_deleted' => 1, //注销
             ];
-            $result_info = $this->_svrDaoVnUserInfoModel->updateUserInfo($dataInfo , $where);
+            $resultInfo = $this->_svrDaoVnUserInfoModel->updateUserInfo($dataInfo , $where);
+            if($resultInfo === false){
+                $this->_svrDaoVnUserSessionsModel->rollback();
+                return -7;
+            }
 
             //4. 主表信息失效
             $where = [
                 'id' => $uid,
             ];
-            $result_user = $this->_svrDaoVnUserModel->deleteUser($data , $where);
-
+            $resultUser = $this->_svrDaoVnUserModel->deleteUser($data , $where);
+            if($resultUser === false){
+                $this->_svrDaoVnUserSessionsModel->rollback();
+                return -7;
+            }
+            $this->_svrDaoVnUserSessionsModel->commit();
             //5. 日志记录(即使失败无需报错，日记记录，方便追踪)
             $data= [
                 'user_id' => $uid,
@@ -205,16 +223,11 @@ class User extends Base
                 'ip_address' => $params['ip_address'],
                 'user_agent' => $params['user_agent'],
             ];
-            $result_log = $this->_svrDaoVnUserLogsModel->storeLogs($data);
-
-            if($result_session && $result_auth && $result_info && $result_user && $result_log){
-                return 0;
-            }else{
-                return -1;
-            }
-
+            //log日志
+            $this->_svrDaoVnUserLogsModel->storeLogs($data);
+            return 0;
         }catch (\Exception $e){ //数据库操作失败
-            \Lsf\Loader::plugin('Log')->error(9018508,
+            \Lsf\Loader::plugin('Log')->error(1001014,
                 [
                     'call_function' => 'cancellation',
                     'uid' => $uid,
@@ -247,7 +260,7 @@ class User extends Base
             }
             $result = \Lsf\Loader::plugin('RedisPool')->redis()->setex($redisKey, $expire, $data);
             if ( ! $result) {
-                \Lsf\Loader::plugin('Log')->error(9040510, [
+                \Lsf\Loader::plugin('Log')->error(1002007, [
                     'redis_key'     => $redisKey,
                     'call_function' => 'setex',
                     'result'        => $result,
@@ -258,7 +271,7 @@ class User extends Base
                 return true;
             }
         } catch (\RedisException $e) {
-            \Lsf\Loader::plugin('Log')->error(9040511, [
+            \Lsf\Loader::plugin('Log')->error(1002007, [
                 'redis_key'     => $redisKey,
                 'call_function' => 'setex',
                 'code'          => $e->getCode(),
@@ -284,7 +297,7 @@ class User extends Base
 
             return '';
         } catch (\RedisException $e) {
-            \Lsf\Loader::plugin('Log')->error(9040511, [
+            \Lsf\Loader::plugin('Log')->error(1002007, [
                 'redis_key'     => $redisKey,
                 'call_function' => 'get',
                 'code'          => $e->getCode(),

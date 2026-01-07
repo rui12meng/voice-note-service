@@ -293,16 +293,13 @@ class User extends \App\Application
             case 0:
                 $eCode = ECODE_SUCCESS;
                 break;
-            case -1: //部分失败
-                $eCode = 9013009;
-                break;
-            // 注销失败
-            case -2:
-                $eCode = 9013001;
+            case -2:// 注销失败
+            case -7: //数据库操作失败
+                $eCode = ECODE_DATABASE_QUERY_FAIL;
                 break;
             // 未知错误
             default:
-                $eCode = $this->erroneous($result);
+                $eCode = ECODE_UNDEFINED_ERROR;
         }
 
         return $this->json($eCode, []);
