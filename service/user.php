@@ -81,7 +81,7 @@ class User extends Base
         $jti = $payload['jti'];
 
         //2. 去数据库查 user_sessions 是否注销 todo 可以考虑加redis缓存（优先查询redis）
-        $result = $this->_svrDaoVnUserSessionsModel->findSessionByJti('status, is_deleted', $jti);
+        $result = $this->_svrDaoVnUserSessionsModel->findSessionByJti($jti, 'status, is_deleted');
         if($result === false){
             return -7; //数据库操作失败
         }

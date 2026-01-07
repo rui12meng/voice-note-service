@@ -155,7 +155,7 @@ class Application extends \Lsf\Controller
                         }
                     }else{ //无redis数据,查表
                         $daoVnUserSessionsModel = \Lsf\Loader::model('DaoVnUserSessions', true);
-                        $sessionInfo          = $daoVnUserSessionsModel->findSessionByJti('status', $payload['jti']);
+                        $sessionInfo          = $daoVnUserSessionsModel->findSessionByJti($payload['jti'], 'status');
                         // 无session数据，默认无效
                         $status      = isset($sessionInfo[0]['status']) ? (int)$sessionInfo[0]['status'] : 0;
                         if($status != 1){ //无效

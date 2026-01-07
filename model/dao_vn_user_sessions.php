@@ -59,7 +59,7 @@ class DaoVnUserSessions extends \Lsf\Model
      * @param  int      $limit
      * @return mixed
      */
-    public function findSessionByJti($columns = '*', $jti, $limit = 1){
+    public function findSessionByJti($jti, $columns = '*', $limit = 1){
         $where = ['jti' => $jti];
         $result = $this->select($columns, $where, $this->primary . ' DESC', $limit);
         if($result === FALSE){
