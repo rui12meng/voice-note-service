@@ -110,7 +110,7 @@ class Application extends \Lsf\Controller
             }
 
             if($payload === false){
-                throw new FinishException($this->json(9999999, [], 'token非法'));
+                throw new FinishException($this->json(1001017, [], 'token非法'));
             }else{
                 $this->uid = $payload['sub'];
                 $this->jti = $payload['jti'];
@@ -147,7 +147,7 @@ class Application extends \Lsf\Controller
 
                     if (is_numeric($cacheStatus)&& ctype_digit($cacheStatus)){
                         if((int)$cacheStatus === 0 ||(int) $cacheStatus === 2){
-                            throw new FinishException($this->json(100001002, [], 'token失效'));
+                            throw new FinishException($this->json(1001013, [], 'token失效'));
                         }
                     }else{ //无redis数据,查表
                         $daoVnUserSessionsModel = \Lsf\Loader::model('DaoVnUserSessions', true);
@@ -155,25 +155,25 @@ class Application extends \Lsf\Controller
                         // 无session数据，默认无效
                         $status      = isset($sessionInfo[0]['status']) ? $sessionInfo[0]['status'] : 0;
                         if($status != 1){ //无效
-                            throw new FinishException($this->json(100001002, [], 'token失效'));
+                            throw new FinishException($this->json(1001013, [], 'token失效'));
                         }
                     }
                     return $payload;
                 }else{
-                    \Lsf\Loader::plugin('Log')->error(9018508,
+                    \Lsf\Loader::plugin('Log')->error(1001016,
                         [
                             'call_function' => 'checkToken',
                             'payload' => $payload,
                         ]);
-                    throw new FinishException($this->json(100001001, [], 'token非法'));
+                    throw new FinishException($this->json(1001001, [], 'token非法'));
                 }
             }catch (\Exception $e) {
-                \Lsf\Loader::plugin('Log')->error(9018508,
+                \Lsf\Loader::plugin('Log')->error(1001016,
                     [
                         'call_function' => 'checkToken',
                         'err' => $e->getMessage(),
                     ]);
-                throw new FinishException($this->json(100001001, [], 'token非法'));
+                throw new FinishException($this->json(1001001, [], 'token非法'));
             }
         }
 
@@ -224,7 +224,7 @@ class Application extends \Lsf\Controller
         }
         // 系统维护
         if ($status == 0) {
-            throw new FinishException($this->json(9999999, [], $description));
+            throw new FinishException($this->json(1111111, [], $description));
         }
     }
 
@@ -400,7 +400,6 @@ class Application extends \Lsf\Controller
                 $eCode = ECODE_API_PASSPORT_NOT_FOUND;
                 break;
             default:
-                \Lsf\Loader::plugin('Log')->error(9010513, ['code' => $code]);
                 // 未知错误
                 $eCode = ECODE_UNDEFINED_ERROR;
                 break;
