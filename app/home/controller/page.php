@@ -29,8 +29,8 @@ class Page extends \App\Application
      * @return string
      */
     public function index(){
-        $uuid4 = Uuid::uuid7()->toString();
-        echo $uuid4; exit();// e.g. "550e8400-e29b-41d4-a716-446655440000"
-        return $this->json(ECODE_SUCCESS);
+        $uuid7 = Uuid::uuid7()->toString();
+        //echo $uuid4; exit();// e.g. "550e8400-e29b-41d4-a716-446655440000"
+        return $this->json(ECODE_SUCCESS, ['uuid' => $uuid7]);
     }
 }
