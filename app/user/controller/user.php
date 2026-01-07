@@ -52,8 +52,8 @@ class User extends \App\Application
                 case -2: //数据库操作失败
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
-                case -3: //数据不存在
-                    $eCode = ECODE_DATA_NOT_FOUND;
+                case -3: //refresh_token 无效
+                    $eCode = 1002006;
                     break;
                 case -4: //注销
                     $eCode = ECODE_USER_ACCOUNT_DEACTIVATED;
