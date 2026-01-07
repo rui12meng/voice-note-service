@@ -1,5 +1,5 @@
 <?php
-namespace App\Action;
+namespace App\Home;
 
 /**
  * 框架测试基类
