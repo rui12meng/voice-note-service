@@ -6,7 +6,6 @@ namespace Home\Controller;
  * @author mengrui
  * $Id: page.php $
  */
-use Ramsey\Uuid\Uuid;
 
 class Page extends \App\Application
 {
@@ -29,7 +28,7 @@ class Page extends \App\Application
      * @return string
      */
     public function index(){
-        $uuid7 = Uuid::uuid7()->toString();
+        $uuid7 = \Lsf\Uuid::v7();
         //echo $uuid4; exit();// e.g. "550e8400-e29b-41d4-a716-446655440000"
         return $this->json(ECODE_SUCCESS, ['uuid' => $uuid7]);
     }
