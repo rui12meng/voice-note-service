@@ -38,7 +38,7 @@ class DaoVnUserInfo extends \Lsf\Model
         if($result === FALSE){
             return FALSE;
         }else{
-            return $result; //主键id
+            return $result;
         }
     }
 

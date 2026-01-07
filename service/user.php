@@ -49,7 +49,7 @@ class User extends Base
         $result = $this->_svrDaoVnUserSessionsModel->changeSessionStatusByJti($jti);
         // 数据库操作失败
         if($result === FALSE){
-            return -1;
+            return -7;
         }
 
         //同时更新redis登录状态为失效
@@ -78,10 +78,10 @@ class User extends Base
         $userId = $payload['sub'];
         $jti = $payload['jti'];
 
-        //2. 去数据库查 user_sessions 是否注销
+        //2. 去数据库查 user_sessions 是否注销 todo 可以考虑加redis缓存（优先查询redis）
         $result = $this->_svrDaoVnUserSessionsModel->findSessionByJti('status, is_deleted', $jti);
         if($result === false){
-            return -2; //数据库操作失败
+            return -7; //数据库操作失败
         }
         if(isset($result[0]['status']) && isset($result[0]['is_deleted'])){
             if((int)$result[0]['is_deleted'] === 1){  //已注销
@@ -117,7 +117,7 @@ class User extends Base
         ];
         $result_session = $this->_svrDaoVnUserSessionsModel->updateSession($data , $where);
         if($result_session === false){
-            return -2; //数据库操作失败
+            return -7; //数据库操作失败
         }
         return $data;
     }
@@ -129,11 +129,11 @@ class User extends Base
      */
     public function getUserInfo($uid){
         // 要查询的字段
-        $col = 'nickname, gender, avatar_url, timezone, language';
+        $col = 'nickname, email, gender, avatar_url, timezone, language';
         $result = $this->_svrDaoVnUserInfoModel->findUserInfo($col, $uid);
         // 数据库操作失败
         if($result === FALSE){
-            return -1;
+            return -7;
         }
         return $result;
     }
@@ -149,14 +149,14 @@ class User extends Base
         $result = $this->_svrDaoVnUserInfoModel->editUserInfo($uid, $user_info);
         // 数据库操作失败
         if($result === FALSE){
-            return -1;
+            return -7;
         }
         //查询数据
         $col = 'nickname, gender, avatar_url, timezone, language, updated_at';
         $user_info = $this->_svrDaoVnUserInfoModel->findUserInfo($col,$uid);
         // 数据库操作失败
         if($user_info === FALSE){
-            return -1;
+            return -7;
         }
         return $user_info;
     }

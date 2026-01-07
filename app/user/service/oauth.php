@@ -327,7 +327,7 @@ class Oauth extends \Service\Base
             return -7;
         }
         //查询用户信息返回给客户端
-        $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender',$uid);
+        $userInfo = $this->_svrDaoVnUserInfoModel->findUserInfo('nickname,email,avatar_url,gender,language',$uid);
 
         if($userInfo === false){
             return -7;
@@ -336,6 +336,7 @@ class Oauth extends \Service\Base
             $result_data['email'] = $userInfo[0]['email'] ?? '';
             $result_data['avatar_url'] = $userInfo[0]['avatar_url'] ?? '';
             $result_data['gender'] = $userInfo[0]['gender'] ?? '';
+            $result_data['language'] = $userInfo[0]['language'] ?? '';
         }
 
         return $result_data;

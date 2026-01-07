@@ -99,7 +99,7 @@ class User extends \App\Application
         if (is_int($result) && $result < 0) {
             switch ($result) {
                 // 数据库操作失败
-                case -1:
+                case -7:
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
                 // 未知错误
@@ -129,7 +129,7 @@ class User extends \App\Application
         if (is_int($userInfo) && $userInfo < 0) {
             switch ($userInfo) {
                 // 数据库操作失败
-                case -1:
+                case -7:
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
                 // 未知错误
@@ -139,6 +139,7 @@ class User extends \App\Application
         } else {
             $result = [
                 'nickname' => $userInfo[0]['nickname'] ?? '',
+                'email' => $userInfo[0]['email'] ?? '',
                 'gender' => $userInfo[0]['gender'] ?? 0,
                 'avatar_url' => $userInfo[0]['avatar_url'] ?? '',
                 'timezone' => $userInfo[0]['timezone'] ?? '',
@@ -189,7 +190,7 @@ class User extends \App\Application
             if (is_int($result) && $result < 0) {
                 switch ($result) {
                     // 数据库操作失败
-                    case -1:
+                    case -7:
                         $eCode = ECODE_DATABASE_QUERY_FAIL;
                         break;
                     // 未知错误
@@ -210,7 +211,7 @@ class User extends \App\Application
 
         }else{
             //没有要修改的内容
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'miss user info');
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'miss params');
         }
     }
 

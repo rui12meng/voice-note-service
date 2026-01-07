@@ -86,7 +86,6 @@ class Oauth extends \App\Application
      */
     public function loginWithApple($params){
 
-        $user_info = [];
         //apple授权登录必传
         if ( !isset($params['id_token']) || empty($params['id_token'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'id_token');
@@ -104,8 +103,12 @@ class Oauth extends \App\Application
         }
         //登录or注册逻辑
         $result = $this->_oauthService->appleLoginOrSignUp($params);
-
-        return $result;
+        if(is_array($result) && !empty($result)){
+            $response = array_merge($result,['login_model' => 'apple']);
+        }else{
+            $response = $result;
+        }
+        return $response;
     }
 
     /**
@@ -139,8 +142,12 @@ class Oauth extends \App\Application
         }
         //登录or注册逻辑
         $result = $this->_oauthService->guestLoginOrSignUp($params);
-
-        return $result;
+        if(is_array($result) && !empty($result)){
+            $response = array_merge($result,['login_model' => 'guest']);
+        }else{
+            $response = $result;
+        }
+        return $response;
     }
 
     /**
