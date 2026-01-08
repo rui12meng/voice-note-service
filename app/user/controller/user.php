@@ -157,12 +157,24 @@ class User extends \App\Application
         if (empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'invalid token');
         }
+        //todo 服务端做一层验证，游客无编辑权限【通过uid查询user是否为游客身份】
+        $res = $this->_userService->isGuest($uid);
 
+        if(is_int($res) && $res < 0){
+            return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
+        }
+        if($res === true){ //无权限编辑
+            return $this->json(1002017, []);
+        }
         $user_info = [];
 
-        // 用户信息-昵称
+        // 用户信息-昵称 todo 限制50个字符
         $nickname = $this->post('nickname', true);
-        if (!empty($nickname)) {
+        $nickname = is_string($nickname) ? trim($nickname) : '';
+        if ($nickname !== '' && mb_strlen($nickname) > 50) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'nickname too long');
+        }
+        if ($nickname !== '') {
             $user_info['nickname'] = $nickname;
         }
         // 用户信息-性别
@@ -255,6 +267,7 @@ class User extends \App\Application
             return $this->json(1002012, []);
         }
 
+        //todo 图片合规性校验；内容审核API，成本控制
         $url = $this->_userService->uploadAvatar($uid, $scene = 'avatar', $files_info);
         //-1 上传失败
         $eCode = ECODE_SUCCESS;

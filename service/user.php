@@ -273,6 +273,23 @@ class User extends Base
         }
         return $url;
     }
+
+    /**
+     * 检查用户是否为游客身份
+     * @param int $uid
+     * @return void
+     */
+    public function isGuest($uid){
+        $columns = 'is_guest';
+        $result = $this->_svrDaoVnUserModel->find($columns, $uid);
+        if($result === false){
+            return -7;
+        }
+        if(isset($result['is_guest']) && (int)$result['is_guest'] === 1){
+            return true;
+        }
+        return false;
+    }
     /*
      * 设置缓存
      * @param  string  $redisKey

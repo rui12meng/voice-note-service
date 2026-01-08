@@ -31,5 +31,6 @@ return [
     1002014 => 'File upload general error',
     1002015 => '文件上传失败',
     1002016 => '头像文件地址签名失败',
+    1002017 => 'Guest users cannot edit profile information. Please sign in.',
 
 ];
