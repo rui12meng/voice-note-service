@@ -13,7 +13,6 @@ class DouBaoSummarizer
     private $_svrVolcModel;
     private $_daoVnAiAnalysisUsageModel;
     private $_model = 'doubao-seed-1-6-flash-250828';
-    private $_noteService;
     private $_noteAiAnalysisService;
 
     /**
@@ -22,7 +21,6 @@ class DouBaoSummarizer
     public function __construct(){
         $this->_svrVolcModel = \Lsf\Loader::Model('SvrVolc', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisUsageModel = \Lsf\Loader::Model('DaoVnAiAnalysisUsage', false, APP_NAME_NOTE);
-        $this->_noteService = \Lsf\Loader::service('Note', false, APP_NAME_NOTE);
         $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
     }
 
@@ -53,7 +51,6 @@ class DouBaoSummarizer
             return [];
         }
         $durationMs = round((microtime(true) - $startTime) * 1000);
-        var_dump($response);exit();
         $content = $response['choices'][0]['message']['content'] ?? '';
         $final = [];
         if (is_array($content)) {
@@ -102,7 +99,7 @@ class DouBaoSummarizer
             ];
             $this->_noteAiAnalysisService->addBatchNoteAiAnalysis($noteId, $data['ai_model'], $items, $analyzedAt);
         }
-        exit();
+        
         return $final;
     }
 

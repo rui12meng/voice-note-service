@@ -6,7 +6,7 @@ namespace Note\Service;
  * $Id: note.php $
  * @author mengrui
  */
-class Note //extends \Note\Service\Base
+class Note extends \Service\Base
 {
     const NOTE_TYPE_AUDIO   = 1;
     const NOTE_TYPE_TEXT    = 2;
@@ -15,6 +15,7 @@ class Note //extends \Note\Service\Base
 
     const REDIS_EXPIRE_BASE_TIME = 3600;
     const REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT = 'voice-note-service:free-user-limit-for-analyze-text';
+    const REDIS_KEY_PROMPT_FOR_ANALYZE_TEXT = 'voice-note-service:prompt-for-analyze-text';
     const REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES = 2;
 
     /**
@@ -53,7 +54,7 @@ class Note //extends \Note\Service\Base
      */
     public function doAnalyzeNotesTasks($uid, $noteId, $content){
         // todo 1. 验证用户AI分析权限：免费用户每天最多2次
-        /*$redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $uid;
+        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $uid;
         $usedTimes = (int) $this->getCache($redisKey);
 
         if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
@@ -64,7 +65,7 @@ class Note //extends \Note\Service\Base
                 'error' => '今日AI分析次数已用完',
             ]);
             return false;
-        }*/
+        }
 
         //识别tile & summary & tag
         //$result = $this->_doubaoSummarizerService->summarize($content);
@@ -72,8 +73,6 @@ class Note //extends \Note\Service\Base
         $promptMessage = $this->getNotePrompt($content);
 
         $result = $this->_douBaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
-
-        var_dump($result);exit();
 
         //识别结果存储SQL
 
@@ -154,6 +153,15 @@ class Note //extends \Note\Service\Base
      * @return void
      */
     public function getNotePrompt($text, $promptKey = 'diary_analysis', $scene = 'default'){
+
+        // todo 提示词优先查看cache
+        $redisKey = self::REDIS_KEY_PROMPT_FOR_ANALYZE_TEXT . ':' . $promptKey. ':' . $scene;
+        $redisData = $this->getCache($redisKey);
+
+        if ($redisData != false) {
+            return json_decode($redisData);
+        }
+
         $where = [
             'prompt_key' => $promptKey,
             'scene' => $scene,
@@ -205,7 +213,7 @@ class Note //extends \Note\Service\Base
             $value = $runtimeVars[$varName];
 
             if ($type === 'json') {
-                $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
             } else {
                 $value = (string) $value;
             }
@@ -228,6 +236,7 @@ class Note //extends \Note\Service\Base
                 'content' => $userPrompt,
             ],
         ];
+        $this->setCache($redisKey, json_encode($messages, JSON_UNESCAPED_UNICODE), self::REDIS_EXPIRE_BASE_TIME*24);
         return $messages;
     }
 
