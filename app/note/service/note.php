@@ -6,7 +6,7 @@ namespace Note\Service;
  * $Id: note.php $
  * @author mengrui
  */
-class Note extends Base
+class Note extends \Note\Service\Base
 {
     const NOTE_TYPE_AUDIO   = 1;
     const NOTE_TYPE_TEXT    = 2;
@@ -51,7 +51,7 @@ class Note extends Base
      */
     public function doAnalyzeNotesTasks($uid, $noteId, $content){
         // todo 1. 验证用户AI分析权限：免费用户每天最多2次
-        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $uid;
+        /*$redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $uid;
         $usedTimes = (int) $this->getCache($redisKey);
 
         if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
@@ -62,11 +62,16 @@ class Note extends Base
                 'error' => '今日AI分析次数已用完',
             ]);
             return false;
-        }
+        }*/
 
         //识别tile & summary & tag
-        $result = $this->_doubaoSummarizerService->summarize($content);
+        //$result = $this->_doubaoSummarizerService->summarize($content);
 
+        $promptMessage = $this->_noteService->getNotePrompt($content);
+
+        $result = $this->_doubaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
+
+        var_dump($result);exit();
 
         //识别结果存储SQL
 

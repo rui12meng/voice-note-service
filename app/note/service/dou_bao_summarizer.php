@@ -53,6 +53,7 @@ class DouBaoSummarizer
             return [];
         }
         $durationMs = round((microtime(true) - $startTime) * 1000);
+        var_dump($response);exit();
         $content = $response['choices'][0]['message']['content'] ?? '';
         $final = [];
         if (is_array($content)) {
