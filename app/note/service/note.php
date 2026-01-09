@@ -6,7 +6,7 @@ namespace Note\Service;
  * $Id: note.php $
  * @author mengrui
  */
-class Note extends \Note\Service\Base
+class Note //extends \Note\Service\Base
 {
     const NOTE_TYPE_AUDIO   = 1;
     const NOTE_TYPE_TEXT    = 2;
@@ -25,6 +25,7 @@ class Note extends \Note\Service\Base
     private $_daoVnAiPromptTemplatesModel;
     private $_daoVnAiAnalysisTypesModel;
     private $_daoVnNoteTagsModel;
+    private $_douBaoSummarizerService;
 
     /**
      * 构造函数
@@ -39,6 +40,7 @@ class Note extends \Note\Service\Base
         $this->_daoVnAiPromptTemplatesModel = \Lsf\Loader::model('DaoVnAiPromptTemplates', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisTypesModel = \Lsf\Loader::model('DaoVnAiAnalysisTypes', false, APP_NAME_NOTE);
         $this->_daoVnNoteTagsModel = \Lsf\Loader::model('DaoVnNoteTags', false, APP_NAME_NOTE);
+        $this->_douBaoSummarizerService = \Lsf\Loader::service('DouBaoSummarizer', false, APP_NAME_NOTE);
     }
 
     /**
@@ -67,9 +69,9 @@ class Note extends \Note\Service\Base
         //识别tile & summary & tag
         //$result = $this->_doubaoSummarizerService->summarize($content);
 
-        $promptMessage = $this->_noteService->getNotePrompt($content);
+        $promptMessage = $this->getNotePrompt($content);
 
-        $result = $this->_doubaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
+        $result = $this->_douBaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
 
         var_dump($result);exit();
 
