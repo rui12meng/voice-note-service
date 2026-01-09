@@ -73,7 +73,7 @@ class Note extends \Service\Base
         $promptMessage = $this->getNotePrompt($content);
 
         $result = $this->_douBaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
-
+return $result;
         //识别结果存储SQL
 
 //        $response = [
