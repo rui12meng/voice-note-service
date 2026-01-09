@@ -6,12 +6,17 @@ namespace Note\Service;
  * $Id: note.php $
  * @author mengrui
  */
-class Note
+class Note extends Base
 {
     const NOTE_TYPE_AUDIO   = 1;
     const NOTE_TYPE_TEXT    = 2;
     const NOTE_TYPE_IMAGE   = 3;
     const NOTE_MODERATION_STATUS = 2;
+
+    const REDIS_EXPIRE_BASE_TIME = 3600;
+    const REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT = 'voice-note-service:free-user-limit-for-analyze-text';
+    const REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES = 2;
+
     /**
      * @var mixed
      */
@@ -34,6 +39,43 @@ class Note
         $this->_daoVnAiPromptTemplatesModel = \Lsf\Loader::model('DaoVnAiPromptTemplates', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisTypesModel = \Lsf\Loader::model('DaoVnAiAnalysisTypes', false, APP_NAME_NOTE);
         $this->_daoVnNoteTagsModel = \Lsf\Loader::model('DaoVnNoteTags', false, APP_NAME_NOTE);
+    }
+
+    /**
+     * 日记分析（身份验证/分析/存储）
+     * @param int $uid
+     * @param int $noteId
+     * @param  string $content
+     * @throws \Exception
+     * @return void
+     */
+    public function doAnalyzeNotesTasks($uid, $noteId, $content){
+        // todo 1. 验证用户AI分析权限：免费用户每天最多2次
+        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $uid;
+        $usedTimes = (int) $this->getCache($redisKey);
+
+        if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
+            // 超过当日次数限制
+            \Lsf\Loader::plugin('Log')->error(1002013, [
+                'uid' => $uid,
+                'note_id' => $noteId,
+                'error' => '今日AI分析次数已用完',
+            ]);
+            return false;
+        }
+
+        //识别tile & summary & tag
+        $result = $this->_doubaoSummarizerService->summarize($content);
+
+
+        //识别结果存储SQL
+
+//        $response = [
+//            'title' => $result['tilte'] ?? '',
+//            'summary' => $result['summary'] ?? '',
+//        ];
+//        return $this->json(ECODE_SUCCESS, $response);
+
     }
 
     /**
@@ -135,9 +177,9 @@ class Note
 
         $runtimeVars = [];
         foreach ($AnalyseType as $item) {
-            if($item['name'] == 'insight'){
+            //if($item['name'] == 'insight'){
                 $runtimeVars["{$item['name']}_schema"] = $item['json_schema'];
-            }
+            //}
         }
         if(!empty($runtimeVars)){
             $runtimeVars['diary_text'] = $text;
@@ -196,13 +238,11 @@ class Note
             'note_type' => self::NOTE_TYPE_AUDIO,
             'content' => $noteText,
             'media_url' => json_encode($audioUrls),
-            'created_at' => date("Y-m-d H:i:s"),
         ];
 
         $result = $this->_daoVnNoteModel->insert($data);
 
-        if ($result === false) {
-            //入库失败
+        if ($result === false) {//入库失败
             return -7;
         } else {
             return $result;

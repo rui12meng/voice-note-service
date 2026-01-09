@@ -34,13 +34,13 @@ class SvrVolc extends \Model\SvrBase
      * @return string $requestUuid（唯一请求id）
      * @throws Exception
      */
-    public function asrSubmit(string $fileUrl, string $fileFormat, string $requestUuid): string
+    public function asrSubmit(string $fileUrl, string $fileFormat, string $requestUuid)
     {
         $apiSign = 'volc_asr_submit';
 
         $payload = [
             'user' => [
-                'uid' => 'php_swoole_' . substr(md5($reqId), 0, 16),
+                'uid' => 'php_swoole_' . substr(md5($requestUuid), 0, 16),
             ],
             'audio' => [
                 'format' => $fileFormat,
@@ -62,7 +62,7 @@ class SvrVolc extends \Model\SvrBase
         $logId      = $response['headers']['x-tt-logid'] ?? '';
 
         if ($statusCode !== '20000000') {
-            \Lsf\Loader::plugin('Log')->error(9040505, [
+            \Lsf\Loader::plugin('Log')->error(1003507, [
                 'error' => 'volc asr Submit API error',
                 'code' => $statusCode,
                 'message' => $message,
@@ -129,18 +129,18 @@ class SvrVolc extends \Model\SvrBase
 
                 // 可重试状态：20000001（处理中）、20000002（排队中）
                 if (!in_array($code, ['20000001', '20000002'], true)) {
-                    \Lsf\Loader::plugin('Log')->error(9020507, ['error' => "VOLC ASR task failed permanently: code={$code}, message={$message}"]);
+                    \Lsf\Loader::plugin('Log')->error(1003505, ['error' => "VOLC ASR task failed permanently: code={$code}, message={$message}"]);
                     return false;
                 }
 
                 // 超时检查
                 if (time() - $startTime > $maxWaitSeconds) {
-                    \Lsf\Loader::plugin('Log')->error(9020507, ['error' => "VOLC ASR task timeout after {$maxWaitSeconds} seconds"]);
+                    \Lsf\Loader::plugin('Log')->error(1003506, ['error' => "VOLC ASR task timeout after {$maxWaitSeconds} seconds"]);
                     return false;
                 }
 
             } catch (\Exception $e) {
-                \Lsf\Loader::plugin('Log')->error(9020507, ['error' => "VOLC ASR Query error:  {$e->getMessage()}"]);
+                \Lsf\Loader::plugin('Log')->error(1003507, ['error' => "VOLC ASR Query error:  {$e->getMessage()}"]);
                 return false;
             }
         }

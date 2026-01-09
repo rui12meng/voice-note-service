@@ -137,8 +137,10 @@ class Upload
 
     /**
      * 获取音频时长（秒）
+     * @param string $file
+     * @return void
      */
-    public static function get(string $file): int
+    public static function get(string $file)
     {
         if (!is_file($file)) {
             return 0;

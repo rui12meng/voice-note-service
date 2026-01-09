@@ -5,10 +5,10 @@ namespace Note\Service;
 /**
  * 豆包文本解析服务
  * @author mengrui
- * $Id: doubao_summarizer.php $
+ * $Id: dou_bao_summarizer.php $
  */
 
-class DoubaoSummarizer
+class DouBaoSummarizer
 {
     private $_svrVolcModel;
     private $_daoVnAiAnalysisUsageModel;
@@ -34,7 +34,7 @@ class DoubaoSummarizer
      * @param int $noteId 关联 notes.id（可为空）
      * @return void
      */
-    public function aiAnalysis(array $prompt, int $userId, int $noteId = 0){
+    public function aiAnalysis(array $prompt, int $userId, int $noteId){
         $startTime = microtime(true);
         if (empty($prompt)) {
             return [];
@@ -113,7 +113,7 @@ class DoubaoSummarizer
      * @param int $noteId 关联 notes.id（可为空）
      * @return array{title: string, summary: string, compliance_status: int, compliance_reason: string}
      */
-    public function summarize(string $text, int $userId, int $noteId = 0): array
+    public function summarize(string $text, int $userId, int $noteId)
     {
         $startTime = microtime(true);
         // 1. 参数校验

@@ -268,7 +268,7 @@ class User extends \App\Application
         }
 
         //todo 图片合规性校验；内容审核API，成本控制
-        $url = $this->_userService->uploadAvatar($uid, $scene = 'avatar', $files_info);
+        $url = $this->_userService->uploadAvatar($uid, $files_info, $scene = 'avatar');
         //-1 上传失败
         $eCode = ECODE_SUCCESS;
         if(is_int($url)){

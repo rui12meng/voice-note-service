@@ -14,8 +14,9 @@ class Notes extends \App\Application
      */
     private $_asrService;
     private $_uploadService;
-    private $_doubaoSummarizerService;
+    private $_douBaoSummarizerService;
     private $_noteService;
+    private $_audioService;
 
     /**
      * 构造函数
@@ -28,8 +29,9 @@ class Notes extends \App\Application
     {
         parent::__construct($appName, $controllerName, $actionName);
         $this->_asrService = \Lsf\Loader::service('Asr', false, APP_NAME_NOTE);
-        $this->_doubaoSummarizerService = \Lsf\Loader::service('DoubaoSummarizer', false, APP_NAME_NOTE);
+        $this->_douBaoSummarizerService = \Lsf\Loader::service('DouBaoSummarizer', false, APP_NAME_NOTE);
         $this->_noteService = \Lsf\Loader::service('Note', false, APP_NAME_NOTE);
+        $this->_audioService = \Lsf\Loader::service('Audio', false, APP_NAME_NOTE);
         $this->_uploadService = \Lsf\Loader::service('Upload', true);
     }
 
@@ -40,124 +42,111 @@ class Notes extends \App\Application
      */
     public function addAudio()
     {
-        $this->uid = 101;
-        $text = 'I’ve finally decided on a 5-day trip to Kyoto this autumn! The goal is relaxation, culture, and disconnecting from screens. I’ll fly into Kansai Airport on October 18th and stay in a traditional machiya townhouse near Gion.
 
-Key priorities:
-
-Visit Fushimi Inari at sunrise (avoid crowds!)
-Book a tea ceremony experience in Arashiyama
-Explore Nishiki Market for local snacks like matcha mochi and yuba
-Take a day trip to Nara to see the deer park and Todai-ji Temple
-I’ll keep my itinerary flexible—no rushing between spots. Packing light: comfortable walking shoes, a light jacket for cool mornings, and my sketchbook for quiet moments at temples.
-
-Budget-wise, I’ve set ¥80,000 (~$550) for lodging, food, transport, and small souvenirs. Using a prepaid IC card (ICOCA) for trains/buses to simplify transit.
-
-Most importantly: no work emails, minimal social media. Just wandering, observing, and soaking in the autumn colors. If plans change? That’s okay—spontaneity is part of the joy. Can’t wait to recharge!';
-        $noteId = $this->_noteService->addAudioNote($this->uid,$text,$audioUrl = 'https://dashscope.oss-cn-beijing.aliyuncs.com/samples/audio/paraformer/hello_world_female2.wav');
-
-        $result = $this->_doubaoSummarizerService->summarize($text, $this->uid, $noteId);
-
-
-        $r = $this->_noteService->saveNoteAiResult($noteId, $result['title'], $result['summary'], $result['analyzed_at'], $result['compliance_status']);
-        var_dump( [$noteId, $result , $r]);exit();
-
-//        $url ='https://dashscope.oss-cn-beijing.aliyuncs.com/samples/audio/paraformer/hello_world_female2.wav';
-//
-//        //1. 识别
-//        $result = $this->_asrService->voiceAsr($url , 'wav');
-
-        exit();
+        //$r = $this->_noteService->saveNoteAiResult($noteId, $result['title'], $result['summary'], $result['analyzed_at'], $result['compliance_status']);
 
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
 
-        $audio_info = $this->files('audio', true);
+        $audioInfo = $this->files('audio', true);
 
         //文件是否存在
-        if (empty($audio_info) || !isset($audio_info['tmp_name']) || empty($audio_info['size'])) {
+        if (empty($audioInfo) || !isset($audioInfo['tmp_name']) || empty($audioInfo['size'])) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'audio');
         }
 
-        //上传错误
-        /*if ($audio_info['error'] !== UPLOAD_ERR_OK  || $audio_info['size'] === 0) {
-            throw new Exception("Invalid or empty audio");
-        }*/
-        // 验证音频有效性，获取音频时长
-        $response = $this->_svrAudio->validateAudio($audio_info);
+        //文件无效
+        if ((int)$audioInfo['error'] !== UPLOAD_ERR_OK  || (int)$audioInfo['size'] === 0) {
+            return $this->json(1003000, [], 'Invalid or empty audio');
+        }
 
-        /*if (is_int($response) && $response < 0) {
-            switch ($response) {
+        // 验证音频有效性，获取音频时长
+        $result = $this->_audioService->validateAudio($audioInfo);
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
                 case -1://音频文件大小超过限制
-                    $eCode = 9043020;
+                    $eCode = 1003001;
                     break;
                 case -2:
                 case -3: //类型错误
-                    $eCode = 9043034;
-                    break;
-                case -4: //文件不是有效音频 //无法解析音频时长
-                    $eCode = 9043035;
-                    break;
-                case -5: //无法解析音频时长 //音频时长超出限制
-                    $eCode = 9043035;
+                    $eCode = 1003002;
                     break;
                 case -6: //音频时长超出限制 //音频解析失败
-                    $eCode = 9043035;
-                    break;
-                case -7: //音频解析失败
-                    $eCode = 9043035;
+                    $eCode = 1003004;
                     break;
                 // 未知错误
                 default:
-                    $eCode = $this->erroneous($response);
+                    $eCode = ECODE_UNDEFINED_ERROR;
                     break;
             }
-        } else {
-            $result = isset($response['duration']) ?? '';
-        }*/
-
+            return $this->json($eCode, []);
+        }
+        $duration = isset($result['duration']) ? (int)$result['duration'] : 0;
         //上传音频
-        if(is_array($response)&& isset($response['duration'])){
-            //上传OSS
-            $url = $this->_uploadService->uploadFileOss($uid, $scene = 'audio', $audio_info);
-
-            var_dump($url);
-
-            //AI解析
-
+        $pathUrl = '';
+        $signUrl = '';
+        if($duration > 0){
+            //上传OSS，获取文件相对路径
+            $result = $this->_audioService->uploadAudio($uid, $audioInfo, $scene = 'audio');
+            if($result === false){ //上传失败
+                return $this->json(1003005, []);
+            }
+            $pathUrl = isset($result['pathUrl']) ? $result['pathUrl'] : '';
+            $signUrl = isset($result['signUrl']) ? $result['signUrl'] : '';
         }
 
-        //如果text存在则不需要语音识别
-
+        //如果text存在则不需要语音识别 todo 限制1000字符
         $noteText = $this->post('text', true);
 
         if (!isset($noteText) || empty($noteText) ) {
             //如果 text 为空 → 触发服务端 ASR
-            $result = $this->_asrService->voiceAsr($url , 'wav');
-            //$this->_asrService->execute($url);
-            $noteText = $result['text'] ?? '';
+            if(!empty($signUrl)){
+                $result = $this->_asrService->voiceAsr($signUrl); //扩展名放到voiceAsr内部处理
+                if(is_int($result) && $result < 0){// 语音识别失败
+                    return $this->json(1003006, []);
+                }
+                $noteText = $result['text'] ?? '';
+            }
+        }
+        if (isset($noteText) && mb_strlen($noteText) > 1000) {
+            $noteText = mb_substr($noteText, 0, 1000);
         }
 
         //优先存储用户日记信息
-        $this->_noteService->addAudioNote($this->uid,$noteText,$audioUrl);
-
-        //需要验证用户是否有AI分析权限
-        //识别tile & summary
-        if($this->uid){// hasAI
-            $result = $this->_doubaoSummarizerService->summarize($noteText);
+        $noteId = $this->_noteService->addAudioNote($uid, $noteText, array($pathUrl));
+        $eCode = ECODE_SUCCESS;
+        $response = [];
+        if(is_int($noteId) && $noteId < 0){
+            switch ($noteId){
+                // 数据库操作失败
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
         }else{
-            $result = [];
+            $response = [
+                'note_id' => $noteId,
+                'note_type' => 'audio',
+                'title' => '语音日记',
+                'tags' => [],
+                'audio_urls' => array($signUrl),
+                'content' => $noteText,
+                'created_at' => date('Y-m-d H:i:s'),
+            ];
         }
 
-        //存储SQL
+        //todo 【关键】启动后台任务（不阻塞当前协程）
+        go(function () use ($uid, $noteId, $noteText) {
+            $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
+        });
 
-        $response = [
-            'title' => $result['tilte'] ?? '',
-            'summary' => $result['summary'] ?? '',
-            ];
-        return $this->json(ECODE_SUCCESS, $response);
+        return $this->json($eCode, $response);
     }
 
     /**
@@ -166,6 +155,9 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
      * @return void
      */
     public function noteAnalysis(){
+        $text = 'Today was one of those golden days I’ll tuck away in my heart forever. It started early—6:30 a.m.—with my six-year-old, Lily, shaking my shoulder, whispering, \'Mom, the sun’s up! Can we go to the park like you promised?\' Her eyes sparkled with that mix of sleepiness and excitement only kids possess. I said yes before my brain fully caught up, and by 8 a.m., we were at Meadowbrook Park, picnic basket in hand, dew still clinging to the grass.\n\nWe didn’t have a plan, just time. We fed ducks (Lily insisted on naming each one—Quackers, Flufftail, Sir Waddles), skipped stones across the pond (she beat me 7–2!), and built a lopsided sandcastle that she declared \'the palace of Queen Lily the Brave.\' Around noon, we spread our blanket under an oak tree and shared peanut butter sandwiches and apple slices. She told me about her dream last night—flying on a dragon made of rainbows—and I realized how rarely I truly listen without checking my phone or mentally drafting emails.\n\nAfter lunch, we joined a free nature walk led by a park ranger. Lily asked endless questions: \'Why do squirrels bury nuts?\' \'Do trees get lonely?\' The ranger smiled and said, \'You’ve got the curiosity of a scientist!\' Her pride was palpable. On the way home, she fell asleep in the car, cheek smudged with dirt, hair tangled with leaves. I carried her inside, her weight familiar and fleeting.\n\nTonight, as I washed paint-stained clothes (we’d stopped at the community art tent for finger-painting), I felt a deep calm. No screens, no schedules—just presence. I remembered how she hugged me tight after finding a four-leaf clover: \'This is for you, Mommy, because you’re my lucky day.\' In a world of deadlines and distractions, today reminded me that joy lives in the small, unplanned moments. I resolved to protect these pockets of slowness. Childhood isn’t waiting for \'someday\'; it’s happening now, in sticky fingers and whispered secrets. Tomorrow, I’ll say \'yes\' again—even if it’s raining.';
+        $promptMessage = $this->_noteService->getNotePrompt($text);
+        exit();
         $uid = $this->uid;
         //优先判断用户是否有权限
 
@@ -243,7 +235,7 @@ Most importantly: no work emails, minimal social media. Just wandering, observin
      * @param  void
      * @return void
      */
-    public function list(){
+    public function noteList(){
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
