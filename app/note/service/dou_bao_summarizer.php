@@ -14,6 +14,8 @@ class DouBaoSummarizer
     private $_daoVnAiAnalysisUsageModel;
     private $_model = 'doubao-seed-1-6-flash-250828';
     private $_noteAiAnalysisService;
+    private $_daoVnNotes;
+    private $_daoVnTags;
 
     /**
      * 构造函数
@@ -22,6 +24,8 @@ class DouBaoSummarizer
         $this->_svrVolcModel = \Lsf\Loader::Model('SvrVolc', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisUsageModel = \Lsf\Loader::Model('DaoVnAiAnalysisUsage', false, APP_NAME_NOTE);
         $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
+        $this->_daoVnNotes = \Lsf\Loader::Model('DaoVnNotes', true);
+        $this->_daoVnTags = \Lsf\Loader::Model('DaoVnTags', true);
     }
 
     /**
@@ -108,6 +112,34 @@ class DouBaoSummarizer
                 'habits' => is_array($habits) ? $habits : (string)$habits,
             ];
             $this->_noteAiAnalysisService->addBatchNoteAiAnalysis($noteId, $data['ai_model'], $items, $analyzedAt);
+
+            //todo 同时更新notes表is_analyzed 为分析状态
+            $data = [
+                'title' => $final['title'],
+                'summary' => $final['summary'],
+                'ai_model_version' => $response['model'] ?? $this->_model,
+                'moderation_status' => 0, //todo 待完善
+                'is_analyzed' => 1,
+                'analyzed_at' => $analyzedAt,
+            ];
+            $this->_daoVnNotes->update($data, ['id'=>$noteId]);
+
+            //todo 存储tags到tag表，批量存储
+            $dataTags = [];
+            foreach ($final['tags'] as $k => $v) {
+                if(!empty($v)){
+                    $dataTags[] = [
+                        'note_id' => $noteId,
+                        'user_id' => $userId,
+                        'name' => $v,
+                        'normalized_name' => strtolower(trim($v)),
+                        'source' => 'ai',
+                    ];
+                }
+            }
+            if(!empty($dataTags)){
+                $this->_daoVnTags->batchInsert($dataTags);
+            }
         }
         
         return $final;
