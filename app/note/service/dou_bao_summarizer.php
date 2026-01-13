@@ -47,7 +47,17 @@ class DouBaoSummarizer
 
         try {
             $response = $this->_svrVolcModel->aiSummarize($payload);
+            \Lsf\Loader::plugin('Log')->info('', [
+                'payload'     => $payload,
+                'call_function' => 'aiSummarize',
+                'result'        => $response
+            ]);
         } catch (\Exception $e) {
+            \Lsf\Loader::plugin('Log')->error(1001014,
+                [   'payload'     => $payload,
+                    'call_function' => 'aiSummarize',
+                    'error' => $e
+                ]);
             return [];
         }
         $durationMs = round((microtime(true) - $startTime) * 1000);
@@ -149,8 +159,17 @@ class DouBaoSummarizer
         // 4. 调用模型
         try {
             $response = $this->_svrVolcModel->aiSummarize($payload);
+            \Lsf\Loader::plugin('Log')->info('', [
+                'payload'     => $payload,
+                'call_function' => 'aiSummarize',
+                'result'        => $response
+            ]);
         } catch (\Exception $e) {
-            // log error if needed
+            \Lsf\Loader::plugin('Log')->error(1001014,
+                [
+                    'payload'     => $payload,
+                    'error' => $e
+                ]);
             return [];
         }
 

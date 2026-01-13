@@ -67,12 +67,18 @@ class Note extends \Service\Base
             return false;
         }
 
-        //识别tile & summary & tag
-        //$result = $this->_doubaoSummarizerService->summarize($content);
+        //todo 2. 检查该noteId是否已经AI分析过
+        $isAnalyzed = $this->checkIfAnalyzed($noteId);
+        if($isAnalyzed === true){
+            return false;
+        }
 
+        //todo 3. 笔记AI分析
         $promptMessage = $this->getNotePrompt($content);
-
         $result = $this->_douBaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
+
+        //todo 4. 分析后更新表数据为已分析状态
+
 return $result;
         //识别结果存储SQL
 
@@ -82,6 +88,27 @@ return $result;
 //        ];
 //        return $this->json(ECODE_SUCCESS, $response);
 
+    }
+
+    /**
+     * 根据noteId是否已经被分析
+     * @param   int     $noteId
+     * @return bool  true 表示已分析，false 表示未分析、记录不存在或查询失败
+     */
+    private function checkIfAnalyzed(int $noteId){
+        if ($noteId <= 0) {
+            return false;
+        }
+
+        $columns = 'is_analyzed';
+        $result = $this->_daoVnNoteModel->find($columns, $noteId);
+
+        // 查询失败（返回 false）或结果中无 is_analyzed 字段，视为未分析
+        if ($result === false || !isset($result['is_analyzed'])) {
+            return false;
+        }
+
+        return (int)$result['is_analyzed'] === 1;
     }
 
     /**
