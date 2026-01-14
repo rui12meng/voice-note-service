@@ -149,14 +149,6 @@ class Notes extends \App\Application
         return $this->json($eCode, $response);
     }
 
-    /**
-     * 笔记分析
-     * @param  void
-     * @return void
-     */
-    public function analysis(){
-        echo 'why';exit();
-    }
 
     /**
      * 笔记分析
