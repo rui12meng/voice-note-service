@@ -102,7 +102,6 @@ class Notes extends \App\Application
         $noteText = $this->post('text', true);
 
         if (!isset($noteText) || empty($noteText) ) {
-            echo 'asr';
             //如果 text 为空 → 触发服务端 ASR
             if(!empty($signUrl)){
                 $result = $this->_asrService->voiceAsr($signUrl); //扩展名放到voiceAsr内部处理

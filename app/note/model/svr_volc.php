@@ -49,6 +49,7 @@ class SvrVolc extends \Model\SvrBase
             "request" => [
                 'model_name' => 'bigmodel',
                 'model_version' => '400',
+                'show_utterances' => false,
             ],
         ];
 
