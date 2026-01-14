@@ -47,6 +47,7 @@ class Asr
     }
 
     protected function asr_volc($fileUrl , $fileFormat){
+        $startTime = microtime(true);
         // Step 1: Submit 任务
         $requestUuid = $this->generateUuid();
 
@@ -61,6 +62,14 @@ class Asr
         // Step 2: 轮询查询结果
         $result = $this->_svrVolcModel->query($requestUuid, $maxWaitSeconds = 10);
 
+        $durationMs = round((microtime(true) - $startTime) * 1000);
+        \Lsf\Loader::plugin('Log')->info('', [
+            'call_function' => '[VOLC ASR] Task query',
+            'reqID' => $requestUuid,
+            '$fileUrl' => $fileUrl,
+            'result' => $result,
+            'totalDuration' => $durationMs,
+        ]);
         return $result;
     }
 

@@ -100,7 +100,7 @@ class Notes extends \App\Application
 
         //如果text存在则不需要语音识别 todo 限制1000字符
         $noteText = $this->post('text', true);
-var_dump($noteText);
+
         if (!isset($noteText) || empty($noteText) ) {
             echo 'asr';
             //如果 text 为空 → 触发服务端 ASR
