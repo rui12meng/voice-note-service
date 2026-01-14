@@ -64,7 +64,11 @@ class Upload
 
             // 7. 构造公开访问 URL
 //            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
-
+            \Lsf\Loader::plugin('Log')->info('', [
+                'file' => $file_info,
+                'file_path' => $objectKey,
+                'signUrl' => $signUrl,
+            ]);
             // 返回结果
             $response = [
                 'pathUrl' => $objectKey,

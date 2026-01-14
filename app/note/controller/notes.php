@@ -90,7 +90,7 @@ class Notes extends \App\Application
         $signUrl = '';
         if($duration > 0){
             //上传OSS，获取文件相对路径
-            $result = $this->_audioService->uploadAudio($uid, $audioInfo, $scene = 'audio');
+            $result = $this->_audioService->uploadAudio($audioInfo, $scene = 'audio');
             if($result === false){ //上传失败
                 return $this->json(1003005, []);
             }
