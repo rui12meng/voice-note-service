@@ -108,7 +108,7 @@ class Notes extends \App\Application
                 if(is_int($result) && $result < 0){// 语音识别失败
                     return $this->json(1003006, []);
                 }
-                $noteText = $result['text'] ?? '';
+                $noteText = isset($result['text']) ? $result['text'] : '';
             }
         }
         if (isset($noteText) && mb_strlen($noteText) > 1000) {

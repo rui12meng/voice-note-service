@@ -69,7 +69,7 @@ class Asr
             '$fileUrl' => $fileUrl,
             'totalDuration' => $durationMs,
         ]);
-        return $result;
+        return isset($result['result']) ? $result['result'] : [];
     }
 
     private function generateUuid(): string
