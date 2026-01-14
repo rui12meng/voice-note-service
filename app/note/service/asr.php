@@ -60,7 +60,7 @@ class Asr
         ]);
 
         // Step 2: 轮询查询结果
-        $result = $this->_svrVolcModel->query($requestUuid, $maxWaitSeconds = 10);
+        $result = $this->_svrVolcModel->query($requestUuid, $maxWaitSeconds = 30);
 
         $durationMs = round((microtime(true) - $startTime) * 1000);
         \Lsf\Loader::plugin('Log')->info('', [

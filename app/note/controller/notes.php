@@ -143,9 +143,12 @@ class Notes extends \App\Application
         }
 
         //todo 【关键】启动后台任务（不阻塞当前协程）
-        go(function () use ($uid, $noteId, $noteText) {
-            $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
-        });
+        if (!empty($noteText) && is_string($noteText) && mb_strlen(trim($noteText), 'UTF-8') > 100) {
+            go(function () use ($uid, $noteId, $noteText) {
+                $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
+            });
+        }
+
 
         return $this->json($eCode, $response);
     }
