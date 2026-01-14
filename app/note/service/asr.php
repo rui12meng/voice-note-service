@@ -67,7 +67,6 @@ class Asr
             'call_function' => '[VOLC ASR] Task query',
             'reqID' => $requestUuid,
             '$fileUrl' => $fileUrl,
-            'result' => $result,
             'totalDuration' => $durationMs,
         ]);
         return $result;
