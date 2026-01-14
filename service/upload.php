@@ -49,6 +49,7 @@ class Upload
         }
         $objectKey = $path.'/' . uniqid() . '.' . $ext; // 路径：user/avatar/65d8a1b2c3e4f.jpg
 
+        var_dump($objectKey) ;
         // 上传到 OSS
         try {
             $ossClient = new OssClient($this->_aliyunOssConfig['access_key_id'], $this->_aliyunOssConfig['access_key_secret'], $this->_aliyunOssConfig['end_point']);
@@ -61,7 +62,7 @@ class Upload
 
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
             $signUrl = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600); // 3600秒 = 1小时
-
+            var_dump($signUrl) ;
             // 7. 构造公开访问 URL
 //            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
             \Lsf\Loader::plugin('Log')->info('', [
@@ -77,6 +78,7 @@ class Upload
             return $response;
 
         } catch (OssException $e) {
+            var_dump($e);
             \Lsf\Loader::plugin('Log')->error(1002013, [
                 'file' => $file_info,
                 'file_path' => $objectKey,

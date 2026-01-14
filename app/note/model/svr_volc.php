@@ -106,7 +106,7 @@ class SvrVolc extends \Model\SvrBase
      * @return array
      * @throws Exception
      */
-    public function query(string $reqId, int $maxWaitSeconds): array
+    public function query(string $reqId, int $maxWaitSeconds)
     {
         $startTime = time();
 
@@ -130,18 +130,18 @@ class SvrVolc extends \Model\SvrBase
                 // 可重试状态：20000001（处理中）、20000002（排队中）
                 if (!in_array($code, ['20000001', '20000002'], true)) {
                     \Lsf\Loader::plugin('Log')->error(1003505, ['error' => "VOLC ASR task failed permanently: code={$code}, message={$message}"]);
-                    return false;
+                    return [];
                 }
 
                 // 超时检查
                 if (time() - $startTime > $maxWaitSeconds) {
                     \Lsf\Loader::plugin('Log')->error(1003506, ['error' => "VOLC ASR task timeout after {$maxWaitSeconds} seconds"]);
-                    return false;
+                    return [];
                 }
 
             } catch (\Exception $e) {
                 \Lsf\Loader::plugin('Log')->error(1003507, ['error' => "VOLC ASR Query error:  {$e->getMessage()}"]);
-                return false;
+                return [];
             }
         }
     }

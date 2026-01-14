@@ -31,6 +31,7 @@ class Audio
 
         //上传OSS
         $result = $this->_uploadService->uploadFileOss($audioInfo, $scene);
+        var_dump($result);
         return $result;
     }
 
