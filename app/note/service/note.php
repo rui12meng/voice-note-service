@@ -146,7 +146,7 @@ class Note extends \Service\Base
         }
 
         if (is_array($habitsDb) && !empty($habitsDb)) {
-            $habits = $habitsDb;
+            $habits = isset($habitsDb[0]) ? $habitsDb[0] : [];
         } else {
             if (is_array($habitAi) && !empty($habitAi)) {
                 if (isset($habitAi['habit_suggestion'])) {
