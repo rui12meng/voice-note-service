@@ -214,24 +214,26 @@ class Note extends \Service\Base
 
     /**
      * 根据noteId获取笔记详情
-     * @param   string  $columns
      * @param   int     $uid
      * @param   int     $noteId
      * @return  void
      */
-    public function getNoteInfo($columns = '*', $uid, $noteId){
+    public function getInfoById($uid, $noteId){
+
         $where = [
-            'user_id' => $uid,
             'id' => $noteId,
-            'moderation_status' => self::NOTE_MODERATION_STATUS,
+            'user_id' => $uid,
+            'moderation_status' => self::NOTE_MODERATION_STATUS, // 合规状态为正常
         ];
+        $columns = 'id,title,summary,content,note_type,media_url,is_analyzed,created_at';
         $result = $this->_daoVnNoteModel->select($columns, $where);
 
         if ($result === false) {
             //查询失败
             return -7;
         }
-        $tags = $this->_daoVnNoteTagsModel->select('id,name' , ['note_id' => $noteId]);
+
+        $tags = $this->_daoVnNoteTagsModel->select('id,name' , ['user_id'=> $uid, 'note_id' => $noteId , 'is_deleted' => 0]);
         if ($tags === false) {
             //查询失败
             return -7;
@@ -244,7 +246,27 @@ class Note extends \Service\Base
 
         if(isset($result[0]) && !empty($result[0])){
             foreach($result[0] as $k => $v){
-                $noteInfo[$k] = $v;
+                if ($k === 'media_url') {
+                    $signUrls = [];
+                    if (is_string($v) && $v !== '') {
+                        $paths = json_decode($v, true);
+                        if (is_array($paths)) {
+                            $uploadService = \Lsf\Loader::service('Upload', true);
+                            foreach ($paths as $p) {
+                                if (!is_string($p) || $p === '') {
+                                    continue;
+                                }
+                                $u = $uploadService->getSignUrl($p);
+                                if (is_string($u) && $u !== '') {
+                                    $signUrls[] = $u;
+                                }
+                            }
+                        }
+                    }
+                    $noteInfo[$k] = $signUrls;
+                } else {
+                    $noteInfo[$k] = $v;
+                }
             }
         }
         return $noteInfo;

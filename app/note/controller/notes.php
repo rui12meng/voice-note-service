@@ -222,17 +222,13 @@ class Notes extends \App\Application
      * @return void
      */
     public function info(){
-        /*$uid = $this->uid;
-        //优先判断用户是否有权限
-
+        $uid = $this->uid;
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
-        }*/
-        $uid = 101;
-        $noteId = 7;
-        $columns = 'id,title,summary,content,note_type,media_url,is_analyzed,created_at';
-        $result = $this->_noteService->getNoteInfo($columns, $uid, $noteId);
+        }
+
+        $result = $this->_noteService->getInfoById();
 
         $eCode  = ECODE_SUCCESS;
         $returnData = [];
@@ -242,20 +238,17 @@ class Notes extends \App\Application
                 case -7:
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
-                //数据不存在
-                case -6:
-                    $eCode = ECODE_DATA_NOT_FOUND;
-                    break;
                 //未知错误
                 default:
                     $eCode = ECODE_UNDEFINED_ERROR;
+                    break;
             }
         } else {
             $returnData['note_id'] = $result['id'];
             $returnData['note_type'] = $result['note_type'];
             $returnData['title'] = $result['title'];
             $returnData['tags'] = $result['tags'];
-            $returnData['media_url'] = $result['media_url'];
+            $returnData['media_url'] = $result['media_url']; //todo 返回可访问地址
             $returnData['status'] = $result['is_analyzed']; //0=未分析，1=已分析
             $returnData['content'] = $result['content'];
             $returnData['summary'] = $result['summary'];
