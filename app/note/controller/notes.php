@@ -228,7 +228,7 @@ class Notes extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
         }
 
-        $result = $this->_noteService->getInfoById();
+        $result = $this->_noteService->getInfoById($uid, $noteId);
 
         $eCode  = ECODE_SUCCESS;
         $returnData = [];
