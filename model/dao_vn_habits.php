@@ -154,7 +154,7 @@ SQL;
             'is_deleted' => 0,
         ];
         $columns = 'id, habit_name, habit_desc, interval_num, interval_unit, status';
-        $result = $this->select($columns , $where);
+        $result = $this->select($columns , $where, '', $limit = 1);
         if($result === false){
             return [];
         }

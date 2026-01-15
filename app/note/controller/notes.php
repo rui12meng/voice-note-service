@@ -186,15 +186,17 @@ class Notes extends \App\Application
                     $eCode = ECODE_UNDEFINED_ERROR;
                     break;
             }
+            return $this->json($eCode, []);
         }
         // todo 分析完毕后，聚合返回AI分析数据
-
-        return $this->json($eCode, $result);
+        $aiData = $this->_noteService->getAiAnalyzedData($uid, $noteId);
+        return $this->json($eCode, $aiData);
 
     }
 
     /**
      * 用户获取日记AI分析详情数据
+     * todo 根据habit返回的下游如果包含habit id等信息说明已添加/若只返回内容，说明未添加
      * @param  void
      * @return void
      */

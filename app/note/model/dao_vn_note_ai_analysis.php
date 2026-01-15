@@ -30,7 +30,7 @@ SELECT
 FROM note_ai_analysis
 WHERE note_id = {$noteId} 
     AND is_deleted = 0
-    AND analysis_type_name IN ('insight', 'emotion')
+    AND analysis_type_name IN ('insight', 'emotion', 'habits')
 SQL;
 
         $result = $this->query($sql);

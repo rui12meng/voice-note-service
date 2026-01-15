@@ -101,10 +101,11 @@ class Note extends \Service\Base
 
         $actions = $this->_daoVnActionsModel->getActions($uid, $noteId);
 
-        $habits = $this->_daoVnHabitsModel->getHabitsByNoteId($uid, $noteId);
+        $habitsDb = $this->_daoVnHabitsModel->getHabitsByNoteId($uid, $noteId);
 
         $insight = [];
         $emotion = [];
+        $habitAi = [];
 
         if ($aiResult !== false && !empty($aiResult)) {
             foreach ($aiResult as $row) {
@@ -124,16 +125,36 @@ class Note extends \Service\Base
                     }
                 }
 
-                if ($type === 'insight') {
-                    $insight = $value;
-                } elseif ($type === 'emotion') {
-                    $emotion = $value;
+                switch ($type){
+                    case 'insight':
+                        $insight = $value;
+                        break;
+                    case 'emotion':
+                        $emotion = $value;
+                        break;
+                    case 'habits':
+                        $habitAi = $value;
+                        break;
+                    default:
+                        break;
                 }
             }
         }
 
         if (!is_array($actions)) {
             $actions = [];
+        }
+
+        if (is_array($habitsDb) && !empty($habitsDb)) {
+            $habits = $habitsDb;
+        } else {
+            if (is_array($habitAi) && !empty($habitAi)) {
+                if (isset($habitAi['habit_suggestion'])) {
+                    $habitAi['habit_name'] = $habitAi['habit_suggestion'];
+                    unset($habitAi['habit_suggestion']);
+                }
+            }
+            $habits = $habitAi;
         }
 
         if (!is_array($habits)) {
@@ -144,7 +165,7 @@ class Note extends \Service\Base
             'insight' => $insight,
             'emotion' => $emotion,
             'actions' => $actions,
-            'habit' => $habits[0],
+            'habits' => $habits,
         ];
     }
 
