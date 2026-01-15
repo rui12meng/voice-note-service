@@ -238,6 +238,9 @@ class Notes extends \App\Application
                 case -7:
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;
+                case -6:
+                    $eCode = ECODE_DATA_NOT_FOUND;
+                    break;
                 //未知错误
                 default:
                     $eCode = ECODE_UNDEFINED_ERROR;
@@ -264,7 +267,7 @@ class Notes extends \App\Application
      * @param  void
      * @return void
      */
-    public function noteList(){
+    public function lists(){
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
@@ -273,7 +276,7 @@ class Notes extends \App\Application
         $cursor = $this->post('cursor', true);
         if ( ! isset($cursor) || empty($cursor) || $cursor < 0) {
             //游标（Base64 编码的 (created_at, id)）
-            //$cursor = 1;
+            $cursor = 0;
         }
         $pageSize = $this->post('limit', true);
         if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0) {

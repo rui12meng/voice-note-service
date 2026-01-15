@@ -30,6 +30,7 @@ class Note extends \Service\Base
     private $_daoVnNoteAiAnalysisModel;
     private $_daoVnActionsModel;
     private $_daoVnHabitsModel;
+    private $_uploadService;
 
     /**
      * 构造函数
@@ -48,6 +49,7 @@ class Note extends \Service\Base
         $this->_daoVnNoteAiAnalysisModel = \Lsf\Loader::model('DaoVnNoteAiAnalysis', false, APP_NAME_NOTE);
         $this->_daoVnActionsModel = \Lsf\Loader::model('DaoVnActions', true);
         $this->_daoVnHabitsModel = \Lsf\Loader::model('DaoVnHabits', true);
+        $this->_uploadService = \Lsf\Loader::service('Upload', true);
     }
 
     /**
@@ -223,7 +225,8 @@ class Note extends \Service\Base
         $where = [
             'id' => $noteId,
             'user_id' => $uid,
-            'moderation_status' => self::NOTE_MODERATION_STATUS, // 合规状态为正常
+            'is_deleted' => 0,
+            //'moderation_status' => self::NOTE_MODERATION_STATUS, // 合规状态为正常
         ];
         $columns = 'id,title,summary,content,note_type,media_url,is_analyzed,created_at';
         $result = $this->_daoVnNoteModel->select($columns, $where);
@@ -231,6 +234,9 @@ class Note extends \Service\Base
         if ($result === false) {
             //查询失败
             return -7;
+        }
+        if(empty($result)){
+            return -6;
         }
 
         $tags = $this->_daoVnNoteTagsModel->select('id,name' , ['user_id'=> $uid, 'note_id' => $noteId , 'is_deleted' => 0]);
@@ -247,29 +253,38 @@ class Note extends \Service\Base
         if(isset($result[0]) && !empty($result[0])){
             foreach($result[0] as $k => $v){
                 if ($k === 'media_url') {
-                    $signUrls = [];
-                    if (is_string($v) && $v !== '') {
-                        $paths = json_decode($v, true);
-                        if (is_array($paths)) {
-                            $uploadService = \Lsf\Loader::service('Upload', true);
-                            foreach ($paths as $p) {
-                                if (!is_string($p) || $p === '') {
-                                    continue;
-                                }
-                                $u = $uploadService->getSignUrl($p);
-                                if (is_string($u) && $u !== '') {
-                                    $signUrls[] = $u;
-                                }
-                            }
-                        }
-                    }
-                    $noteInfo[$k] = $signUrls;
+                    $noteInfo[$k] = $this->buildSignedMediaUrls($v);
                 } else {
                     $noteInfo[$k] = $v;
                 }
             }
         }
         return $noteInfo;
+    }
+
+    /**
+     * 生成media_url签名地址
+     * @param  string   $raw  media_url字段返回的json串
+     * @return void
+     */
+    private function buildSignedMediaUrls($raw)
+    {
+        $signUrls = [];
+        if (is_string($raw) && $raw !== '') {
+            $paths = json_decode($raw, true);
+            if (is_array($paths)) {
+                foreach ($paths as $p) {
+                    if (!is_string($p) || $p === '') {
+                        continue;
+                    }
+                    $u = $this->_uploadService->getSignUrl($p);
+                    if (is_string($u) && $u !== '') {
+                        $signUrls[] = $u;
+                    }
+                }
+            }
+        }
+        return $signUrls;
     }
 
     /**
@@ -458,7 +473,7 @@ class Note extends \Service\Base
      * @param array       $filters   额外过滤条件
      * @return array{list: array, pagination: array{has_next_page: bool, next_cursor: int|null}}
      */
-    public function getNoteListByCursor($uid, $cursor = null, $pageSize = 20, $filters = [])
+    public function getNoteListByCursor($uid, $cursor = 0, $pageSize = 20, $filters = [])
     {
         $where = array_merge(['user_id' => $uid , 'is_deleted' => 0], $filters);
         if (!empty($cursor)) {
@@ -468,21 +483,51 @@ class Note extends \Service\Base
         $orderBy = 'id DESC';
         $list = $this->_daoVnNoteModel->select($columns, $where, $orderBy, $pageSize + 1);
         if ($list === false) {
-            return ['list' => [], 'pagination' => ['has_next_page' => false, 'next_cursor' => null]];
+            return ['list' => [], 'pagination' => ['has_next_page' => false, 'next_cursor' => 0]];
         }
         $hasNext = count($list) > $pageSize;
         if ($hasNext) {
             $list = array_slice($list, 0, $pageSize);
         }
-        /*if (!empty($list)) {
-            $noteIds = array_column($list, 'id');
-            $tagsMap = $this->_getTagsByNoteIds($noteIds);
-            foreach ($list as &$note) {
-                $note['tags'] = isset($tagsMap[$note['id']]) ? $tagsMap[$note['id']] : [];
+
+        if (!empty($list)) {
+            foreach ($list as $index => $item) {
+                if (isset($item['media_url'])) {
+                    $list[$index]['media_url'] = $this->buildSignedMediaUrls($item['media_url']);
+                }
             }
-            unset($note);
-        }*/
-        $nextCursor = $hasNext ? end($list)['id'] : null;
+            $noteIds = array_column($list, 'id');
+            $tags = $this->_daoVnNoteTagsModel->select(
+                'id,name,note_id',
+                [
+                    'user_id' => $uid,
+                    'note_id' => ['IN', $noteIds],
+                    'is_deleted' => 0,
+                ]
+            );
+
+            $tagMap = [];
+            if ($tags !== false && !empty($tags)) {
+                foreach ($tags as $tag) {
+                    if (!isset($tag['note_id'])) {
+                        continue;
+                    }
+                    $noteId = $tag['note_id'];
+                    unset($tag['note_id']);
+                    if (!isset($tagMap[$noteId])) {
+                        $tagMap[$noteId] = [];
+                    }
+                    $tagMap[$noteId][] = $tag;
+                }
+            }
+
+            foreach ($list as $index => $item) {
+                $noteId = $item['id'];
+                $list[$index]['tags'] = isset($tagMap[$noteId]) ? $tagMap[$noteId] : [];
+            }
+        }
+
+        $nextCursor = $hasNext ? end($list)['id'] : 0;
         return [
             'list' => $list,
             'pagination' => [
