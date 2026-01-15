@@ -36,15 +36,13 @@ class Notes extends \App\Application
     }
 
     /**
-     * 语音笔记上传
+     * 添加语音笔记
+     * 上传OSS+ASR语音识别+AI分析全流程
      * @param  void
      * @return void
      */
     public function addAudio()
     {
-
-        //$r = $this->_noteService->saveNoteAiResult($noteId, $result['title'], $result['summary'], $result['analyzed_at'], $result['compliance_status']);
-
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
@@ -148,7 +146,6 @@ class Notes extends \App\Application
             });
         }
 
-
         return $this->json($eCode, $response);
     }
 
@@ -158,14 +155,12 @@ class Notes extends \App\Application
      * @param  void
      * @return void
      */
-    public function noteAnalysis(){
+    public function analysis(){
 
-        $text = 'Today was one of those golden days I’ll tuck away in my heart forever. It started early—6:30 a.m.—with my six-year-old, Lily, shaking my shoulder, whispering, \'Mom, the sun’s up! Can we go to the park like you promised?\' Her eyes sparkled with that mix of sleepiness and excitement only kids possess. I said yes before my brain fully caught up, and by 8 a.m., we were at Meadowbrook Park, picnic basket in hand, dew still clinging to the grass.\n\nWe didn’t have a plan, just time. We fed ducks (Lily insisted on naming each one—Quackers, Flufftail, Sir Waddles), skipped stones across the pond (she beat me 7–2!), and built a lopsided sandcastle that she declared \'the palace of Queen Lily the Brave.\' Around noon, we spread our blanket under an oak tree and shared peanut butter sandwiches and apple slices. She told me about her dream last night—flying on a dragon made of rainbows—and I realized how rarely I truly listen without checking my phone or mentally drafting emails.\n\nAfter lunch, we joined a free nature walk led by a park ranger. Lily asked endless questions: \'Why do squirrels bury nuts?\' \'Do trees get lonely?\' The ranger smiled and said, \'You’ve got the curiosity of a scientist!\' Her pride was palpable. On the way home, she fell asleep in the car, cheek smudged with dirt, hair tangled with leaves. I carried her inside, her weight familiar and fleeting.\n\nTonight, as I washed paint-stained clothes (we’d stopped at the community art tent for finger-painting), I felt a deep calm. No screens, no schedules—just presence. I remembered how she hugged me tight after finding a four-leaf clover: \'This is for you, Mommy, because you’re my lucky day.\' In a world of deadlines and distractions, today reminded me that joy lives in the small, unplanned moments. I resolved to protect these pockets of slowness. Childhood isn’t waiting for \'someday\'; it’s happening now, in sticky fingers and whispered secrets. Tomorrow, I’ll say \'yes\' again—even if it’s raining.';
-        $result = $this->_noteService->doAnalyzeNotesTasks($uid=1, $noteId=1,$text);
-        return $this->json(0,$result);
-        /*$uid = $this->uid;
-        //优先判断用户是否有权限
-
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+        }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
@@ -173,15 +168,49 @@ class Notes extends \App\Application
 
         // 获取笔记内容
         $result = $this->_noteService->getNoteData($uid, $noteId);
-        $text = $result[0]['content'] ?? "";
-        if(!empty($text)){
-            //分析
-            $promptMessage = $this->_noteService->getNotePrompt($text);
+        $text = isset($result[0]['content']) ? $result[0]['content'] : "";
+        if(empty($text) || mb_strlen(trim($text), 'UTF-8') < 100){
+            return $this->json(1003008 , []);
+        }
+        $result = $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $text);
+        $eCode = ECODE_SUCCESS;
+        if(is_int($result) && (int)$result < 0){
+            switch ($result){
+                case -1:
+                    $eCode = 1003009;
+                    break;
+                case -2:
+                    $eCode = 1003010;
+                    break;
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+                    break;
+            }
+        }
+        // todo 分析完毕后，聚合返回AI分析数据
 
-            $this->_doubaoSummarizerService->aiAnalysis($promptMessage, $this->uid, $noteId);
-        }else{
-            return [];
-        }*/
+        return $this->json($eCode, $result);
+
+    }
+
+    /**
+     * 用户获取日记AI分析详情数据
+     * @param  void
+     * @return void
+     */
+    public function analyzed(){
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+        }
+        $noteId = $this->post('note_id', true);
+        if ( ! isset($noteId) || empty($noteId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
+        }
+
+        $result = $this->_noteService->getAiAnalyzedData($uid, $noteId);
+
+        return $this->json( 0, $result);
 
     }
 

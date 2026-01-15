@@ -141,6 +141,26 @@ SQL;
 
     }
 
+    /**
+     * 获取用户笔记关联的习惯（仅一个）
+     * @param int $uid 用户ID
+     * @param int $noteId 笔记ID
+     * @return array
+     */
+    public function getHabitsByNoteId($uid, $noteId){
+        $where = [
+            'user_id' => $uid,
+            'note_id' => $noteId,
+            'is_deleted' => 0,
+        ];
+        $columns = 'id, habit_name, habit_desc, interval_num, interval_unit, status';
+        $result = $this->select($columns , $where);
+        if($result === false){
+            return [];
+        }
+        return $result;
+    }
+
 }
 
 

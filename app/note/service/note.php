@@ -21,12 +21,15 @@ class Note extends \Service\Base
     /**
      * @var mixed
      */
-    private $_daoVnNoteModel;
     private $_noteAiAnalysisService;
+    private $_douBaoSummarizerService;
+    private $_daoVnNoteModel;
     private $_daoVnAiPromptTemplatesModel;
     private $_daoVnAiAnalysisTypesModel;
     private $_daoVnNoteTagsModel;
-    private $_douBaoSummarizerService;
+    private $_daoVnNoteAiAnalysisModel;
+    private $_daoVnActionsModel;
+    private $_daoVnHabitsModel;
 
     /**
      * 构造函数
@@ -36,12 +39,15 @@ class Note extends \Service\Base
      */
     public function __construct()
     {
-        $this->_daoVnNoteModel  = \Lsf\Loader::model('DaoVnNotes', false, APP_NAME_NOTE);
         $this->_noteAiAnalysisService = \Lsf\Loader::service('NoteAiAnalysis', false, APP_NAME_NOTE);
+        $this->_douBaoSummarizerService = \Lsf\Loader::service('DouBaoSummarizer', false, APP_NAME_NOTE);
+        $this->_daoVnNoteModel  = \Lsf\Loader::model('DaoVnNotes', false, APP_NAME_NOTE);
         $this->_daoVnAiPromptTemplatesModel = \Lsf\Loader::model('DaoVnAiPromptTemplates', false, APP_NAME_NOTE);
         $this->_daoVnAiAnalysisTypesModel = \Lsf\Loader::model('DaoVnAiAnalysisTypes', false, APP_NAME_NOTE);
         $this->_daoVnNoteTagsModel = \Lsf\Loader::model('DaoVnNoteTags', false, APP_NAME_NOTE);
-        $this->_douBaoSummarizerService = \Lsf\Loader::service('DouBaoSummarizer', false, APP_NAME_NOTE);
+        $this->_daoVnNoteAiAnalysisModel = \Lsf\Loader::model('DaoVnNoteAiAnalysis', false, APP_NAME_NOTE);
+        $this->_daoVnActionsModel = \Lsf\Loader::model('DaoVnActions', true);
+        $this->_daoVnHabitsModel = \Lsf\Loader::model('DaoVnHabits', true);
     }
 
     /**
@@ -64,13 +70,13 @@ class Note extends \Service\Base
                 'note_id' => $noteId,
                 'error' => '今日AI分析次数已用完',
             ]);
-            return false;
+            return -1;
         }
 
         //todo 2. 检查该noteId是否已经AI分析过
         $isAnalyzed = $this->checkIfAnalyzed($noteId);
         if($isAnalyzed === true){
-            return false;
+            return -2;
         }
 
         //todo 3. 笔记AI分析
@@ -79,15 +85,67 @@ class Note extends \Service\Base
 
         //todo 4. 分析后更新表数据为已分析状态
 
-return $result;
-        //识别结果存储SQL
+        return $result;
 
-//        $response = [
-//            'title' => $result['tilte'] ?? '',
-//            'summary' => $result['summary'] ?? '',
-//        ];
-//        return $this->json(ECODE_SUCCESS, $response);
+    }
 
+    /**
+     * 获取笔记分析数据
+     * @param   int     $uid
+     * @param   int     $noteId
+     * @return void
+     */
+    public function getAiAnalyzedData($uid, $noteId){
+
+        $aiResult = $this->_daoVnNoteAiAnalysisModel->getAiDataBySql($noteId);
+
+        $actions = $this->_daoVnActionsModel->getActions($uid, $noteId);
+
+        $habits = $this->_daoVnHabitsModel->getHabitsByNoteId($uid, $noteId);
+
+        $insight = [];
+        $emotion = [];
+
+        if ($aiResult !== false && !empty($aiResult)) {
+            foreach ($aiResult as $row) {
+                if (!isset($row['analysis_type_name'], $row['analysis_data'])) {
+                    continue;
+                }
+                $type = $row['analysis_type_name'];
+                $rawData = $row['analysis_data'];
+
+                $value = [];
+                if (is_string($rawData) && $rawData !== '') {
+                    $decoded = json_decode($rawData, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $value = $decoded;
+                    } else {
+                        $value = [$rawData];
+                    }
+                }
+
+                if ($type === 'insight') {
+                    $insight = $value;
+                } elseif ($type === 'emotion') {
+                    $emotion = $value;
+                }
+            }
+        }
+
+        if (!is_array($actions)) {
+            $actions = [];
+        }
+
+        if (!is_array($habits)) {
+            $habits = [];
+        }
+
+        return [
+            'insight' => $insight,
+            'emotion' => $emotion,
+            'actions' => $actions,
+            'habit' => $habits[0],
+        ];
     }
 
     /**
@@ -181,56 +239,57 @@ return $result;
      */
     public function getNotePrompt($text, $promptKey = 'diary_analysis', $scene = 'default'){
 
-        // todo 提示词优先查看cache
         $redisKey = self::REDIS_KEY_PROMPT_FOR_ANALYZE_TEXT . ':' . $promptKey. ':' . $scene;
-        $redisData = $this->getCache($redisKey);
+        $cached = $this->getCache($redisKey);
 
-        if ($redisData != false) {
-            return json_decode($redisData);
-        }
+        $promptRow = null;
+        $baseRuntimeVars = [];
 
-        $where = [
-            'prompt_key' => $promptKey,
-            'scene' => $scene,
-            'version' => 'v1',
-        ];
-        $result = $this->_daoVnAiPromptTemplatesModel->select ('system_prompt,user_prompt_template,variables' , $where);
-        if ($result === false) {
-            //查询失败
-            return -7;
-        }
-        if(isset($result[0]) && !empty($result[0])){
-            $promptRow = [
-                'system_prompt' => $result[0]['system_prompt'],
-                'user_prompt_template' => $result[0]['user_prompt_template'],
-                'variables' => json_decode($result[0]['variables'], true),
+        if (is_array($cached) && isset($cached['prompt_row']) && isset($cached['runtime_vars'])) {
+            $promptRow = $cached['prompt_row'];
+            $baseRuntimeVars = $cached['runtime_vars'];
+        } else {
+            $where = [
+                'prompt_key' => $promptKey,
+                'scene' => $scene,
+                'version' => 'v1',
             ];
-        }else{
-            return -6;
+            $result = $this->_daoVnAiPromptTemplatesModel->select('system_prompt,user_prompt_template,variables' , $where);
+            if ($result === false) {
+                return -7;
+            }
+            if(isset($result[0]) && !empty($result[0])){
+                $promptRow = [
+                    'system_prompt' => $result[0]['system_prompt'],
+                    'user_prompt_template' => $result[0]['user_prompt_template'],
+                    'variables' => json_decode($result[0]['variables'], true),
+                ];
+            }else{
+                return -6;
+            }
+
+            $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1]);
+            if ($AnalyseType === false) {
+                return -7;
+            }
+
+            foreach ($AnalyseType as $item) {
+                $baseRuntimeVars["{$item['name']}_schema"] = $item['json_schema'];
+            }
+
+            $cacheData = [
+                'prompt_row' => $promptRow,
+                'runtime_vars' => $baseRuntimeVars,
+            ];
+            $this->setCache($redisKey, $cacheData, self::REDIS_EXPIRE_BASE_TIME*24);
         }
 
+        $runtimeVars = $baseRuntimeVars;
+        $runtimeVars['diary_text'] = $text;
 
-
-        $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1]);
-        if ($AnalyseType === false) {
-            //查询失败
-            return -7;
-        }
-
-        $runtimeVars = [];
-        foreach ($AnalyseType as $item) {
-            //if($item['name'] == 'insight'){
-                $runtimeVars["{$item['name']}_schema"] = $item['json_schema'];
-            //}
-        }
-        if(!empty($runtimeVars)){
-            $runtimeVars['diary_text'] = $text;
-        }
         foreach ($promptRow['variables'] as $varName => $type) {
             if (!array_key_exists($varName, $runtimeVars)) {
-                //log
                 return false;
-                //throw new RuntimeException("Missing prompt variable: {$varName}");
             }
         }
 
@@ -247,7 +306,7 @@ return $result;
 
             $replaceMap['{{' . $varName . '}}'] = $value;
         }
-        // 占位符替换
+
         $userPrompt = strtr(
             $promptRow['user_prompt_template'],
             $replaceMap
@@ -263,7 +322,7 @@ return $result;
                 'content' => $userPrompt,
             ],
         ];
-        $this->setCache($redisKey, json_encode($messages, JSON_UNESCAPED_UNICODE), self::REDIS_EXPIRE_BASE_TIME*24);
+
         return $messages;
     }
 
@@ -456,4 +515,3 @@ return $result;
     }
 
 }
-
