@@ -5,9 +5,9 @@ namespace Note\Controller;
 /**
  * 日记智能分析服务
  * @author mengrui
- * $Id: analyze_note.php $
+ * $Id: analysis.php $
  */
-class AnalyzeNote extends \App\Application
+class Analysis extends \App\Application
 {
     /**
      * @var mixed
@@ -34,11 +34,10 @@ class AnalyzeNote extends \App\Application
      */
     public function delete()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
