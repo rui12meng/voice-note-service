@@ -363,9 +363,9 @@ class Notes extends \App\Application
 
         if (is_int($result) && $result < 0) {
             switch ($result) {
-                case -6: // 笔记不存在
-                    $eCode = ECODE_DATA_NOT_FOUND;
-                    break;
+//                case -6: // 笔记不存在
+//                    $eCode = ECODE_DATA_NOT_FOUND;
+//                    break;
                 case -7: // 数据库异常
                     $eCode = ECODE_DATABASE_QUERY_FAIL;
                     break;

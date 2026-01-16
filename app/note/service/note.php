@@ -604,7 +604,7 @@ class Note extends \Service\Base
         ];
 
         $result = $this->_daoVnNoteModel->update($data, $where);
-        return $result === false ? -6 : $result;
+        return $result === false ? -7 : $result;
     }
 
 }
