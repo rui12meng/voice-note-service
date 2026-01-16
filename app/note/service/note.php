@@ -164,10 +164,10 @@ class Note extends \Service\Base
         }
 
         return [
-            'insight' => $insight,
+            'insight' => (object)$insight,
             'emotion' => $emotion,
             'actions' => $actions,
-            'habits' => $habits,
+            'habits' => (object)$habits,
         ];
     }
 

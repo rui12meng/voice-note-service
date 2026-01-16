@@ -1,6 +1,8 @@
 <?php
 namespace Note\Service;
 
+use PhpParser\Node\Stmt\Switch_;
+
 /**
  * AI分析服务
  * @author mengrui
@@ -8,10 +10,14 @@ namespace Note\Service;
 class NoteAiAnalysis
 {
     private $_daoVnNoteAiAnalysis;
+    private $_daoVnActionsModel;
+    private $_daoVnHabitsModel;
 
     public function __construct()
     {
         $this->_daoVnNoteAiAnalysis = \Lsf\Loader::model('DaoVnNoteAiAnalysis', false, APP_NAME_NOTE);
+        $this->_daoVnActionsModel = \Lsf\Loader::model('DaoVnActions', true);
+        $this->_daoVnHabitsModel = \Lsf\Loader::model('DaoVnHabits', true);
     }
 
     public function addNoteAiAnalysis($noteId, $analyzedAt)
@@ -63,22 +69,44 @@ class NoteAiAnalysis
      * @return int 影响行数
      */
     public function delAiStructData($noteId, $structType){
-        $data = ['is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')];
-        $where = [
-            'note_id' => $noteId,
-            'analysis_type_name' => $structType,
-        ];
-        $result = $this->_daoVnNoteAiAnalysis->softDelete($data, $where);
-
-        if($result === false){
-            return -7;
-        }
-        if(is_int($result) && ($result == 1 || $result == 0)){
-            // 静默忽略数据不存在的情况，统一返回1
-            return 1;
+        if($structType === 'actions'){ //行动项单独处理
+            $data = ['is_deleted' => 1];
+            $where = ['note_id' => $noteId];
+            $result = $this->_daoVnActionsModel->softDelete($data, $where);
+            if($result === false){
+                return -7;
+            }
+            if(is_int($result) && ($result >= 0)){
+                return 1;
+            }else{
+                return -6;
+            }
         }else{
-            return -6;
+            $data = ['is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')];
+            $where = [
+                'note_id' => $noteId,
+                'analysis_type_name' => $structType,
+            ];
+            $result = $this->_daoVnNoteAiAnalysis->softDelete($data, $where);
+
+            $resultHabit = null;
+            if($structType === 'habits'){
+                $data = ['is_deleted' => 1];
+                $where = ['note_id' => $noteId];
+                $resultHabit = $this->_daoVnHabitsModel->softDelete($data, $where);
+            }
+            if($result === false || ($structType === 'habits' && $resultHabit === false)){
+                return -7;
+            }
+            if(!is_int($result) || $result < 0){
+                return -6;
+            }
+            if($structType === 'habits' && (!is_int($resultHabit) || $resultHabit < 0)){
+                return -6;
+            }
+            return 1;
         }
+
     }
 
     /**
