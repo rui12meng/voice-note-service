@@ -562,22 +562,21 @@ class Note extends \Service\Base
         ];
         $result = $this->_daoVnNoteModel->update($data, $where);
         if ($result === false) {
-            return -6;
+            return -7;
         }
 
         // 软删除关联的AI分析记录
         $this->_noteAiAnalysisService->softDeleteByNoteId($noteId);
 
         // 软删除关联的标签记录
-        /*$tagData = [
+        $tagData = [
             'is_deleted' => 1,
-            'deleted_at' => date("Y-m-d H:i:s"),
         ];
         $tagWhere = [
             'note_id' => $noteId,
         ];
-        $this->_daoVnNoteTagsModel->update($tagData, $tagWhere);
-*/
+        $this->_daoVnNoteTagsModel->softDelete($tagData, $tagWhere);
+
         return $result;
     }
 

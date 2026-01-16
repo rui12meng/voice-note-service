@@ -88,7 +88,7 @@ class DaoVnNotes extends \Lsf\Model
         if ($cursor > 0) {
             $where .= " AND id <= {$cursor}";
         }
-        $where .= " AND MATCH(title) AGAINST('{$booleanQuery}' IN BOOLEAN MODE)";
+        $where .= " AND MATCH(title, content, summary) AGAINST('{$booleanQuery}' IN BOOLEAN MODE)";
         
         $sql = "SELECT {$columns} FROM {$this->table} WHERE {$where} ORDER BY id DESC LIMIT {$limit}";
         $result = $this->query($sql);
