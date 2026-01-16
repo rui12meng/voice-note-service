@@ -471,17 +471,23 @@ class Note extends \Service\Base
      * @param int|null    $cursor    当前页游标（上一页最后一条的 id）
      * @param int         $pageSize  每页条数
      * @param array       $filters   额外过滤条件
+     * @param string      $keywords  搜索关键字
      * @return array{list: array, pagination: array{has_next_page: bool, next_cursor: int|null}}
      */
-    public function getNoteListByCursor($uid, $cursor = 0, $pageSize = 20, $filters = [])
+    public function getNoteListByCursor($uid, $cursor = 0, $pageSize = 20, $filters = [], $keywords= '')
     {
-        $where = array_merge(['user_id' => $uid , 'is_deleted' => 0], $filters);
-        if (!empty($cursor)) {
-            $where['id'] = ['LE', (int)$cursor];
+        if(!empty(trim($keywords))){
+            $list = $this->_daoVnNoteModel->getUserNoteListByCursorWithKeyword($uid, $cursor, $pageSize, $keywords);
+        } else {
+            $where = array_merge(['user_id' => $uid , 'is_deleted' => 0], $filters);
+            if (!empty($cursor)) {
+                $where['id'] = ['LE', (int)$cursor];
+            }
+            $columns = 'id,title,summary,note_type,media_url,is_analyzed,analyzed_at,created_at';
+            $orderBy = 'id DESC';
+            $list = $this->_daoVnNoteModel->select($columns, $where, $orderBy, $pageSize + 1);
         }
-        $columns = 'id,title,summary,note_type,media_url,is_analyzed,analyzed_at,created_at';
-        $orderBy = 'id DESC';
-        $list = $this->_daoVnNoteModel->select($columns, $where, $orderBy, $pageSize + 1);
+
         if ($list === false) {
             return ['list' => [], 'pagination' => ['has_next_page' => false, 'next_cursor' => 0]];
         }

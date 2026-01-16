@@ -282,8 +282,13 @@ class Notes extends \App\Application
         if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0) {
             $pageSize = 20;
         }
+        // todo 可按照标题搜索（标签搜索暂不支持） ---- shujubiao title tianjia FULLTEXT KEY
+        $keyword = $this->post('keyword', true);
+        if ( ! isset($keyword) || empty($keyword)) {
+            $keyword = '';
+        }
         // 调用服务层获取列表
-        $result = $this->_noteService->getNoteListByCursor($uid, $cursor, $pageSize);
+        $result = $this->_noteService->getNoteListByCursor($uid, $cursor, $pageSize, [], $keyword);
         if (is_int($result) && $result < 0) {
             // 服务层返回错误码
             return $this->json(ECODE_DATABASE_QUERY_FAIL, []);
