@@ -203,12 +203,13 @@ class Note extends \Service\Base
         $where = [
             'user_id' => $uid,
             'id' => $noteId,
+            'is_deleted' => 0,
         ];
-        $result = $this->_daoVnNoteModel->select('content', $where);
+        $result = $this->_daoVnNoteModel->select('content,is_analyzed', $where);
 
         if ($result === false) {
             //查询失败
-            return -7;
+            return [];
         } else {
             return $result;
         }

@@ -168,26 +168,35 @@ class Notes extends \App\Application
 
         // 获取笔记内容
         $result = $this->_noteService->getNoteData($uid, $noteId);
-        $text = isset($result[0]['content']) ? $result[0]['content'] : "";
-        if(empty($text) || mb_strlen(trim($text), 'UTF-8') < 100){
-            return $this->json(1003008 , []);
+        if(empty($result) || !isset($result[0])){
+            return $this->json(ECODE_DATABASE_QUERY_FAIL , []);
         }
-        $result = $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $text);
         $eCode = ECODE_SUCCESS;
-        if(is_int($result) && (int)$result < 0){
-            switch ($result){
-                case -1:
-                    $eCode = 1003009;
-                    break;
-                case -2:
-                    $eCode = 1003010;
-                    break;
-                default:
-                    $eCode = ECODE_UNDEFINED_ERROR;
-                    break;
+        //todo 检验是否已经被分析过：如果未分析走分析逻辑；已分析直接返回分析结果
+        if(isset($result[0]['is_analyzed']) && (int)$result[0]['is_analyzed'] === 0){
+
+            $text = isset($result[0]['content']) ? $result[0]['content'] : "";
+            if(empty($text) || mb_strlen(trim($text), 'UTF-8') < 100){
+                return $this->json(1003008 , []);
             }
-            return $this->json($eCode, []);
+            $result = $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $text);
+
+            if(is_int($result) && (int)$result < 0){
+                switch ($result){
+                    case -1:
+                        $eCode = 1003009;
+                        break;
+                    case -2:
+                        $eCode = 1003010;
+                        break;
+                    default:
+                        $eCode = ECODE_UNDEFINED_ERROR;
+                        break;
+                }
+                return $this->json($eCode, []);
+            }
         }
+
         // todo 分析完毕后，聚合返回AI分析数据
         $aiData = $this->_noteService->getAiAnalyzedData($uid, $noteId);
         return $this->json($eCode, $aiData);
@@ -333,8 +342,10 @@ class Notes extends \App\Application
 
         return $this->json(ECODE_SUCCESS, []);
     }
+
     /**
      * 修改日记（仅支持文本与摘要）
+     * @param  void
      * @return void
      */
     public function edit()
