@@ -73,11 +73,10 @@ class Analysis extends \App\Application
      */
     public function editInsight()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101; // 临时固定 uid，后续接入登录态
+        }
 
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
