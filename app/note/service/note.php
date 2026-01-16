@@ -165,7 +165,7 @@ class Note extends \Service\Base
 
         return [
             'insight' => (object)$insight,
-            'emotion' => $emotion,
+            'emotion' => (object)$emotion,
             'actions' => $actions,
             'habits' => (object)$habits,
         ];
