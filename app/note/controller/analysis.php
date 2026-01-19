@@ -141,6 +141,11 @@ class Analysis extends \App\Application
      */
     public function editEmotion()
     {
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');

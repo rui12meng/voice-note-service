@@ -36,11 +36,10 @@ class Tags extends \App\Application
      */
     public function add()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
@@ -56,7 +55,6 @@ class Tags extends \App\Application
             'name' => $tagName,
             'normalized_name' => mb_strtolower(trim($tagName), 'UTF-8'),//$tagName,
             'source' => 'user',
-            'created_at'  => date('Y-m-d H:i:s'),
         ];
 
         $result = $this->_tagsService->addTag($data);
@@ -93,11 +91,10 @@ class Tags extends \App\Application
      */
     public function delete()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
 
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {

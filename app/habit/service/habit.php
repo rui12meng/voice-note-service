@@ -54,7 +54,6 @@ class Habit
     public function addUserHabit($uid, $noteId, $habitName, $habitDesc, $remindTime, $active, $intervalNum, $intervalUnit){
         // 根据 intervalUnit 和 intervalNum 计算频率配置
         $frequencyType = 'daily';
-        $frequencyConfig = [];
         switch ($intervalUnit) {
             case 'day':
                 // 间隔天数
@@ -69,7 +68,7 @@ class Habit
                 $frequencyConfig = ['days' => (int)$intervalNum * 30, 'anchor_date' => date('Y-m-d')];
                 break;
             default:
-                return -5;
+                return -4;
         }
 
         $result = $this->countUserActiveHabits($uid);
@@ -164,11 +163,11 @@ class Habit
      * @param string  $intervalUnit
      * @return void
      */
-    public function editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $intervalNum, $intervalUnit): int
+    public function editUserHabit($uid, $habitId, $habitName, $habitDesc, $remindTime, $active, $intervalNum, $intervalUnit)
     {
         // 根据 intervalUnit 和 intervalNum 计算频率配置
         $frequencyType = 'daily';
-        $frequencyConfig = $this->_intervalIndays($intervalNum, $intervalUnit);
+        $frequencyConfig = $this->_intervalInDays($intervalNum, $intervalUnit);
         if(empty($frequencyConfig)){
             return -5; //参数异常
         }
@@ -184,7 +183,7 @@ class Habit
 
         // todo 如果用户更新规则（时间间隔变更），锚点数据需要算法更新
         if($intervalNum != $habit[0]['interval_num'] || $intervalUnit!= $habit[0]['interval_unit']){
-            $days = $this->_intervalIndays($habit[0]['interval_num'] , $habit[0]['interval_unit']);
+            $days = $this->_intervalInDays($habit[0]['interval_num'] , $habit[0]['interval_unit']);
             $latestDate = $this->_getLastOccurrenceDate($habit[0]['anchor_date'], $days['days']);
             $frequencyConfig['anchor_date'] = $latestDate;
 
@@ -284,7 +283,7 @@ class Habit
      */
     public function getUserHabitList($uid, $keyword, $cursor, $pageSize)
     {
-        if ($pageSize > 50) {
+        if ((int)$pageSize > 50) {
             $pageSize = 50;
         }
 
@@ -682,11 +681,11 @@ class Habit
 
     /**
      * 根据时间间隔和时间单位，计算天数
-     * @params int $intervalNum
-     * @params string $intervalUnit
-     * @return void
+     * @param int $intervalNum
+     * @param string $intervalUnit
+     * @return array
      */
-    private function _intervalIndays($intervalNum, $intervalUnit){
+    private function _intervalInDays($intervalNum, $intervalUnit){
         $frequencyConfig = [];
         switch ($intervalUnit) {
             case 'day':

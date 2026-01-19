@@ -184,11 +184,10 @@ class Habits extends \App\Application
      */
     public function add(){
         // 用户uid
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
             $noteId = 0;
@@ -279,11 +278,10 @@ class Habits extends \App\Application
     public function info()
     {
         // 用户uid
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
         //habit_id 必传
         $habitId = $this->post('habit_id', true);
         if (!isset($habitId) || empty($habitId)) {
@@ -331,11 +329,10 @@ class Habits extends \App\Application
     public function edit()
     {
         // 用户uid
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
 
         $habitId = $this->post('habit_id', true);
         if (!isset($habitId) || empty($habitId)) {
@@ -577,11 +574,10 @@ class Habits extends \App\Application
      */
     public function delete()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
 
         $habitId = $this->post('habit_id', true);
         if (!isset($habitId) || empty($habitId)) {
@@ -611,13 +607,12 @@ class Habits extends \App\Application
      * 每页默认20条，游标偏移分页
      * @return void
      */
-    public function list()
+    public function lists()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+        }
 
         // 搜索关键词，可选
         $keyword = $this->post('keyword', true);
