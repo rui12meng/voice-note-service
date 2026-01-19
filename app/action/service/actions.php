@@ -227,7 +227,7 @@ class Actions
             $list = array_slice($list, 0, $pageSize);
         }
 
-        $nextCursor = $hasNext ? end($list)['id'] : null;
+        $nextCursor = $hasNext ? end($list)['id'] : 0;
 
         return [
             'list' => $list,
