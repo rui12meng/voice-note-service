@@ -298,6 +298,7 @@ class Actions
                 'note_id'    => $habit['note_id'],
                 'habit_id'   => $habit['id'],
                 'title'      => $habit['habit_name'],
+                'content'    => $habit['habit_desc'],
                 'streak'     => $habit['streak'],
                 'status'     => 0,          // 0: 待执行
                 'due_date'   => $execTime,

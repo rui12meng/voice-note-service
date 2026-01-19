@@ -20,6 +20,7 @@ class DaoVnHabits extends \Lsf\Model
 
     /**
      * 获取某日需要执行的习惯列表
+     * todo 找出当前用户 $uid 在指定时间 $execTime 应该执行的、处于开启状态的习惯（habits），并计算其“今日连续打卡数”（streak）。
      * todo 习惯规则变更时，重置 streak_count = 0；因为“每2天跑一次”和“每3天跑一次”是两个不同的行为目标，连续性不应继承
      * todo current_streak COMMENT '写时维护，仅在 last_done_date 连续时可信'
      * todo 一旦规则变了，必须重算 current_streak = 0
@@ -31,12 +32,12 @@ class DaoVnHabits extends \Lsf\Model
     public function getExecHabitsList($uid, $execTime, $limit = 50)
     {
 
-
 $sql = <<<SQL
 SELECT
             id,
             note_id,
             habit_name,
+            habit_desc,
         CASE
             WHEN last_done_date IS NULL THEN 0
             WHEN DATEDIFF({$execTime}, last_done_date) = (CASE interval_unit

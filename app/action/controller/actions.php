@@ -213,7 +213,11 @@ class Actions extends \App\Application
      * @return void
      */
     public function uList(){
-        $uid = 101;
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
         $actionDate = $this->post('due_date', true);
         if ( ! isset($actionDate) || empty($actionDate)) {
             $actionDate = date('Y-m-d');
@@ -224,7 +228,7 @@ class Actions extends \App\Application
             $status = self::USER_ACTION_CANCEL;
         }
 
-        //todo 同步今日习惯到任务表（仅待办需要同步）
+        //todo 同步今日习惯到任务表（仅待办需要同步）/按查看日期仅同步一次
         if($status === self::USER_ACTION_CANCEL && $actionDate <= date('Y-m-d')){
             // todo 调用服务：获取今日需展示的习惯并自动落库到 actions
             $this->_actionsService->syncExecHabitsToActions($uid, $actionDate);
