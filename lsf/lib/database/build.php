@@ -146,67 +146,138 @@ class Build
     }
 
     // where子单元分析
-    protected function parseWhereItem($key, $val){
-        $whereStr = '';
-        if(is_array($val)){
-            if(is_string($val[0])) {
-                if(preg_match('/^(EQ|NEQ|GT|EGT|LT|ELT)$/i', $val[0])) { // 比较运算
-                    $whereStr.= $key.' '.$this->comparison[strtolower($val[0])] . ' ' . $this->parseValue($val[1]);
-                }elseif(preg_match('/^(NOTLIKE|LIKE)$/i', $val[0])){ // 模糊查找
-                    if(is_array($val[1])){
-                        $likeLogic = isset($val[2]) ? strtoupper($val[2]) : 'OR';
-                        if(in_array($likeLogic, ['AND', 'OR', 'XOR'])){
-                            $likeStr = $this->comparison[strtolower($val[0])];
-                            $like = [];
-                            foreach($val[1] as $item){
-                                $like[] = $key . ' ' . $likeStr . ' ' . $this->parseValue($item);
-                            }
-                            $whereStr .= '(' . implode(' ' . $likeLogic . ' ', $like) . ')';
-                        }
-                    }else{
-                        $whereStr.= $key . ' ' . $this->comparison[strtolower($val[0])] . ' ' . $this->parseValue($val[1]);
-                    }
-                }elseif('exp' == strtolower($val[0])){ // 使用表达式
-                    $whereStr.= ' (' . $key . ' ' . $val[1] . ') ';
-                }elseif(preg_match('/IN/i', $val[0])){ // IN 运算
-                    if(isset($val[2]) && 'exp' == $val[2]) {
-                        $whereStr.= $key . ' ' . strtoupper($val[0]) . ' ' . $val[1];
-                    }else{
-                        if(is_string($val[1])){
-                            $val[1] = explode(',', $val[1]);
-                        }
-                        $zone = implode(',', $this->parseValue($val[1]));
-                        $whereStr.= $key . ' ' . strtoupper($val[0]) . ' (' . $zone . ')';
-                    }
-                }elseif(preg_match('/BETWEEN/i', $val[0])){ // BETWEEN运算
-                    $data = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
-                    $whereStr.=  ' (' . $key . ' ' . strtoupper($val[0]) . ' ' . $this->parseValue($data[0]) . ' AND ' . $this->parseValue($data[1]) . ' )';
-                }else{
-                    throw new \Exception("param where error : $val[0]");
-                }
-            }else {
-                $count = count($val);
-                $rule = isset($val[$count-1]) ? strtoupper($val[$count-1]) : '';
-                if(in_array($rule, ['AND','OR','XOR'])) {
-                    $count = $count - 1;
-                }else{
-                    $rule = 'AND';
-                }
-                for($i=0;$i<$count;$i++){
-                    $data = is_array($val[$i]) ? $val[$i][1] : $val[$i];
-                    if('exp' == strtolower($val[$i][0])) {
-                        $whereStr.= '(' . $key . ' ' . $data.') ' . $rule . ' ';
-                    }else{
-                        $op = is_array($val[$i]) ? $this->comparison[strtolower($val[$i][0])] : '=';
-                        $whereStr.= '(' . $key . ' ' . $op . ' ' . $this->parseValue($data) . ') ' . $rule . ' ';
-                    }
-                }
-                $whereStr = substr($whereStr, 0, -4);
-            }
-        }else{
-            $whereStr.= $key . ' = ' . $this->parseValue($val);
+    protected function parseWhereItem($key, $val)
+    {
+        // 情况1: 值为 null → 转为 IS NULL
+        if (is_null($val)) {
+            return "$key IS NULL";
         }
-        return $whereStr;
+
+        // 情况2: 非数组 → 普通等值查询
+        if (!is_array($val)) {
+            return "$key = " . $this->parseValue($val);
+        }
+
+        // 情况3: 数组表达式
+        $operator = strtolower($val[0] ?? '');
+        $value = $val[1] ?? null;
+
+        // 特殊操作符处理
+        switch ($operator) {
+            // --- NULL 相关 ---
+            case 'null':
+                return "$key IS NULL";
+
+            case 'notnull':
+            case 'nn':
+                return "$key IS NOT NULL";
+
+            // --- 比较运算 ---
+            case 'eq':
+            case 'neq':
+            case 'gt':
+            case 'egt':
+            case 'lt':
+            case 'elt':
+                if (!isset($this->comparison[$operator])) {
+                    throw new \Exception("Unsupported comparison operator: {$val[0]}");
+                }
+                return "$key {$this->comparison[$operator]} " . $this->parseValue($value);
+
+            // --- 模糊查询 ---
+            case 'like':
+            case 'notlike':
+                if (is_array($value)) {
+                    $logic = isset($val[2]) ? strtoupper($val[2]) : 'OR';
+                    if (!in_array($logic, ['AND', 'OR', 'XOR'])) {
+                        $logic = 'OR';
+                    }
+                    $likes = [];
+                    foreach ($value as $item) {
+                        $likes[] = "$key {$this->comparison[$operator]} " . $this->parseValue($item);
+                    }
+                    return '(' . implode(" $logic ", $likes) . ')';
+                }
+                return "$key {$this->comparison[$operator]} " . $this->parseValue($value);
+
+            // --- IN / NOT IN ---
+            case 'in':
+            case 'notin':
+                if (isset($val[2]) && strtolower($val[2]) === 'exp') {
+                    // 表达式模式：['in', '(SELECT id FROM ...)', 'exp']
+                    return "$key " . strtoupper($operator) . " $value";
+                }
+                if (is_string($value)) {
+                    $value = explode(',', $value);
+                }
+                if (empty($value)) {
+                    return $operator === 'in' ? '1=0' : '1=1'; // 防空 IN
+                }
+                $list = implode(',', array_map([$this, 'parseValue'], $value));
+                return "$key " . strtoupper($operator) . " ($list)";
+
+            // --- BETWEEN / NOT BETWEEN ---
+            case 'between':
+            case 'notbetween':
+                $data = is_string($value) ? explode(',', $value) : (array)$value;
+                if (count($data) !== 2) {
+                    throw new \Exception("BETWEEN requires two values");
+                }
+                return "($key " . strtoupper($operator) . " " . $this->parseValue($data[0]) . " AND " . $this->parseValue($data[1]) . ")";
+
+            // --- 原生表达式 ---
+            case 'exp':
+                // 注意：此处 value 应为安全的 SQL 片段
+                return "($key {$value})";
+
+            // --- 兼容旧式多条件数组（如 [['gt', 10], ['lt', 100]]）---
+            default:
+                // 如果第一个元素不是字符串，可能是旧式多条件
+                if (!is_string($val[0])) {
+                    return $this->parseMultiConditions($key, $val);
+                }
+
+                // 未知操作符
+                throw new \Exception("Invalid where operator: {$val[0]}");
+        }
+    }
+
+    /**
+     * 处理旧式多条件数组：[['gt', 10], ['lt', 100], 'AND']
+     * @param  mixed     $key
+     * @param  mixed     $conditions
+     * @return string
+     */
+    protected function parseMultiConditions($key, $conditions)
+    {
+        $parts = [];
+        $logic = 'AND';
+
+        // 检查最后一个是否为逻辑操作符
+        $last = end($conditions);
+        if (in_array(strtoupper($last), ['AND', 'OR', 'XOR'])) {
+            $logic = strtoupper($last);
+            array_pop($conditions);
+        }
+
+        foreach ($conditions as $cond) {
+            if (is_array($cond) && isset($cond[0])) {
+                $op = strtolower($cond[0]);
+                $val = $cond[1] ?? null;
+                if (isset($this->comparison[$op])) {
+                    $parts[] = "($key {$this->comparison[$op]} " . $this->parseValue($val) . ")";
+                } elseif ($op === 'exp') {
+                    $parts[] = "($key {$val})";
+                } else {
+                    throw new \Exception("Unsupported operator in multi-condition: {$cond[0]}");
+                }
+            } else {
+                // 非数组条件？回退为等值
+                $parts[] = "($key = " . $this->parseValue($cond) . ")";
+            }
+        }
+
+        return '(' . implode(" $logic ", $parts) . ')';
     }
 
     /**

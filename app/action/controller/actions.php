@@ -303,7 +303,7 @@ class Actions extends \App\Application
 
         $filters = [
             'note_id' => $noteId,
-            'habit_id' => ['is' , NULL],
+            'habit_id' => null,
         ];
 
         $result = $this->_actionsService->noteActionList($uid, $cursor, $pageSize, $filters);
