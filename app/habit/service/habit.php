@@ -94,9 +94,12 @@ class Habit
         ];
 
         if($noteId > 0){
-            $data['note_id'] = $noteId;
             //todo 查询note_title/summary 到habit表，冗余查询
-            $result = $this->_daoNotesModel->select('title,summary',['id' => $noteId, 'user_id' => $uid]);
+            //todo 只有noteId合法，才关联存储，否则不关联，只当作日常习惯存储。
+            $result = $this->_daoNotesModel->select('id,title,summary',['id' => $noteId, 'user_id' => $uid, 'is_deleted' => 0]);
+            if(isset($result[0]['id']) && !empty($result[0]['id'])){
+                $data['note_id'] = $noteId;
+            }
             if(isset($result[0]['summary']) && !empty($result[0]['summary'])){
                 $data['note_summary'] = $result[0]['summary'];
             }
