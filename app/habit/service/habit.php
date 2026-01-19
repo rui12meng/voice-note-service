@@ -12,6 +12,7 @@ class Habit
 {
     private $_daoHabitsModel;
     private $_daoHabitSchedulesModel;
+    private $_daoNotesModel;
 
     /**
      * 构造函数
@@ -21,6 +22,7 @@ class Habit
     public function __construct(){
         $this->_daoHabitsModel = \Lsf\Loader::Model('DaoVnHabits', false, APP_NAME_HABIT);
         $this->_daoHabitSchedulesModel = \Lsf\Loader::Model('DaoVnHabitSchedules', false, APP_NAME_HABIT);
+        $this->_daoNotesModel = \Lsf\Loader::Model('DaoVnNotes', true);
     }
 
     /**
@@ -93,6 +95,11 @@ class Habit
 
         if($noteId > 0){
             $data['note_id'] = $noteId;
+            //todo 查询note_title/summary 到habit表，冗余查询
+            $result = $this->_daoNotesModel->select('title,summary',['id' => $noteId, 'user_id' => $uid]);
+            if(isset($result[0]['summary']) && !empty($result[0]['summary'])){
+                $data['note_summary'] = $result[0]['summary'];
+            }
         }
 
         $this->_daoHabitsModel->begin();
