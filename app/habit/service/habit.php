@@ -13,6 +13,7 @@ class Habit
     private $_daoHabitsModel;
     private $_daoHabitSchedulesModel;
     private $_daoNotesModel;
+    private $_daoActionsModel;
 
     /**
      * 构造函数
@@ -23,6 +24,7 @@ class Habit
         $this->_daoHabitsModel = \Lsf\Loader::Model('DaoVnHabits', false, APP_NAME_HABIT);
         $this->_daoHabitSchedulesModel = \Lsf\Loader::Model('DaoVnHabitSchedules', false, APP_NAME_HABIT);
         $this->_daoNotesModel = \Lsf\Loader::Model('DaoVnNotes', true);
+        $this->_daoActionsModel = \Lsf\Loader::Model('DaoVnActions', true);
     }
 
     /**
@@ -119,6 +121,21 @@ class Habit
         ];
         $habitRuleId = $this->_daoHabitSchedulesModel->insert($habitRule);
         if($habitRuleId === false){
+            $this->_daoHabitsModel->rollback();
+            return -7;
+        }
+        //todo 同时把当天习惯快照存入行动表
+        $actionData = [
+            'user_id' => $uid,
+            'note_id' => $noteId,
+            'habit_id' => $habitId,
+            'title' => $habitName,
+            'content' => $habitDesc,
+            'source' => 'user',
+            'due_date' => date('Y-m-d'),
+        ];
+        $actionId = $this->_daoActionsModel->insert($actionData);
+        if($actionId === false){
             $this->_daoHabitsModel->rollback();
             return -7;
         }

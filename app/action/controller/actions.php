@@ -270,7 +270,11 @@ class Actions extends \App\Application
      * @return void
      */
     public function nList(){
-        $uid = 101;
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
@@ -279,11 +283,11 @@ class Actions extends \App\Application
         $cursor = $this->post('cursor', true);
         if (!isset($cursor) || empty($cursor) || !is_numeric($cursor) || (int)$cursor < 0) {
             //游标（Base64 编码的 (created_at, id)）
-            $cursor = null;
+            $cursor = 0;
         } else {
             $cursor = (int)$cursor;
             if ($cursor < 0) {
-                $cursor = null;
+                $cursor = 0;
             }
         }
         
@@ -299,6 +303,7 @@ class Actions extends \App\Application
 
         $filters = [
             'note_id' => $noteId,
+            'habit_id' => ['is' , NULL],
         ];
 
         $result = $this->_actionsService->noteActionList($uid, $cursor, $pageSize, $filters);

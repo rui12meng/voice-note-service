@@ -204,7 +204,7 @@ class Actions
      * @param array $filters 查询条件数组
      * @return void
      */
-    public function actionList($uid, $cursor = null, $pageSize = 20, $filters = []){
+    public function actionList($uid, $cursor = 0, $pageSize = 20, $filters = []){
         $where = [
             'user_id' => $uid,
             'is_deleted' => 0,
@@ -246,7 +246,7 @@ class Actions
      * @param array $filters 查询条件数组
      * @return void
      */
-    public function noteActionList($uid, $cursor = null, $pageSize = 20, $filters = []){
+    public function noteActionList($uid, $cursor = 0, $pageSize = 20, $filters = []){
 
         //todo 1. 先验证模块是否存在
         $result = $this->_daoVnNoteAiAnalyzeModel->select('is_deleted',['note_id' =>$filters['note_id'], 'analysis_type_name' => 'actions']);
@@ -364,6 +364,7 @@ class Actions
                 'title'    => $item['title']  ?? '',
                 'status'   => $item['status']  ?? 0,
                 'due_date' => $item['date'] ?? null,
+                'source'   => 'user',
             ];
             $insertData[] = $row;
         }
