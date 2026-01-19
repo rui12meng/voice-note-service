@@ -26,7 +26,7 @@ class Actions extends \App\Application
     public function __construct($appName, $controllerName, $actionName)
     {
         parent::__construct($appName, $controllerName, $actionName);
-        $this->_actionsService = \Lsf\Loader::service('Actions', false, APP_NAME_NOTE);
+        $this->_actionsService = \Lsf\Loader::service('Actions', false, APP_NAME_ACTION);
 
     }
 
@@ -327,15 +327,29 @@ class Actions extends \App\Application
      * @return void
      */
     public function save(){
-        $uid = 101;
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
         }
-        //tasks
+        //actions
         $actions = $this->post('actions', true);
-        if ( ! isset($actions) || empty($actions)) {
+
+        if (!isset($actions)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'actions');
+        }
+
+        if (empty($actions)) {
+            //todo 删除全部
+            $this->_actionsService->saveActionsByNoteId($uid, $noteId, []);
             return $this->json(0, []);
+        }
+
+        if (!is_array($actions)) {
+            return $this->json(1004001, []);
         }
         // 过滤掉 content 或 due_date 为空的任务
         $validActions = [];
@@ -349,16 +363,16 @@ class Actions extends \App\Application
             }
             // 必填字段缺失
             if (empty($item['title']) || empty($item['date'])) {
-                return $this->errParamMissing(ECODE_PARAM_MISSING, 'title/ date 缺失');
+                return $this->errParamMissing(ECODE_PARAM_MISSING, 'title/ date');
             }
             // title 长度超限
-            if (mb_strlen($item['title']) > 100) {
-                return $this->errParamMissing(ECODE_PARAM_MISSING, 'title 超过100字符');
+            if (mb_strlen($item['title']) > 50) {
+                return $this->json(1004002, []);
             }
             // date 范围校验：仅允许当天到将来一个月内
             $date = \DateTime::createFromFormat('Y-m-d', $item['date']);
             if (!$date) {
-                return $this->errParamMissing(ECODE_PARAM_MISSING, 'date 格式非法');
+                return $this->json(1004003, []);
             }
             $now = new \DateTime();
             // 重置时分秒，确保只比较日期部分
@@ -366,7 +380,7 @@ class Actions extends \App\Application
             $date->setTime(0, 0, 0);
             $interval = $now->diff($date);
             if ($interval->invert > 0 || $interval->days > 30) {
-                return $this->errParamMissing(ECODE_PARAM_MISSING, 'date 不在当天到将来一个月时间范围内');
+                return $this->json(1004004, []);
             }
             $validActions[] = $item;
         }
@@ -384,7 +398,7 @@ class Actions extends \App\Application
         }
         $actionsCnt = $this->_actionsService->countTodayActions($uid, $today);
         if (($actionsCnt + $todayCnt) >= 50) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, '当日行动总数超过50个限制');
+            return $this->json(1004005, []);
         }
 
         // 调用服务层：全量更新（含新增、编辑、删除）
