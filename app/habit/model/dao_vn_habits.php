@@ -80,6 +80,7 @@ SELECT
     remind_time,
     interval_num,
     interval_unit,
+    note_summary,
     created_at
 FROM user_habits 
 WHERE user_id = {$uid} AND is_deleted = 0
