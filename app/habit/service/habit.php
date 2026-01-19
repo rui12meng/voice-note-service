@@ -583,7 +583,7 @@ class Habit
      * @param int    $interval       新的周期间隔（天）
      * @return string                返回 'Y-m-d' 格式的日期
      */
-    private function _getLastOccurrenceDate(string $anchorDate, int $interval): string
+    private function _getLastOccurrenceDate(string $anchorDate, int $interval)
     {
         // 当前日期（00:00:00）
         $today = new \DateTime('today');
@@ -599,7 +599,7 @@ class Habit
         $diff = $today->diff($anchorDt);
         $diffDays = (int)$diff->format('%r%a'); // Signed days
 
-        if ($diffDays > 0) { //锚点在未来
+        if ($diffDays >= 0) { //锚点在未来
             return $anchorDate;
         } else { //锚点在过去 或 今天
             $passed = abs($diffDays); // 已经过了多少天（非负）
@@ -621,7 +621,7 @@ class Habit
      * @param array $config
      * @return string
      */
-    private function _getExecutionPrompt($type, $config): string
+    private function _getExecutionPrompt($type, $config)
     {
         if ($type === 'daily') {
             return '每天都执行';
@@ -678,7 +678,7 @@ class Habit
             $diff = $today->diff($anchorDate);
             $diffDays = (int)$diff->format('%r%a'); // Signed days
 
-            if ($diffDays > 0) { //锚点在未来
+            if ($diffDays >= 0) { //锚点在未来
                 $daysUntil = $diffDays;
             } else { //锚点在过去 或 今天
                 $passed = abs($diffDays); // 已经过了多少天（非负）
