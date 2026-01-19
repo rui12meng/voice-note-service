@@ -24,7 +24,7 @@ class Habits extends \App\Application
     public function __construct($appName, $controllerName, $actionName)
     {
         parent::__construct($appName, $controllerName, $actionName);
-        $this->_habitsService = \Lsf\Loader::service('Habit', false, APP_NAME_NOTE);
+        $this->_habitsService = \Lsf\Loader::service('Habit', false, APP_NAME_HABIT);
 
     }
     /**
