@@ -16,6 +16,7 @@ class Actions
     private $_daoVnNoteAiAnalyzeModel;
     private $_daoVnNotesModel;
     private $_daoVnHabitsModel;
+    private $_daoVnHabitSyncRecordsModel;
 
     /**
      * 构造函数
@@ -27,6 +28,7 @@ class Actions
         $this->_daoVnNoteAiAnalyzeModel = \Lsf\Loader::Model('DaoVnNoteAiAnalysis', true);
         $this->_daoVnNotesModel = \Lsf\Loader::Model('DaoVnNotes', true);
         $this->_daoVnHabitsModel = \Lsf\Loader::Model('DaoVnHabits', true);
+        $this->_daoVnHabitSyncRecordsModel = \Lsf\Loader::Model('DaoVnHabitSyncRecords', true);
     }
 
     /**
@@ -269,12 +271,12 @@ class Actions
     public function syncExecHabitsToActions($uid, $execTime)
     {
         //todo 先查询是否已经同步，（仅同步一次），因为习惯修改与后续添加对历史数据不影响；
-        $habits = $this->_daoVnActionsModel->count('habit_id',['user_id' => $uid, 'due_date' => $execTime, 'habit_id' => ['GT', 0]]);
-        if($habits === false){
+        $syncRecord = $this->_daoVnHabitSyncRecordsModel->count('id',['user_id' => $uid, 'sync_date' => $execTime]);
+        if($syncRecord === false){
             return -7;
         }
         // todo 已写入，无需重复写入
-        if(isset($habits) && $habits > 0){
+        if(isset($syncRecord) && $syncRecord > 0){
             return 1;
         }
 
@@ -305,10 +307,23 @@ class Actions
             ];
         }
         if(!empty($actionData)){
-            $res = $this->_daoVnActionsModel->batchInsert($actionData);
+            $this->_daoVnActionsModel->begin();
+            $res = $this->_daoVnActionsModel->batchInsert($actionData, true);
             if ($res === false) {
+                $this->_daoVnActionsModel->rollback();
                 return -7;
             }
+            //todo 记录已同步
+            $data = [
+                'user_id' => $uid,
+                'sync_date' => $execTime,
+            ];
+            $record = $this->_daoVnHabitSyncRecordsModel->insert($data);
+            if ($record === false) {
+                $this->_daoVnActionsModel->rollback();
+                return -7; // 数据库错误
+            }
+            $this->_daoVnActionsModel->commit();
             return $res;
         }else{
             return 1;

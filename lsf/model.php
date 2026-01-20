@@ -147,16 +147,21 @@ class Model
      * [说明]
      * 写入成功返回影响行数
      * @param  array  $data
+     * @param  boolean $ignore [如果某一行违反 唯一索引约束，则跳过该行，其他行正常插入。]
      * @return mixed
      */
-    private function batchInsert($data){
+    private function batchInsert($data, $ignore = FALSE){
         $batchValues = [];
         foreach($data as $oneData){
             $parseData = $this->build->parseInsertData($oneData);
             list($columns, $values) = $parseData;
             $batchValues[] = $values;
         }
-        $sql = 'INSERT INTO ';
+        if($ignore){
+            $sql = 'INSERT IGNORE INTO ';
+        }else{
+            $sql = 'INSERT INTO ';
+        }
         $sql.= $this->table;
         $sql.= ' ' . $columns . ' VALUES ' . implode(',', $batchValues);
         $result = $this->_query($sql, __FUNCTION__);
