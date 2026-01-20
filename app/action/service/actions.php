@@ -197,7 +197,7 @@ class Actions
             // 打卡总次数
             $newStreakCount = $habit['streak_count'] + 1;
 
-            $result = $this->_daoVnHabitsModel->editHabitsByStreak((int)$uid, (int)$actionId, (int)$actionInfo['habit_id'], $today, (int)$newCurrentStreak, (int)$newStreakCount, (int)$status);
+            $result = $this->_daoVnHabitsModel->editHabitsByStreak((int)$uid, (int)$actionId, (int)$actionInfo['habit_id'], (int)$newCurrentStreak, (int)$newStreakCount, (int)$status);
             
             /*$execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
             $today    = new \DateTime('today');

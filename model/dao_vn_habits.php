@@ -99,16 +99,15 @@ SQL;
      * @param  int $uid    用户ID
      * @param  int $actionId  行动ID
      * @param  int $habitId  习惯ID
-     * @param string $execDate 操作时间
      * @param int $newCurrentStreak 当前最新连续打卡次数
      * @param int $newStreakCount 总计打卡次数
      * @param int $status 行动状态
      * @return void
      */
-    public function editHabitsByStreak($uid, $actionId, $habitId, $execDate, $newCurrentStreak, $newStreakCount, $status){
+    public function editHabitsByStreak($uid, $actionId, $habitId, $newCurrentStreak, $newStreakCount, $status){
 
         $data = [
-            'last_done_date'   => $execDate,
+            'last_done_date'   => date('Y-m-d'),
             'streak_count'     => $newStreakCount,
             'current_streak'   => $newCurrentStreak,
         ];
