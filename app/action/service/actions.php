@@ -149,29 +149,66 @@ class Actions
      * @return void
      */
     public function editActionStatus($uid, $actionId, $status){
-        // todo 优先查询该行动是否为习惯任务
-        $actionInfo = $this->_daoVnActionsModel->find('habit_id, due_date, status, is_deleted',$actionId);
+        $today    = new \DateTime('today');
+        // todo 优先查询该行动权限
+        $result = $this->_daoVnActionsModel->find('user_id, habit_id, due_date, status, is_deleted',$actionId);
+        if($result === false){
+            return -7;
+        }
+        $actionInfo = [];
+        if(isset($result[0])){
+            $actionInfo = $result[0];
+        }
         // todo 说明已删除
         if(isset($actionInfo['is_deleted']) && (int)$actionInfo['is_deleted'] === 1){
             //直接返回成功
             return 0;
-
         }
         // todo 说明已打卡
         if(isset($actionInfo['status']) && (int)$actionInfo['status'] === 1){
             //直接返回成功
             return 0;
-
         }
 
         //todo 说明是习惯，需要维护 current_streak 的标准逻辑
-        if( isset($actionInfo['habit_id']) && is_numeric($actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
-            $execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
+        if( isset($actionInfo['habit_id']) && is_numeric((int)$actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
+            //todo 查询habit配置
+            $habit = $this->_daoVnHabitsModel->find('last_done_date, interval_unit, interval_num, current_streak, streak_count', $actionInfo['habit_id']);
+            if($habit === false){
+                return -7;
+            }
+            // 计算周期天数
+            $periodDays = 1; // 默认值
+            switch (strtolower($habit['interval_unit'])) {
+                case 'day':
+                    $periodDays = $habit['interval_num'];
+                    break;
+                case 'week':
+                    $periodDays = $habit['interval_num'] * 7;
+                    break;
+                case 'month':
+                    $periodDays = $habit['interval_num'] * 30;
+                    break;
+                // default 已由初始值覆盖
+            }
+            // 计算 new_current_streak 当前连续打卡数
+            if (empty($habit['last_done_date'])) {
+                $newCurrentStreak = 1;
+            } else {
+                $diff = (strtotime($today) - strtotime($habit['last_done_date'])) / 86400;
+                $newCurrentStreak = ($diff == $periodDays) ? ($habit['current_streak'] + 1) : 1;
+            }
+            // 打卡总次数
+            $newStreakCount = $habit['streak_count'] + 1;
+
+            $result = $this->_daoVnHabitsModel->editHabitsByStreak((int)$uid, (int)$actionId, (int)$actionInfo['habit_id'], $today, (int)$newCurrentStreak, (int)$newStreakCount, (int)$status);
+            
+            /*$execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
             $today    = new \DateTime('today');
-            if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) {
+            if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) { //正常打卡
                 //todo 更新 user_habits（核心逻辑）事务处理
                 $result = $this->_daoVnHabitsModel->editHabitsByStreak($uid, $actionId, $actionInfo['habit_id'], $actionInfo['due_date'], (int)$status);
-            }else{
+            }else{ //延期/异常打卡
                 $data = ['status' => (int)$status];
                 $where = [
                     'id' => $actionId,
@@ -179,13 +216,14 @@ class Actions
                 ];
                 $result = $this->_daoVnActionsModel->update($data, $where);
 
-            }
+            }*/
 
         }else{
             $data = ['status' => (int)$status];
             $where = [
                 'id' => $actionId,
                 'user_id' => $uid,
+                'complete_time' => date('Y-m-d H:i:s'),
             ];
             $result = $this->_daoVnActionsModel->update($data, $where);
 
@@ -216,7 +254,7 @@ class Actions
             $where['id'] = ['LE', (int)$cursor];
         }
 
-        $columns = 'id, title, streak, status, due_date';
+        $columns = 'id, title, content, streak, status, due_date';
         $orderBy = 'id DESC';
         $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 

@@ -13,9 +13,12 @@ class DaoVnHabits extends \Lsf\Model
     public $tablePrefix = '';
     public $table       = 'user_habits';
 
+    private $_daoVnActionsModel;
+
     public function __construct()
     {
         parent::__construct();
+        $this->_daoVnActionsModel =\Lsf\Loader::Model('DaoVnActions',true);
     }
 
     /**
@@ -91,47 +94,44 @@ SQL;
 
     }
 
-    public function editHabitsByStreak($uid, $actionId, $habitId, $execDate, $status){
+    /**
+     * 更新行动状态关联的习惯打卡管理
+     * @param  int $uid    用户ID
+     * @param  int $actionId  行动ID
+     * @param  int $habitId  习惯ID
+     * @param string $execDate 操作时间
+     * @param int $newCurrentStreak 当前最新连续打卡次数
+     * @param int $newStreakCount 总计打卡次数
+     * @param int $status 行动状态
+     * @return void
+     */
+    public function editHabitsByStreak($uid, $actionId, $habitId, $execDate, $newCurrentStreak, $newStreakCount, $status){
 
-        $sql = <<<SQL
-UPDATE user_habits
-SET
-  last_done_date = '{$execDate}',
-
-  streak_count = streak_count + 1,
-
-  current_streak = CASE
-    WHEN last_done_date IS NULL
-      THEN 1
-    WHEN DATEDIFF('{$execDate}', last_done_date) = (
-    CASE interval_unit
-            WHEN 'day'   THEN interval_num
-            WHEN 'week'  THEN interval_num * 7
-            WHEN 'month' THEN interval_num * 30
-        END
-    )
-      THEN current_streak + 1
-    ELSE
-      1
-  END
-WHERE id = {$habitId};
-
-SQL;
-
+        $data = [
+            'last_done_date'   => $execDate,
+            'streak_count'     => $newStreakCount,
+            'current_streak'   => $newCurrentStreak,
+        ];
         $this->begin();
-        $result = $this->query($sql);
+        // 更新 habit
+        $result = $this->update($data , ['id' => $habitId]);
         if($result === false){
             $this->rollback();
             return -7;
         }
 
-        $data = ['status' => (int)$status , 'streak' => ['exp', 'streak + 1']];
+        // 更新 action：streak = 新计算出的 current_streak
+        $actionData = [
+            'status' => (int)$status ,
+            'complete_time' => date('Y-m-d H:i:s'),
+            'streak'        => $newCurrentStreak,
+            ];
         $where = [
             'id' => $actionId,
             'user_id' => $uid,
         ];
-        $_daoVnActionsModel =\Lsf\Loader::Model('DaoVnActions',true);
-        $result = $_daoVnActionsModel->update($data, $where);
+
+        $result = $this->_daoVnActionsModel->update($actionData, $where);
 
         if($result === false){
             $this->rollback();

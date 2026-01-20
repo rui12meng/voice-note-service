@@ -75,7 +75,10 @@ class Actions extends \App\Application
      */
     public function delete(){
 
-        $uid = 101;
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
         $actionId = $this->post('action_id', true);
         if ( ! isset($actionId) || empty($actionId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'action_id');
@@ -148,7 +151,10 @@ class Actions extends \App\Application
      * @return void
      */
     public function complete(){
-        $uid = 101;
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
         $actionId = $this->post('action_id', true);
         if ( ! isset($actionId) || empty($actionId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'action_id');
