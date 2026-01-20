@@ -215,11 +215,13 @@ class Actions
             }*/
 
         }else{
-            $data = ['status' => (int)$status];
+            $data = [
+                'status' => (int)$status,
+                'complete_time' => date('Y-m-d H:i:s'),
+                ];
             $where = [
                 'id' => $actionId,
                 'user_id' => $uid,
-                'complete_time' => date('Y-m-d H:i:s'),
             ];
             $result = $this->_daoVnActionsModel->update($data, $where);
 
