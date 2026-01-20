@@ -113,7 +113,7 @@ class Actions
             return -7;
         }
         //若不存在或已删除，静默忽略，不报错
-        if (empty($result) || int($result) >= 0) {
+        if (empty($result) || (int)($result) >= 0) {
             return 0;
         }else{
             return -6;
