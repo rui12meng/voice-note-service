@@ -270,12 +270,33 @@ class Actions
         $nextCursor = $hasNext ? end($list)['id'] : 0;
 
         return [
-            'list' => $list,
+            'list' => $this->_replaceNullWithEmptyString($list),
             'pagination' => [
                 'has_next_page' => $hasNext,
                 'next_cursor' => $nextCursor,
             ],
         ];
+    }
+
+    /**
+     * 对数组中「所有字段」的 null 值统一替换为空字符串
+     * @param   array $array
+     * @return  array
+     */
+    private function _replaceNullWithEmptyString(array $array)
+    {
+        if(!empty($array)){
+            foreach ($array as &$row) {
+                if (is_array($row)) {
+                    foreach ($row as $key => $value) {
+                        if ($value === null) {
+                            $row[$key] = '';
+                        }
+                    }
+                }
+            }
+        }
+        return $array;
     }
 
     /**
