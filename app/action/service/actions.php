@@ -151,13 +151,9 @@ class Actions
     public function editActionStatus($uid, $actionId, $status){
         $today    = new \DateTime('today');
         // todo 优先查询该行动权限
-        $result = $this->_daoVnActionsModel->find('user_id, habit_id, due_date, status, is_deleted',$actionId);
-        if($result === false){
+        $actionInfo = $this->_daoVnActionsModel->find('user_id, habit_id, due_date, status, is_deleted',$actionId);
+        if($actionInfo === false){
             return -7;
-        }
-        $actionInfo = [];
-        if(isset($result[0])){
-            $actionInfo = $result[0];
         }
         // todo 说明已删除
         if(isset($actionInfo['is_deleted']) && (int)$actionInfo['is_deleted'] === 1){
