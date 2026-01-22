@@ -210,7 +210,7 @@ class Actions
             }else{
                 $data = [
                     'streak_count' => $newStreakCount,
-                    'complete_time' => data('Y-m-d H:i:s'),
+                    'complete_time' => date('Y-m-d H:i:s'),
                 ];
                 $result = $this->_daoVnHabitsModel->editHabitCompletion($uid, $actionInfo['habit_id'], $actionId, $status, $data);
 
@@ -305,7 +305,7 @@ class Actions
 
             }else{
                 // todo 打卡总次数
-                $newStreakCount = max(0, $habit['streak_count'] - 1),
+                $newStreakCount = max(0, $habit['streak_count'] - 1);
                 $data = [
                     'streak_count' => $newStreakCount,
                 ];
@@ -352,7 +352,7 @@ class Actions
             $where['id'] = ['LE', (int)$cursor];
         }
 
-        $columns = 'id, title, content, streak, status, due_date';
+        $columns = 'id, title, content, streak, status, due_date, habit_id';
         $orderBy = 'id ASC';
         $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
@@ -363,6 +363,32 @@ class Actions
         $hasNext = count($list) > $pageSize;
         if ($hasNext) {
             $list = array_slice($list, 0, $pageSize);
+        }
+
+        // 聚合习惯打卡总次数
+        $habitIds = [];
+        foreach ($list as $item) {
+            if (isset($item['habit_id']) && $item['habit_id'] > 0) {
+                $habitIds[] = $item['habit_id'];
+            }
+        }
+
+        if (!empty($habitIds)) {
+            $habitIds = array_unique($habitIds);
+            $habits = $this->_daoVnHabitsModel->select('id, streak_count', ['id' => ['IN', $habitIds]]);
+            
+            $habitMap = [];
+            if ($habits !== false && !empty($habits)) {
+                foreach ($habits as $h) {
+                    $habitMap[$h['id']] = $h['streak_count'];
+                }
+            }
+
+            foreach ($list as &$item) {
+                if (isset($item['habit_id']) && isset($habitMap[$item['habit_id']])) {
+                    $item['streak'] = $habitMap[$item['habit_id']];
+                }
+            }
         }
 
         $nextCursor = $hasNext ? end($list)['id'] : 0;
