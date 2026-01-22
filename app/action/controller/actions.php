@@ -160,7 +160,7 @@ class Actions extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'action_id');
         }
 
-        $result = $this->_actionsService->editActionStatus($uid, $actionId, self::USER_ACTION_COMPLETE);
+        $result = $this->_actionsService->completeActionStatus($uid, $actionId, self::USER_ACTION_COMPLETE);
 
         $eCode = ECODE_SUCCESS;
 
@@ -185,13 +185,16 @@ class Actions extends \App\Application
      * @return void
      */
     public function cancel(){
-        $uid = 101;
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
         $actionId = $this->post('action_id', true);
         if ( ! isset($actionId) || empty($actionId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'action_id');
         }
 
-        $result = $this->_actionsService->editActionStatus($uid, $actionId, self::USER_ACTION_CANCEL);
+        $result = $this->_actionsService->cancelActionStatus($uid, $actionId, self::USER_ACTION_CANCEL);
 
         $eCode = ECODE_SUCCESS;
 

@@ -148,7 +148,7 @@ class Actions
      * @param  int $status  状态值
      * @return void
      */
-    public function editActionStatus($uid, $actionId, $status){
+    public function completeActionStatus($uid, $actionId, $status){
         $today    = new \DateTime('today');
         // todo 优先查询该行动权限
         $actionInfo = $this->_daoVnActionsModel->find('user_id, habit_id, due_date, status, is_deleted',$actionId);
@@ -168,52 +168,53 @@ class Actions
 
         //todo 说明是习惯，需要维护 current_streak 的标准逻辑
         if( isset($actionInfo['habit_id']) && is_numeric((int)$actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
+
             //todo 查询habit配置
             $habit = $this->_daoVnHabitsModel->find('last_done_date, interval_unit, interval_num, current_streak, streak_count', $actionInfo['habit_id']);
             if($habit === false){
                 return -7;
             }
-            // 计算周期天数
-            $periodDays = 1; // 默认值
-            switch (strtolower($habit['interval_unit'])) {
-                case 'day':
-                    $periodDays = $habit['interval_num'];
-                    break;
-                case 'week':
-                    $periodDays = $habit['interval_num'] * 7;
-                    break;
-                case 'month':
-                    $periodDays = $habit['interval_num'] * 30;
-                    break;
-                // default 已由初始值覆盖
-            }
-            // 计算 new_current_streak 当前连续打卡数
-            if (empty($habit['last_done_date'])) {
-                $newCurrentStreak = 1;
-            } else {
-                $diff = (strtotime($today) - strtotime($habit['last_done_date'])) / 86400;
-                $newCurrentStreak = ($diff == $periodDays) ? ($habit['current_streak'] + 1) : 1;
-            }
+
+            $execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
+            $today    = new \DateTime('today');
             // 打卡总次数
             $newStreakCount = $habit['streak_count'] + 1;
 
-            $result = $this->_daoVnHabitsModel->editHabitsByStreak((int)$uid, (int)$actionId, (int)$actionInfo['habit_id'], (int)$newCurrentStreak, (int)$newStreakCount, (int)$status);
-            
-            /*$execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
-            $today    = new \DateTime('today');
-            if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) { //正常打卡
+            //todo 只有当天操作完成，才记录连续，如果非当天表示历史补打卡，只记录打卡总次数，不变更当前连续性
+            if ($execDate->format('Y-m-d') === $today->format('Y-m-d')) {
+                // 计算周期天数
+                $periodDays = 1; // 默认值
+                switch (strtolower($habit['interval_unit'])) {
+                    case 'day':
+                        $periodDays = $habit['interval_num'];
+                        break;
+                    case 'week':
+                        $periodDays = $habit['interval_num'] * 7;
+                        break;
+                    case 'month':
+                        $periodDays = $habit['interval_num'] * 30;
+                        break;
+                    // default 已由初始值覆盖
+                }
+                // 计算 new_current_streak 当前连续打卡数
+                if (empty($habit['last_done_date'])) {
+                    $newCurrentStreak = 1;
+                } else {
+                    $diff = (strtotime($today) - strtotime($habit['last_done_date'])) / 86400;
+                    $newCurrentStreak = ($diff == $periodDays) ? ($habit['current_streak'] + 1) : 1;
+                }
                 //todo 更新 user_habits（核心逻辑）事务处理
-                $result = $this->_daoVnHabitsModel->editHabitsByStreak($uid, $actionId, $actionInfo['habit_id'], $actionInfo['due_date'], (int)$status);
-            }else{ //延期/异常打卡
-                $data = ['status' => (int)$status];
-                $where = [
-                    'id' => $actionId,
-                    'user_id' => $uid,
+                $result = $this->_daoVnHabitsModel->editHabitsByStreak((int)$uid, (int)$actionId, (int)$actionInfo['habit_id'], (int)$newCurrentStreak, (int)$newStreakCount, (int)$status);
+
+            // todo 补打卡（非执行时间打卡）
+            }else{
+                $data = [
+                    'streak_count' => $newStreakCount,
+                    'complete_time' => data('Y-m-d H:i:s'),
                 ];
-                $result = $this->_daoVnActionsModel->update($data, $where);
+                $result = $this->_daoVnHabitsModel->editHabitCompletion($uid, $actionInfo['habit_id'], $actionId, $status, $data);
 
-            }*/
-
+            }
         }else{
             $data = [
                 'status' => (int)$status,
@@ -224,13 +225,112 @@ class Actions
                 'user_id' => $uid,
             ];
             $result = $this->_daoVnActionsModel->update($data, $where);
-
         }
         if($result === false){
             return -7;
         }
         return $result;
 
+    }
+
+    /**
+     * 根据行动id撤销行动完成状态【撤销完成】
+     * todo v0.1版本习惯只记录打卡总次数，所以取消只更新总次数
+     * @param  int $uid    用户ID
+     * @param  int $actionId 行动ID
+     * @param  int $status  状态值
+     * @return void
+     */
+    public function cancelActionStatus($uid, $actionId, $status){
+        // todo 优先查询该行动权限
+        $actionInfo = $this->_daoVnActionsModel->find('user_id, habit_id, due_date, status, is_deleted',$actionId);
+        if($actionInfo === false){
+            return -7;
+        }
+        // todo 说明已删除
+        if(isset($actionInfo['is_deleted']) && (int)$actionInfo['is_deleted'] === 1){
+            //直接返回成功
+            return 0;
+        }
+        // todo 说明本身就是待办任务，无需走撤销逻辑
+        if(isset($actionInfo['status']) && (int)$actionInfo['status'] === 0){
+            //直接返回成功
+            return 0;
+        }
+
+        //todo 说明是习惯，需要维护 streak_count and current_streak 的标准逻辑
+        if( isset($actionInfo['habit_id']) && is_numeric((int)$actionInfo['habit_id']) && (int)$actionInfo['habit_id'] >0 ){
+
+            $habit = $this->_daoVnHabitsModel->find('interval_unit, interval_num, streak_count', $actionInfo['habit_id']);
+            if($habit === false){
+                return -7;
+            }
+
+            $execDate = \DateTime::createFromFormat('Y-m-d', $actionInfo['due_date']);
+            $today    = new \DateTime('today');
+            //todo 当天撤销：需重置连续状态
+            if($execDate->format('Y-m-d') === $today->format('Y-m-d')){
+                //todo 查找上上次完成的打卡日期
+                $where = [
+                    'habit_id' => $actionInfo['habit_id'],
+                    'user_id' => $uid,
+                    'status' => 1,
+                    'due_date' => ['lt', $actionInfo['due_date']]
+                ];
+                $order = 'due_date DESC';
+                $prevAction = $this->_daoVnActionsModel->select('due_date, streak' , $where, $order);
+                if($prevAction === false){
+                    return -7;
+                }
+                $newLastDoneDate = isset($prevAction[0]['due_date']) ? $prevAction[0]['due_date'] : null;
+
+                //todo 重新计算 current_streak
+                if ($newLastDoneDate === null) {
+                    $newCurrentStreak = 0; // 或 0，因为今天没打
+                }else {
+                    //todo 直接查上上次 action 的 streak 值
+                    $newCurrentStreak = isset($prevAction[0]['streak']) ? $prevAction[0]['streak'] : 0;
+                }
+                //todo  更新 habit
+                $habitUpdate = [
+                    'last_done_date' => $newLastDoneDate,
+                    'current_streak' => $newCurrentStreak,
+                    'streak_count'   => max(0, $habit['streak_count'] - 1),
+                ];
+
+                $result = $this->_daoVnHabitsModel->editHabitCompletion($uid, $actionInfo['habit_id'], $actionId, $status, $habitUpdate);
+                if($result === false){
+                    return -7;
+                }
+
+            }else{
+                // todo 打卡总次数
+                $newStreakCount = max(0, $habit['streak_count'] - 1),
+                $data = [
+                    'streak_count' => $newStreakCount,
+                ];
+                $result = $this->_daoVnHabitsModel->editHabitCompletion($uid, $actionInfo['habit_id'], $actionId, $status, $data);
+                if($result === false){
+                    return -7;
+                }
+            }
+
+        // 待办
+        }else{
+            $data = [
+                'status' => (int)$status,
+            ];
+            $where = [
+                'id' => $actionId,
+                'user_id' => $uid,
+            ];
+            $result = $this->_daoVnActionsModel->update($data, $where);
+        }
+
+        if($result === false){
+            return -7;
+        }
+        return $result;
 
     }
 
@@ -253,7 +353,7 @@ class Actions
         }
 
         $columns = 'id, title, content, streak, status, due_date';
-        $orderBy = 'id DESC';
+        $orderBy = 'id ASC';
         $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
         if($list === false){
@@ -434,9 +534,9 @@ class Actions
             $row = [
                 'user_id'  => $uid,
                 'note_id'  => $noteId,
-                'title'    => $item['title']  ?? '',
-                'status'   => $item['status']  ?? 0,
-                'due_date' => $item['date'] ?? null,
+                'title'    => isset($item['title'])  ? $item['title'] : '',
+                'status'   => isset($item['status'])  ? $item['status'] : 0,
+                'due_date' => isset($item['date']) ? $item['date'] : null,
                 'source'   => 'user',
             ];
             $insertData[] = $row;

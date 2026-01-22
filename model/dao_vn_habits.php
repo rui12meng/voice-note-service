@@ -95,6 +95,33 @@ SQL;
     }
 
     /**
+     * 撤销/完成一次习惯(v1.0版本仅支持打卡总次数变更)
+     * @param  int $uid    用户ID
+     * @param  int $habitId  习惯ID
+     * @param  int $actionId  行动ID
+     * @param  int $status  行动状态
+     * @param  array $data
+     * @return void
+     */
+    public function editHabitCompletion($uid, $habitId, $actionId, $status, $data){
+
+        $this->begin();
+        $habit = $this->update($data, ['id' => $habitId, 'user_id' => $uid]);
+        if($habit === false){
+            $this->rollback();
+            return false;
+        }
+
+        $action = $this->_daoVnActionsModel->update(['status' => (int)$status], ['id' => $actionId, 'user_id' => $uid]);
+        if($action === false){
+            $this->rollback();
+            return false;
+        }
+        $this->commit();
+        return $action;
+    }
+
+    /**
      * 更新行动状态关联的习惯打卡管理
      * @param  int $uid    用户ID
      * @param  int $actionId  行动ID
