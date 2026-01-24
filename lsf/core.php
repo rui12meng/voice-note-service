@@ -110,6 +110,15 @@ class Core
                 }
 
             }
+            // 获取客户端IP
+            if(isset($request->server['remote_addr']) && !empty($request->server['remote_addr'])){
+                $this->setRequestCommonParams('ip_address', $request->server['remote_addr']);
+            }
+            // 获取客户端 user_agent
+            if(isset($request->header['user_agent']) && !empty($request->header['user_agent'])){
+                $this->setRequestCommonParams('user_agent', $request->header['user_agent']);
+            }
+
             // 获取客户端版本号
             if(isset($post['vc']) && !empty($post['vc'])){
                 $this->setRequestCommonParams('version', $post['vc']);

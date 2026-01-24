@@ -13,6 +13,7 @@ class Notes extends \App\Application
      * @var mixed
      */
     private $_asrService;
+    private $_ocrService;
     private $_uploadService;
     private $_douBaoSummarizerService;
     private $_noteService;
@@ -29,6 +30,7 @@ class Notes extends \App\Application
     {
         parent::__construct($appName, $controllerName, $actionName);
         $this->_asrService = \Lsf\Loader::service('Asr', false, APP_NAME_NOTE);
+        $this->_ocrService = \Lsf\Loader::service('Ocr', false, APP_NAME_NOTE);
         $this->_douBaoSummarizerService = \Lsf\Loader::service('DouBaoSummarizer', false, APP_NAME_NOTE);
         $this->_noteService = \Lsf\Loader::service('Note', false, APP_NAME_NOTE);
         $this->_audioService = \Lsf\Loader::service('Audio', false, APP_NAME_NOTE);
@@ -147,6 +149,107 @@ class Notes extends \App\Application
         }
 
         return $this->json($eCode, $response);
+    }
+
+    /**
+     * 添加图片笔记
+     * 上传OSS+ASR语音识别+AI分析全流程
+     * @param  void
+     * @return void
+     */
+    public function addImage(){
+        $result = $this->_ocrService->imageOcr('https://img0.baidu.com/it/u=677102297,807893389&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=1557');
+        var_dump($result);
+        exit();
+
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
+        $imagesInfo = $this->files('images', true);
+
+        //文件是否存在
+        if (empty($imagesInfo) || !isset($imagesInfo['tmp_name']) || empty($imagesInfo['size'])) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'images');
+        }
+
+        $fileList = [];
+
+        // 规范化文件数组结构
+        if (isset($imagesInfo['name']) && is_array($imagesInfo['name'])) {
+            $count = count($imagesInfo['name']);
+            for ($i = 0; $i < $count; $i++) {
+                // 过滤掉空文件
+                if (empty($imagesInfo['name'][$i])) continue;
+                
+                $fileList[] = [
+                    'name'     => $imagesInfo['name'][$i],
+                    'type'     => $imagesInfo['type'][$i],
+                    'tmp_name' => $imagesInfo['tmp_name'][$i],
+                    'error'    => $imagesInfo['error'][$i],
+                    'size'     => $imagesInfo['size'][$i],
+                ];
+            }
+        } else {
+             // 单文件情况
+             $fileList[] = $imagesInfo;
+        }
+
+        // 数量校验
+        $count = count($fileList);
+        if ($count < 1 || $count > 3) {
+            return $this->json(1003001, [], '图片数量限制1-3张');
+        }
+
+        // 格式与大小校验
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+        foreach ($fileList as $file) {
+            if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] === 0) {
+                return $this->json(1003000, [], '包含无效图片文件');
+            }
+            if ($file['size'] > 5 * 1024 * 1024) { // 5MB
+                return $this->json(1003003, [], '图片大小不能超过5MB');
+            }
+            
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mime, $allowedMimes)) {
+                return $this->json(1003002, [], '不支持的图片格式');
+            }
+        }
+
+        // 批量上传
+        $resultData = [];
+        foreach ($fileList as $file) {
+            $res = $this->_uploadService->uploadFileOss($file, $scene = 'note_image');
+            if ($res === false) {
+                 return $this->json(1003004, [], '上传图片失败');
+            }
+            $resultData[] = $res;
+        }
+
+        //如果text存在则不需要图片OCR识别 todo 限制1000字符
+        $noteText = $this->post('text', true);
+
+        if (!isset($noteText) || empty($noteText) ) {
+            //如果 text 为空 → 触发服务端 //todo ocr 识别
+
+            /*if(!empty($resultData)){
+                foreach($resultData as $url){
+                    $result = $this->_ocrService->imageOcr($url['signUrl']);
+                }
+
+
+                $noteText = isset($result['text']) ? $result['text'] : '';
+            }*/
+        }
+
+
+        return $this->json(ECODE_SUCCESS, $resultData);
+
     }
 
 

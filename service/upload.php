@@ -44,6 +44,9 @@ class Upload
             case 'audio':
                 $path = 'user/audio';
                 break;
+            case 'note_image':
+                $path = 'user/note_image';
+                break;
             default:
                 $path = '';
                 break;

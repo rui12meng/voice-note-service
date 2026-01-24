@@ -15,6 +15,9 @@ use Lsf\Env;
 
 class Oauth extends \Service\Base
 {
+    const REDIS_KEY_JSON_WEB_KEYS_FOR_APPLE = 'voice-note-service:JWKs-apple';
+    const REDIS_KEY_JSON_WEB_KEYS_FOR_GOOGLE = 'voice-note-service:JWKs-google';
+
     /**
      * @var mixed
      */
@@ -54,30 +57,112 @@ class Oauth extends \Service\Base
 
         // === 下载 Apple 公钥 ===
         // Apple 公钥返回的是 JWK 格式
-        $jwks = json_decode(file_get_contents('https://appleid.apple.com/auth/keys'), true);
+        $redisKey = self::REDIS_KEY_JSON_WEB_KEYS_FOR_APPLE;
+        $cacheJWKs = $this->getCache($redisKey);
+        if($cacheJWKs != false){
+            $JWKs = $cacheJWKs;
+        }else{
+            $jwkJson = file_get_contents('https://appleid.apple.com/auth/keys');
+            if (!$jwkJson) {
+                throw new \Exception('Failed to fetch Apple JWKs');
+            }
+            $JWKs = json_decode($jwkJson, true);
+            $this->setCache($redisKey, $JWKs, 3600);
+        }
 
         // === 将 JWK 转为可验证格式 ===
-        $keys = JWK::parseKeySet($jwks);
-
+        $keys = JWK::parseKeySet($JWKs);
 
         // === 4. 验证并解码 id_token ===
         try {
             $decoded = JWT::decode($id_token, $keys);
             if ($decoded->iss !== 'https://appleid.apple.com') {
-                throw new \Exception("Invalid issuer");
+                throw new \Exception("Invalid apple issuer");
             }
 
             if ($decoded->aud != \Lsf\Env::get('APPLE_OAUTH_SERVICE_ID')) {//'你的 Apple Service ID / Client ID'
-                throw new \Exception("Invalid audience");
+                throw new \Exception("Invalid apple audience");
             }
 
-            if ($decoded->exp < time()) {
-                throw new \Exception("expired token");
+//            if ($decoded->exp < time()) {
+//                throw new \Exception("expired token");
+//            }
+
+            $data['sub'] = isset($decoded->sub) ? $decoded->sub : '';
+            $data['email'] = isset($decoded->email) ? $decoded->email : '';
+            $data['name'] = isset($decoded->name) ? $decoded->name : '';
+            $data['avatar'] = isset($decoded->picture) ? $decoded->picture : '';
+
+        } catch (\Exception $e) {
+            $errData = [
+                'method'    => __FUNCTION__,
+                'message' => "token verification failed",
+                'ecode'     => $e->getCode(),
+                'emsg'      => $e->getMessage()
+            ];
+            \Lsf\Loader::plugin('Log')->error(9010511, $errData);
+            throw new \Exception("invalid id_token");
+        }
+        return $data;
+    }
+
+    /**
+     * 验证Google登录identityToken的合法性和有效性
+     * @param void
+     * @return string
+     */
+    private function _checkGoogleIdentityToken($id_token = ''){
+        $data =[];
+        //示例
+        if (empty($id_token)) {
+            return $data;
+        }
+
+        // === 下载 Google 公钥 ===
+        // Google 公钥返回的是 JWK 格式
+        $redisKey = self::REDIS_KEY_JSON_WEB_KEYS_FOR_GOOGLE;
+        $cacheJWKs = $this->getCache($redisKey);
+        if($cacheJWKs != false){
+            $JWKs = $cacheJWKs;
+        }else{
+            $jwkJson = file_get_contents('https://www.googleapis.com/oauth2/v3/certs');
+            if (!$jwkJson) {
+                throw new \Exception('Failed to fetch Google JWKs');
+            }
+            $JWKs = json_decode($jwkJson, true);
+            $this->setCache($redisKey, $JWKs, 3600);
+        }
+
+        // === 将 JWK 转为可验证格式 ===
+        $keys = JWK::parseKeySet($JWKs);
+
+
+        // === 4. 验证并解码 id_token ===
+        try {
+            $decoded = JWT::decode($id_token, $keys);
+
+            $iss = isset($decoded->iss) ? $decoded->iss : '';
+            if (!in_array($iss , ['accounts.google.com',
+                        'https://accounts.google.com'])) {
+                throw new \Exception("Invalid google issuer");
+            }
+            //todo 用户可能使用了其他app的token登录
+            if ($decoded->aud !== \Lsf\Env::get('GOOGLE_OAUTH_CLIENT_ID')) {//'我们APP的 Google Client ID'
+                throw new \Exception("Invalid google audience");
             }
 
-            $data['sub'] = $decoded->sub;
-            $data['email'] = $decoded->email ?? '';
+            if(empty($decoded->sub)){
+                throw new \Exception('Missing google sub');
+            }
 
+//            if ($decoded->exp < time()) { //JWT::decode 内已验证
+//                throw new \Exception("expired token");
+//            }
+
+            $data['sub'] = isset($decoded->sub) ? $decoded->sub : '';
+            $data['email'] = isset($decoded->email) ? $decoded->email : '';
+            $data['name'] = isset($decoded->name) ? $decoded->name : '';
+            $data['avatar'] = isset($decoded->picture) ? $decoded->picture : '';
 
         } catch (\Exception $e) {
             $errData = [
@@ -108,6 +193,8 @@ class Oauth extends \Service\Base
                 $decoded = $this->_checkAppleIdentityToken($data['id_token']);
                 if(isset($decoded['sub'])) $data['sub'] = $decoded['sub'];
                 if(isset($decoded['email'])) $data['email'] = $decoded['email'];
+                if(isset($decoded['name'])) $data['name'] = $decoded['name'];
+                if(isset($decoded['avatar'])) $data['avatar'] = $decoded['avatar'];
             }catch(\Exception $e){
                 //log
                 return -101;// id_token 无效
@@ -118,6 +205,39 @@ class Oauth extends \Service\Base
         }
         $identifier = $data['sub'];
         $action = 'appleLoginOrSignUp';
+        $res = $this->_loginOrSignUpByIdentifier($data['provider'], $identifier, $data, $action);
+        return $res;
+    }
+
+    /**
+     * Google登录Or注册，返回登录态
+     * @param void
+     * @return string
+     */
+    public function googleLoginOrSignUp($data){
+        $data['is_guest'] = 0;
+        if(!isset($data['provider']) || empty($data['provider'])){
+            $data['provider'] = 'google';
+        }
+        if(isset($data['id_token']) && !empty($data['id_token'])){
+            //校验identityToken合法性且未过期
+            try{
+                $decoded = $this->_checkGoogleIdentityToken($data['id_token']);
+                if(isset($decoded['sub'])) $data['sub'] = $decoded['sub'];
+                if(isset($decoded['email'])) $data['email'] = $decoded['email'];
+                if(isset($decoded['name'])) $data['name'] = $decoded['name'];
+                if(isset($decoded['avatar'])) $data['avatar'] = $decoded['avatar'];
+
+            }catch(\Exception $e){
+                //log
+                return -101;// id_token 无效
+            }
+        }
+        if(!isset($data['sub']) || empty($data['sub'])){
+            return -101; // id_token 无效
+        }
+        $identifier = $data['sub'];
+        $action = 'googleLoginOrSignUp';
         $res = $this->_loginOrSignUpByIdentifier($data['provider'], $identifier, $data, $action);
         return $res;
     }
@@ -207,7 +327,7 @@ class Oauth extends \Service\Base
 
         $userData = [
             'uuid' => \Lsf\Uuid::v7(),
-            'username' => $data['username'] ?? '',
+            'username' => $data['name'] ?? '',
             'email' => $data['email'] ?? '',
             'register_type' => $data['provider'] ?? '',
             'is_guest' => $data['is_guest'],
@@ -223,7 +343,8 @@ class Oauth extends \Service\Base
         $userInfoData = [
             'user_id' => $uid,
             'email' => $data['email'] ?? '',
-            'nickname' => $data['username'] ?? '',
+            'nickname' => $data['name'] ?? '',
+            'avatar' => $data['avatar'] ?? '',
         ];
 
         $infoId = $this->_svrDaoVnUserInfoModel->insert($userInfoData);

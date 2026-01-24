@@ -126,8 +126,14 @@ class Oauth extends \App\Application
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'auth_code');
         }
 
-        $result = [];
-        return $this->json(ECODE_SUCCESS, $result);
+        //登录or注册逻辑
+        $result = $this->_oauthService->googleLoginOrSignUp($params);
+        if(is_array($result) && !empty($result)){
+            $response = array_merge($result,['login_model' => 'google']);
+        }else{
+            $response = $result;
+        }
+        return $response;
     }
 
     /**
