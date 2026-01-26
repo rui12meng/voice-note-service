@@ -1,7 +1,7 @@
 <?php
 namespace Service;
 
-require_once LSFPATH . '/lib/ocr-api-20210707-master/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 use AlibabaCloud\SDK\Ocrapi\V20210707\Ocrapi;
 use AlibabaCloud\SDK\Ocrapi\V20210707\Models\RecognizeGeneralRequest;
