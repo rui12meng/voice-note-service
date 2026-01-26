@@ -1,7 +1,7 @@
 <?php
 namespace Service;
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once WEBPATH . '/vendor/autoload.php';
 
 use AlibabaCloud\SDK\Ocrapi\V20210707\Ocrapi;
 use AlibabaCloud\SDK\Ocrapi\V20210707\Models\RecognizeGeneralRequest;
@@ -23,7 +23,7 @@ class OcrAliYun
      */
     public function __construct()
     {
-        $this->_aliYunConfig =\Lsf\Env::group('ALIYUN_OSS_');
+        $this->_aliYunConfig =\Lsf\Env::group('ALIBABA_CLOUD_');
     }
 
     /**
