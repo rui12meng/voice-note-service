@@ -20,7 +20,7 @@ class OcrVolc extends \Model\SvrBase
     public function __construct()
     {
         parent::__construct();
-        $this->_volcConfig =\Lsf\Env::group('SVR_VOLC_OCR_');
+        $this->_volcConfig =\Lsf\Env::group('VOLC_ASR_');
     }
 
     /**
@@ -31,19 +31,20 @@ class OcrVolc extends \Model\SvrBase
     public function Ocr(string $file){
         try {
 
-            $imageBase64 = base64_encode(file_get_contents(WEBPATH.'/test2.jpeg'));
-
+            //$imageBase64 = base64_encode(file_get_contents(WEBPATH.'/test2.jpeg'));
+$url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jpeg';
 
             // 1. 构造原始请求参数（不含 Signature）
             $params = [
-                'image_base64'      => $imageBase64,
+                //'image_base64'      => $imageBase64,
+                'image_url' => $url,
             ];
             $body= json_encode($params, JSON_UNESCAPED_UNICODE);
 
             // 2. 生成签名
             $signature = self::sign(
                 $this->_volcConfig['app_key'],
-                $this->_volcConfig['ACCESS_KEY'],
+                $this->_volcConfig['access_key'],
                 $region='cn-north-1',
                 $service = 'iam',
                 $action = 'OCRNormal',
