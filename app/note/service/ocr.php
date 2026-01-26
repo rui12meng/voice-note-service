@@ -10,6 +10,7 @@ namespace Note\Service;
 class Ocr
 {
     private $_ocrAliYunService;
+    private $_ocrVolcService;
 
     /**
      * 构造函数
@@ -18,6 +19,8 @@ class Ocr
      */
     public function __construct(){
         $this->_ocrAliYunService = \Lsf\Loader::service('OcrAliYun' , true);
+        $this->_ocrVolcService = \Lsf\Loader::service('OcrVolc' , true);
+
     }
 
     /**
@@ -26,7 +29,7 @@ class Ocr
      * @param string $platFrom
      * @return array 解析后的 OCR 结果
      */
-    public function imageOcr($fileUrl, $platFrom = 'aliYun')
+    public function imageOcr($fileUrl, $platFrom = 'volc')
     {
         //获取url 扩展名
         $ext = pathinfo($fileUrl, PATHINFO_EXTENSION);
@@ -36,7 +39,7 @@ class Ocr
             case 'aliYun':
                 $result = $this->ocr_aliYun($fileUrl);
                 break;
-            default:
+            case 'volc':
                 $result = $this->ocr_volC($fileUrl);
                 break;
         }
@@ -47,7 +50,11 @@ class Ocr
     }
 
     protected function ocr_volC($fileUrl){
-
+        $result = $this->_ocrVolcService->Ocr($fileUrl);
+        if($result === false){ //AliYun OCR SDK Error
+            return -1;
+        }
+        return $result;
     }
 
     protected function ocr_aliYun($fileUrl){

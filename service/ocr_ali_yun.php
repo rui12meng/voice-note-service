@@ -12,7 +12,7 @@ use phpDocumentor\Reflection\Types\Self_;
 class OcrAliYun extends \Model\SvrBase
 {
     private $_aliYunConfig;
-    const aliYun_regionId = 'cn-shanghai';
+    const aliYun_regionId = 'cn-hangzhou';
     const aliYun_action = 'RecognizeGeneral';
 
     /**

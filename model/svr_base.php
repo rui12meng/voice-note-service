@@ -246,7 +246,7 @@ class SvrBase //extends \Lsf\Model
                 }
             }
         }
-        if ($headerGroup == 3) {
+        if ($headerGroup == 4) {
             $this->_curl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
         } else {
             $this->_curl->setHeader('Content-Type', 'application/json');
@@ -271,15 +271,15 @@ class SvrBase //extends \Lsf\Model
                 $groupName = 'svr_volc_text';
                 $config = 'SVR_VOLC_TEXT_';
                 break;
-            case 3: // 阿里云OCR识别服务
-                $groupName = 'svr_ali_ocr';//ali_cloud_ocr
-                $config = 'SVR_ALI_CLOUD_OCR_';
+//            case 3: // 阿里云OCR识别服务
+//                $groupName = 'svr_ali_ocr';//ali_cloud_ocr
+//                $config = 'SVR_ALI_CLOUD_OCR_';
+//                break;
+            case 4: // 火山OCR识别服务
+                $groupName = 'svr_volc_ocr';
+                $config = 'SVR_VOLC_OCR_';
                 break;
 
-//            case 3:
-//                $groupName = '';
-//                $config = '';
-//                break;
         }
         $groupConfig = \Lsf\Env::group($config);
         if (empty($groupConfig)) {
