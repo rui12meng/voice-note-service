@@ -1,13 +1,15 @@
 <?php
 namespace Service;
 
+use phpDocumentor\Reflection\Types\Self_;
+
 /**
  * 阿里云OCR识别服务
  * $Id: OcrAliYun.php $
  * @author mengrui
  */
 
-class OcrAliYun
+class OcrAliYun extends \Model\SvrBase
 {
     private $_aliYunConfig;
     const aliYun_regionId = 'cn-shanghai';
@@ -54,16 +56,14 @@ class OcrAliYun
             ];
 
             // 2. 生成签名
-            $signature = AliyunSignature::generateSignature($params, $this->_aliYunConfig['access_key_secret']);
+            $signature = self::generateSignature($params, $this->_aliYunConfig['access_key_secret']);
             $params['Signature'] = $signature;
 
             // 3. 发送请求
             //$endpoint = "http://ocr.{$regionId}.aliyuncs.com";
             $apiSign = 'ali_cloud_ocr';
 
-            $headers = $this->buildAuthHeaders();
-
-            $response = $this->post($apiSign, $params, $headers, 3);
+            $response = $this->post($apiSign, $params);
 var_dump($response);exit();
 
 

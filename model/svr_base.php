@@ -246,7 +246,7 @@ class SvrBase //extends \Lsf\Model
                 }
             }
         }
-        if ($headerGroup == 4) {
+        if ($headerGroup == 3) {
             $this->_curl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
         } else {
             $this->_curl->setHeader('Content-Type', 'application/json');
