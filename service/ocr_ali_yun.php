@@ -4,6 +4,7 @@ namespace Service;
 require_once LSFPATH . '/lib/ocr-api-20210707-master/autoload.php';
 
 use AlibabaCloud\SDK\Ocrapi\V20210707\Ocrapi;
+use AlibabaCloud\SDK\Ocrapi\V20210707\Models\RecognizeGeneralRequest;
 
 /**
  * 阿里云OCR识别服务
@@ -39,10 +40,9 @@ class OcrAliYun
             ];
 
             $client = new Ocrapi($config);
-            $request = [
-                'imageUrl' => $file,
-                'languageType' => 'AUTO',
-            ];
+            $request = new RecognizeGeneralRequest([
+                'url' => $file,
+            ]);
 
             $response = $client->recognizeGeneral($request);
             $body = $response->body;
