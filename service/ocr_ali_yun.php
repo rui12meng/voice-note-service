@@ -22,6 +22,7 @@ class OcrAliYun extends \Model\SvrBase
      */
     public function __construct()
     {
+        parent::__construct();
         $this->_aliYunConfig =\Lsf\Env::group('ALIBABA_CLOUD_');
     }
 
@@ -32,18 +33,13 @@ class OcrAliYun extends \Model\SvrBase
      */
     public function Ocr(string $file){
         try {
-//            $config = [
-//                'accessKeyId' => $this->_aliYunConfig['access_key_id'],
-//                'accessKeySecret' => $this->_aliYunConfig['access_key_secret'],
-//                'endpoint' => 'ocr.cn-shanghai.aliyuncs.com',
-//            ];
-            $imageBase64 = base64_encode(file_get_contents(WEBPATH.'test2.jpeg'));
+            $imageBase64 = base64_encode(file_get_contents(WEBPATH.'/test2.jpeg'));
 
 
             // 1. 构造原始请求参数（不含 Signature）
             $params = [
                 'Action'           => self::aliYun_action,
-                'Version'          => '2019-12-30',
+                'Version'          => '2021-07-07',
                 'Format'           => 'JSON',
                 'RegionId'         => self::aliYun_regionId,
                 'AccessKeyId'      => $this->_aliYunConfig['access_key_id'],
@@ -63,7 +59,7 @@ class OcrAliYun extends \Model\SvrBase
             //$endpoint = "http://ocr.{$regionId}.aliyuncs.com";
             $apiSign = 'ali_cloud_ocr';
 
-            $response = $this->post($apiSign, $params);
+            $response = $this->post($apiSign, $params, [] , 3);
 var_dump($response);exit();
 
 
