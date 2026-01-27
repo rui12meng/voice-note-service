@@ -56,41 +56,36 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
             $headers = $signature;
 
-            $query = array_merge([], [
-                'Action' => $action,
-                'Version' => $version
-            ]);
-            ksort($query);
-            $queryString = http_build_query($query);
-            $requestUrl = 'https://visual.volcengineapi.com/?' . $queryString;
+            //$queryString = http_build_query($query);
+            //$requestUrl = 'https://visual.volcengineapi.com/?' . $queryString;
 
-            $curlHeaders = [];
-            foreach ($headers as $key => $value) {
-                $curlHeaders[] = $key . ': ' . $value;
-            }
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $requestUrl);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 120);
-
-            $responseContent = curl_exec($ch);
-
-            if (curl_errno($ch)) {
-                throw new \Exception('Curl error: ' . curl_error($ch));
-            }
-            curl_close($ch);
-
-            print_r($responseContent);
+//            $curlHeaders = [];
+//            foreach ($headers as $key => $value) {
+//                $curlHeaders[] = $key . ': ' . $value;
+//            }
+//
+//            $ch = curl_init();
+//            curl_setopt($ch, CURLOPT_URL, $requestUrl);
+//            curl_setopt($ch, CURLOPT_POST, true);
+//            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+//            curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
+//            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+//            curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+//
+//            $responseContent = curl_exec($ch);
+//
+//            if (curl_errno($ch)) {
+//                throw new \Exception('Curl error: ' . curl_error($ch));
+//            }
+//            curl_close($ch);
+//
+//            print_r($responseContent);
 
             // 3. 发送请求
-//            $apiSign = 'volc_ocr';
-//            $response = $this->post($apiSign, $params, $headers , 4);
-            //var_dump($response);exit();
+            $apiSign = 'volc_ocr';
+            $response = $this->post($apiSign, $params, $headers , 4);
+            var_dump($response);exit();
 
 
 
@@ -262,7 +257,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         //   SignedHeaders + "\n" +
         //   HexEncode(Hash(Payload))
 
-        $canonicalRequest = implode("\n",[
+        $canonicalRequest = join("\n",[
             'POST',
             '/',
             $queryString,
