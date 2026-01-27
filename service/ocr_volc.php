@@ -20,7 +20,7 @@ class OcrVolc extends \Model\SvrBase
     public function __construct()
     {
         parent::__construct();
-        $this->_volcConfig =\Lsf\Env::group('VOLC_ASR_');
+        $this->_volcConfig =\Lsf\Env::group('VOLC_OCR_');
     }
 
     /**
@@ -41,10 +41,14 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             ];
             $body= json_encode($params, JSON_UNESCAPED_UNICODE);
 
+            if (empty($this->_volcConfig['access_key_id']) || empty($this->_volcConfig['access_key_secret'])) {
+                throw new \Exception('Volcengine OCR credentials not configured');
+            }
+
             // 2. 生成签名
             $signature = self::sign(
-                $this->_volcConfig['app_key'],
-                $this->_volcConfig['access_key'],
+                $this->_volcConfig['access_key_id'],
+                $this->_volcConfig['access_key_secret'],
                 $region='cn-north-1',
                 $service = 'cv',
                 $action = 'OCRNormal',
@@ -60,7 +64,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
 
         } catch (\Exception $e) {
-            \Lsf\Loader::plugin('Log')->error('AliYun OCR SDK Error: ' . $e->getMessage(), [], 'ocr_aliYun');
+            \Lsf\Loader::plugin('Log')->error('Volcengine OCR SDK Error: ' . $e->getMessage(), [], 'ocr_volc');
             return false;
         }
     }
@@ -106,7 +110,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             'host' => 'visual.volcengineapi.com', //$Host,
             'path' => '/',
             'method' => 'POST',
-            'contentType' => 'application/x-www-form-urlencoded',
+            'contentType' => 'application/json',
             'date' => $date,
             'query' => $query
         ];
