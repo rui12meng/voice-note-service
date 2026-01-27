@@ -1,7 +1,7 @@
 <?php
 namespace Service;
 
-require_once LSFPATH . '/lib/volc-sdk-php/autoload.php';
+require_once WEBPATH . '/vendor/autoload.php';
 
 use Volc\Service\Visual;
 
