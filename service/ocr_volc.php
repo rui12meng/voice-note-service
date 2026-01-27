@@ -1,6 +1,9 @@
 <?php
 namespace Service;
 
+require_once LSFPATH . '/lib/volc-sdk-php/autoload.php';
+
+use Volc\Service\Visual;
 
 /**
  * 火山 OCR识别服务
@@ -43,6 +46,23 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             if (empty($this->_volcConfig['access_key_id']) || empty($this->_volcConfig['access_key_secret'])) {
                 throw new \Exception('Volcengine OCR credentials not configured');
             }
+
+
+            $client = Visual::getInstance();
+// call below method if you dont set ak and sk in ～/.volc/config
+            $client->setAccessKey($this->_volcConfig['access_key_id']);
+            $client->setSecretKey($this->_volcConfig['access_key_secret']);
+
+            $action = "MultiLanguageOCR";
+            $version = "2022-08-31";
+            $client->setAPI($action, $version);
+
+            echo "\nDemo OCR\n";
+            $response = $client->CallAPI($action, ['form_params' => $params]);
+            var_dump($response);
+
+            exit();
+
             // 2. 生成签名
             $signature = self::sign(
                 $this->_volcConfig['access_key_id'],
