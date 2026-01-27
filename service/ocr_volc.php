@@ -1,6 +1,9 @@
 <?php
 namespace Service;
 
+require_once LSFPATH . '/lib/guzzle/autoload.php';
+
+use GuzzleHttp\Client;
 
 /**
  * 火山 OCR识别服务
@@ -56,10 +59,27 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
             $headers = $signature;
 
+            $client = new Clinet([
+                'base_uri' => 'https://visual.volcengineapi.com',
+                'timeout' => 120.0,
+            ]);
+            $query = array_merge([], [
+                'Action' => $action,
+                'Version' => $version
+            ]);
+            ksort($query);
+
+            $response = $client->request('POST', 'https://https://visual.volcengineapi.com' . '/', [
+                'headers' => $headers,
+                'query' => $query,
+                'body' => http_build_query($params),
+            ]);
+            print_r($response->getBody()->getContents());
+
             // 3. 发送请求
-            $apiSign = 'volc_ocr';
-            $response = $this->post($apiSign, $params, $headers , 4);
-            var_dump($response);exit();
+//            $apiSign = 'volc_ocr';
+//            $response = $this->post($apiSign, $params, $headers , 4);
+            //var_dump($response);exit();
 
 
 
