@@ -59,7 +59,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
             $headers = $signature;
 
-            $client = new Clinet([
+            $client = new Client([
                 'base_uri' => 'https://visual.volcengineapi.com',
                 'timeout' => 120.0,
             ]);
