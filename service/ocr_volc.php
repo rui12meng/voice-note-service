@@ -231,9 +231,10 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             hash('sha256', $bodyString),
         ]);
         // 7. 构造 StringToSign
-        $algorithm = 'HMAC-SHA256';
-        $credentialScope = "{$shortDate}/{$region}/{$service}/request";
-        $stringToSign = "{$algorithm}\n{$xDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+        $hashedCanonicalRequest = hash("sha256", $canonicalRequest);
+        $credentialScope = join('/', [$shortDate, $region, $service, 'request']);
+        $stringToSign = join("\n", ['HMAC-SHA256', $xDate, $credentialScope, $hashedCanonicalRequest]);
+
 
         // 8. 计算 Signing Key（注意：第一层密钥 = "volcengine" + SecretKey）
         $kDate = hash_hmac('sha256', $shortDate,   $secretAccessKey, true);
@@ -242,11 +243,15 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         $kSigning = hash_hmac('sha256', 'request', $kService, true);
 
         // 9. 计算最终签名
-        $signature = bin2hex(hash_hmac('sha256', $stringToSign, $kSigning, true));
+        //$signature = bin2hex(hash_hmac('sha256', $stringToSign, $kSigning, true));
+        $signature = hash_hmac("sha256", $stringToSign, $kSigning);
 
         // 10. 构造 Authorization 头
-        $authorization = "{$algorithm} Credential={$accessKeyId}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
-        $signResult['Authorization'] = $authorization;
+        $signResult['Authorization'] = sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=%s, Signature=%s",
+            $accessKeyId . '/' . $credentialScope,
+            $signedHeaders,
+            $signature
+        );
         $header = array_merge($headers, $signResult);
         return $header;
     }
