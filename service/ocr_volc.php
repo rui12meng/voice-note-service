@@ -46,7 +46,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
                 $this->_volcConfig['app_key'],
                 $this->_volcConfig['access_key'],
                 $region='cn-north-1',
-                $service = 'iam',
+                $service = 'cv',
                 $action = 'OCRNormal',
                 $body);
 
@@ -91,8 +91,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
         // 2. 构造基础 headers
         $headers = array_merge([
-            'Host' => 'ocr.volcengineapi.com',
-            'Content-Type' => 'application/json',
+            'Host' => 'visual.volcengineapi.com',
             'X-Date' => $date,
         ], $extraHeaders);
 
@@ -104,7 +103,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         $requestParam = [
             // body是http请求需要的原生body
             'body' => $body,
-            'host' => 'iam.volcengineapi.com', //$Host,
+            'host' => 'visual.volcengineapi.com', //$Host,
             'path' => '/',
             'method' => 'POST',
             'contentType' => 'application/x-www-form-urlencoded',
