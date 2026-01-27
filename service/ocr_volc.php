@@ -193,9 +193,11 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         $bodyString = http_build_query($bodyParams);
 
         // 4. 构造 Headers（Content-Type + X-Date）
+        $xContentSha256 = hash('sha256', $queryString);
         $headers = [
             'Host' => 'visual.volcengineapi.com',
             'Content-Type' => 'application/x-www-form-urlencoded',
+            'X-Content-Sha256' => $xContentSha256,
             'X-Date' => $xDate,
         ];
 
@@ -248,6 +250,8 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
         return $header;
         */
+
+
         $canonicalRequest = "POST\n/\n{$queryString}\n{$canonicalHeaders}\n{$signedHeaders}\n" . hash('sha256', $bodyString);
 
         // 7. 构造 StringToSign
