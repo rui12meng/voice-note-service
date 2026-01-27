@@ -1,9 +1,6 @@
 <?php
 namespace Service;
 
-require_once LSFPATH . '/lib/guzzle/autoload.php';
-
-use GuzzleHttp\Client;
 
 /**
  * 火山 OCR识别服务
@@ -59,22 +56,36 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
             $headers = $signature;
 
-            $client = new Client([
-                'base_uri' => 'https://visual.volcengineapi.com',
-                'timeout' => 120.0,
-            ]);
             $query = array_merge([], [
                 'Action' => $action,
                 'Version' => $version
             ]);
             ksort($query);
+            $queryString = http_build_query($query);
+            $requestUrl = 'https://visual.volcengineapi.com/?' . $queryString;
 
-            $response = $client->request('POST', 'https://https://visual.volcengineapi.com' . '/', [
-                'headers' => $headers,
-                'query' => $query,
-                'body' => http_build_query($params),
-            ]);
-            print_r($response->getBody()->getContents());
+            $curlHeaders = [];
+            foreach ($headers as $key => $value) {
+                $curlHeaders[] = $key . ': ' . $value;
+            }
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $requestUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+
+            $responseContent = curl_exec($ch);
+
+            if (curl_errno($ch)) {
+                throw new \Exception('Curl error: ' . curl_error($ch));
+            }
+            curl_close($ch);
+
+            print_r($responseContent);
 
             // 3. 发送请求
 //            $apiSign = 'volc_ocr';
