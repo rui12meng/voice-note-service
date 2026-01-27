@@ -13,7 +13,10 @@ function volcOcrLoader($class)
     }
 
     // 将命名空间转为路径，并加上 src/ 前缀
-    $relativePath = str_replace('\\', DIRECTORY_SEPARATOR, $class);
+    // 注意：Volc\Service\Visual 对应的文件是 src/Service/Visual.php
+    // 但 Volc\Base\V4Curl 对应的文件是 src/Base/V4Curl.php
+    // 所以这里需要把 Volc\ 前缀去掉，映射到 src/ 目录
+    $relativePath = str_replace('\\', DIRECTORY_SEPARATOR, substr($class, 5));
     $file = __DIR__ . '/src/' . $relativePath . '.php';
 
     if (file_exists($file)) {
