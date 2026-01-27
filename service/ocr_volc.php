@@ -186,6 +186,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             'Action' => $action,
             'Version' => $version
         ], $queryParams);
+        ksort($query);
 
         $queryString = http_build_query($query);
 
@@ -193,7 +194,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         $bodyString = http_build_query($bodyParams);
 
         // 4. 构造 Headers（Content-Type + X-Date）
-        $xContentSha256 = hash('sha256', $queryString);
+        $xContentSha256 = hash('sha256', $bodyString);
         $headers = [
             'Host' => 'visual.volcengineapi.com',
             'Content-Type' => 'application/x-www-form-urlencoded',
