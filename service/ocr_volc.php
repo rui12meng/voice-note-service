@@ -211,7 +211,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             $canonicalHeaders .= "$lowerKey:$value\n";
             $signedHeadersList[] = $lowerKey;
         }
-        $signedHeaders = implode(';', $signedHeadersList);
+        $signedHeaders = join(';', $signedHeadersList);
 
         // 6. 构造 Canonical Request
         //   Method + "\n" +
@@ -221,40 +221,15 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         //   SignedHeaders + "\n" +
         //   HexEncode(Hash(Payload))
 
-        /*$xContentSha256 = hash('sha256', $requestParam['body']);
-        $signResult = [
-            'Host' => $requestParam['host'],
-            'X-Date' => $xDate,
-            'Content-Type' => $requestParam['contentType']
-        ];
-        // 第四步：计算 Signature 签名。
-        $signedHeaderStr = join(';', ['content-type', 'host', 'x-content-sha256', 'x-date']);
-        $canonicalRequestStr = join("\n", [
-            $requestParam['method'],
-            $requestParam['path'],
-            http_build_query($requestParam['query']),
-            join("\n", ['content-type:' . $requestParam['contentType'], 'host:' . $requestParam['host'], 'x-content-sha256:' . $xContentSha256, 'x-date:' . $xDate]),
+        $canonicalRequest = implode("\n",[
+            'POST',
+            '/',
+            $queryString,
+            $canonicalHeaders,
             '',
-            $signedHeaderStr,
-            $xContentSha256
+            $signedHeaders,
+            hash('sha256', $bodyString),
         ]);
-        //$hashedCanonicalRequest = hash("sha256", $canonicalRequestStr);
-        //$credentialScope = join('/', [$shortXDate, $region, $service, 'request']);
-        //$stringToSign = join("\n", ['HMAC-SHA256', $xDate, $credentialScope, $hashedCanonicalRequest]);
-        //$kDate = hash_hmac("sha256", $shortXDate, $secretAccessKey, true);
-        //$kRegion = hash_hmac("sha256", $region, $kDate, true);
-        //$kService = hash_hmac("sha256", $service, $kRegion, true);
-        //$kSigning = hash_hmac("sha256", 'request', $kService, true);
-        //$signature = hash_hmac("sha256", $stringToSign, $kSigning);
-        $signResult['Authorization'] = sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=%s, Signature=%s", $accessKeyId . '/' . $credentialScope, $signedHeaderStr, $signature);
-        $header = array_merge($headers, $signResult);
-
-        return $header;
-        */
-
-
-        $canonicalRequest = "POST\n/\n{$queryString}\n{$canonicalHeaders}\n{$signedHeaders}\n" . hash('sha256', $bodyString);
-
         // 7. 构造 StringToSign
         $algorithm = 'HMAC-SHA256';
         $credentialScope = "{$shortDate}/{$region}/{$service}/request";
