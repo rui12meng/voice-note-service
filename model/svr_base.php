@@ -109,6 +109,9 @@ class SvrBase //extends \Lsf\Model
         }else{
             $postData = json_encode($params , JSON_UNESCAPED_UNICODE);
         }
+        if($headerGroup == 4){ // 火山ocr
+            $postData = http_build_query($params);
+        }
         $response = $this->_curl->post($pathUrl, $postData, $this->_timeout);
 
         /**
@@ -276,7 +279,7 @@ class SvrBase //extends \Lsf\Model
 //                $config = 'SVR_ALI_CLOUD_OCR_';
 //                break;
             case 4: // 火山OCR识别服务
-                $groupName = 'svr_volc_ocr';
+                $groupName = 'svr_volc';
                 $config = 'SVR_VOLC_OCR_';
                 break;
 

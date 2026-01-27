@@ -90,64 +90,74 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
         string $body,
         array $extraHeaders = []
     ) {
-        // 1. 当前 UTC 时间
-        $date = gmdate('Ymd\THis\Z');
 
-        // 2. 构造基础 headers
-        $headers = array_merge([
-            'Host' => 'visual.volcengineapi.com',
-            'X-Date' => $date,
-        ], $extraHeaders);
+        $credential = [
+        'accessKeyId' => $accessKeyId,
+        'secretKeyId' => $secretAccessKey,
+        'service' => $service,
+        'region' => $region,
+    ];
 
-        $query = [
-            'Action' => $action,
-            'Version' => '2020-08-26',
-        ];
-        ksort($query);
-        $requestParam = [
-            // body是http请求需要的原生body
-            'body' => $body,
-            'host' => 'visual.volcengineapi.com', //$Host,
-            'path' => '/',
-            'method' => 'POST',
-            'contentType' => 'application/json',
-            'date' => $date,
-            'query' => $query
-        ];
-        // 第三步：接下来开始计算签名。在计算签名前，先准备好用于接收签算结果的 signResult 变量，并设置一些参数。
-        // 初始化签名结果的结构体
-        $xDate = $requestParam['date'];
-        $shortXDate = substr($xDate, 0, 8);
-        $xContentSha256 = hash('sha256', $requestParam['body']);
-        $signResult = [
-            'Host' => $requestParam['host'],
-            'X-Content-Sha256' => $xContentSha256,
-            'X-Date' => $xDate,
-            'Content-Type' => $requestParam['contentType']
-        ];
-        // 第四步：计算 Signature 签名。
-        $signedHeaderStr = join(';', ['content-type', 'host', 'x-content-sha256', 'x-date']);
-        $canonicalRequestStr = join("\n", [
-            $requestParam['method'],
-            $requestParam['path'],
-            http_build_query($requestParam['query']),
-            join("\n", ['content-type:' . $requestParam['contentType'], 'host:' . $requestParam['host'], 'x-content-sha256:' . $xContentSha256, 'x-date:' . $xDate]),
-            '',
-            $signedHeaderStr,
-            $xContentSha256
-        ]);
-        $hashedCanonicalRequest = hash("sha256", $canonicalRequestStr);
-        $credentialScope = join('/', [$shortXDate, $region, $service, 'request']);
-        $stringToSign = join("\n", ['HMAC-SHA256', $xDate, $credentialScope, $hashedCanonicalRequest]);
-        $kDate = hash_hmac("sha256", $shortXDate, $secretAccessKey, true);
-        $kRegion = hash_hmac("sha256", $region, $kDate, true);
-        $kService = hash_hmac("sha256", $service, $kRegion, true);
-        $kSigning = hash_hmac("sha256", 'request', $kService, true);
-        $signature = hash_hmac("sha256", $stringToSign, $kSigning);
-        $signResult['Authorization'] = sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=%s, Signature=%s", $accessKeyId . '/' . $credentialScope, $signedHeaderStr, $signature);
-        $header = array_merge($headers, $signResult);
+    // 初始化签名结构体
+    $query = array_merge([], [
+      'Action' => $action,
+      'Version' => $version
+    ]);
 
-        return $header;
+    ksort($query);
+    $requestParam = [
+        // body是http请求需要的原生body
+        'body' => $body,
+        'host' => $Host,
+        'path' => '/',
+        'method' => $method,
+        'contentType' => $ContentType,
+        'date' => gmdate('Ymd\THis\Z'),
+        'query' => $query
+    ];
+
+    // 第三步：接下来开始计算签名。在计算签名前，先准备好用于接收签算结果的 signResult 变量，并设置一些参数。
+    // 初始化签名结果的结构体
+    $xDate = $requestParam['date'];
+    $shortXDate = substr($xDate, 0, 8);
+    $xContentSha256 = hash('sha256', $requestParam['body']);
+    $signResult = [
+        'Host' => $requestParam['host'],
+        'X-Content-Sha256' => $xContentSha256,
+        'X-Date' => $xDate,
+        'Content-Type' => $requestParam['contentType']
+    ];
+    // 第四步：计算 Signature 签名。
+    $signedHeaderStr = join(';', ['content-type', 'host', 'x-content-sha256', 'x-date']);
+    $canonicalRequestStr = join("\n", [
+        $requestParam['method'],
+        $requestParam['path'],
+        http_build_query($requestParam['query']),
+        join("\n", ['content-type:' . $requestParam['contentType'], 'host:' . $requestParam['host'], 'x-content-sha256:' . $xContentSha256, 'x-date:' . $xDate]),
+        '',
+        $signedHeaderStr,
+        $xContentSha256
+    ]);
+    $hashedCanonicalRequest = hash("sha256", $canonicalRequestStr);
+    $credentialScope = join('/', [$shortXDate, $credential['region'], $credential['service'], 'request']);
+    $stringToSign = join("\n", ['HMAC-SHA256', $xDate, $credentialScope, $hashedCanonicalRequest]);
+    $kDate = hash_hmac("sha256", $shortXDate, $credential['secretKeyId'], true);
+    $kRegion = hash_hmac("sha256", $credential['region'], $kDate, true);
+    $kService = hash_hmac("sha256", $credential['service'], $kRegion, true);
+    $kSigning = hash_hmac("sha256", 'request', $kService, true);
+    $signature = hash_hmac("sha256", $stringToSign, $kSigning);
+    $signResult['Authorization'] = sprintf("HMAC-SHA256 Credential=%s, SignedHeaders=%s, Signature=%s", $credential['accessKeyId'] . '/' . $credentialScope, $signedHeaderStr, $signature);
+    $header = array_merge($header, $signResult);
+    // 第五步：将 Signature 签名写入 HTTP Header 中，并发送 HTTP 请求。
+    $client = new Client([
+        'base_uri' => 'https://' . $requestParam['host'],
+        'timeout' => 120.0,
+    ]);
+    return $client->request($method, 'https://' . $requestParam['host'] . $requestParam['path'], [
+        'headers' => $header,
+        'query' => $requestParam['query'],
+        'body' => $requestParam['body']
+    ]);
     }*/
 
     /**
@@ -228,7 +238,7 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
             $canonicalHeaders,
             '',
             $signedHeaders,
-            hash('sha256', $bodyString),
+            $xContentSha256,
         ]);
         // 7. 构造 StringToSign
         $hashedCanonicalRequest = hash("sha256", $canonicalRequest);
