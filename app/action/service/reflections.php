@@ -54,9 +54,23 @@ class Reflections
             'action_ids' => json_encode($actionIds, JSON_UNESCAPED_UNICODE),
         ];
 
-        $reflectionId = $this->_daoVnReflectionsModel->insert($data);
-        if($reflectionId === false){
-            return -7;
+        // 检查是否存在（防止唯一索引报错）
+        $checkWhere = [
+            'user_id' => $uid,
+            'type' => $type,
+            'start_date' => $date,
+            'end_date' => $date,
+        ];
+        $exist = $this->_daoVnReflectionsModel->select('id', $checkWhere, '', 1);
+
+        if (!empty($exist) && isset($exist[0]['id'])) {
+            $reflectionId = $exist[0]['id'];
+            $this->_daoVnReflectionsModel->update($data, ['id' => $reflectionId]);
+        } else {
+            $reflectionId = $this->_daoVnReflectionsModel->insert($data);
+            if ($reflectionId === false) {
+                return -7;
+            }
         }
 
         //todo 2. 查询actions
@@ -95,9 +109,20 @@ class Reflections
                 'analysis' => json_encode($reflectionResult, JSON_UNESCAPED_UNICODE),
                 'action_suggestions' => json_encode($nextActions, JSON_UNESCAPED_UNICODE),
             ];
-            $reflectionAiId = $this->_daoVnReflectionAiAnalysisModel->insert($data);
-            if($reflectionAiId === false){
-                return -7;
+
+            // 检查是否存在
+            $checkAiWhere = [
+                'reflection_id' => $reflectionId,
+            ];
+            $existAi = $this->_daoVnReflectionAiAnalysisModel->select('id', $checkAiWhere, '', 1);
+
+            if (!empty($existAi) && isset($existAi[0]['id'])) {
+                $this->_daoVnReflectionAiAnalysisModel->update($data, ['id' => $existAi[0]['id']]);
+            } else {
+                $reflectionAiId = $this->_daoVnReflectionAiAnalysisModel->insert($data);
+                if ($reflectionAiId === false) {
+                    return -7;
+                }
             }
         }
     }
