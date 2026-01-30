@@ -98,7 +98,7 @@ class Reflections extends \App\Application
             $syncToNote = 1;
         }
 
-        $result = $this->_reflectionsService->createRetrospectiveWithAIAnalysis($uid, $type, $actionIds, $satisfaction, $emotion, $summary, $syncToNote, $nextAction);
+        $result = $this->_reflectionsService->createRetrospectiveWithAIAnalysis($uid, $type, $date, $actionIds, $satisfaction, $emotion, $summary, $syncToNote, $nextAction);
 
         //todo 根据actionIds获取具体行动列表
 
@@ -119,7 +119,7 @@ class Reflections extends \App\Application
         // 处理未完成任务
         if($pending_cfg['mode'] == 'all'){
             // todo 查询全部未完成ids
-            $result = $this->_actionsService()->getIds($uid, $date, 0);
+            $result = $this->_actionsService->getIds($uid, $date, 0);
             $actionIds = array_merge($actionIds, $result);
 
         }else{ // selected
@@ -129,7 +129,7 @@ class Reflections extends \App\Application
         // 处理已完成任务
         if($completed_cfg['mode'] == 'all'){
             // todo 查询全部已完成ids
-            $result = $this->_actionsService()->getIds($uid, $date, 1);
+            $result = $this->_actionsService->getIds($uid, $date, 1);
             $actionIds = array_merge($actionIds, $result);
 
         }else{

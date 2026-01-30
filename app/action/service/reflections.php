@@ -150,7 +150,7 @@ class Reflections
 PROMPT;
 
         // 2. 调用 AI 模型
-        $svrVolc = \Lsf\Loader::Model('SvrVolc', false, APP_NAME_NOTE);
+        $svrVolc = \Lsf\Loader::Model('SvrVolc', true);
         $payload = [
             'model' => 'doubao-seed-1-6-flash-250828', // 使用与 summarizer 相同的模型
             'messages' => [

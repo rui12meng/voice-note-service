@@ -53,7 +53,7 @@ class Actions
         }
         $actionIds = [];
         foreach ($result as $item){
-            $actionIds = $item['id'];
+            $actionIds[] = $item['id'];
         }
         return $actionIds;
     }
