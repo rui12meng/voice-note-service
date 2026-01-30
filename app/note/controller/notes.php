@@ -158,9 +158,6 @@ class Notes extends \App\Application
      * @return void
      */
     public function addImage(){
-        $result = $this->_ocrService->imageOcr('https://img0.baidu.com/it/u=677102297,807893389&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=1557');
-        var_dump($result);
-        exit();
 
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
@@ -208,8 +205,9 @@ class Notes extends \App\Application
             if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] === 0) {
                 return $this->json(1003000, [], '包含无效图片文件');
             }
-            if ($file['size'] > 5 * 1024 * 1024) { // 5MB
-                return $this->json(1003003, [], '图片大小不能超过5MB');
+            //todo 火山OCR识别图片要求2M以下
+            if ($file['size'] > 2 * 1024 * 1024) { // 2MB
+                return $this->json(1003003, [], '图片大小不能超过2MB');
             }
             
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -234,24 +232,115 @@ class Notes extends \App\Application
         //如果text存在则不需要图片OCR识别 todo 限制1000字符
         $noteText = $this->post('text', true);
 
+        $imagesData = [];
         if (!isset($noteText) || empty($noteText) ) {
             //如果 text 为空 → 触发服务端 //todo ocr 识别
 
-            /*if(!empty($resultData)){
+            if(!empty($resultData)){
                 foreach($resultData as $url){
                     $result = $this->_ocrService->imageOcr($url['signUrl']);
+                    $imagesData[] = $url['pathUrl'];
+                    $noteText .= isset($result['text']) ? $result['text'] : '';
                 }
-
-
-                $noteText = isset($result['text']) ? $result['text'] : '';
-            }*/
+            }
         }
 
+        //优先存储用户日记信息
+        $noteId = $this->_noteService->addImagesNote($uid, $noteText, array($imagesData));
 
-        return $this->json(ECODE_SUCCESS, $resultData);
+        $eCode = ECODE_SUCCESS;
+        $response = [];
+        if(is_int($noteId) && $noteId < 0){
+            switch ($noteId){
+                // 数据库操作失败
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }else{
+            $response = [
+                'note_id' => $noteId,
+                'note_type' => 'audio',
+                'title' => '图片日记',
+                'tags' => [],
+                'image_urls' => array($resultData),
+                'content' => $noteText,
+                'created_at' => date('Y-m-d H:i:s'),
+            ];
+        }
+
+        //todo 【关键】启动后台任务（不阻塞当前协程）
+        if (!empty($noteText) && is_string($noteText) && mb_strlen(trim($noteText), 'UTF-8') > 100) {
+            go(function () use ($uid, $noteId, $noteText) {
+                $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
+            });
+        }
+
+        return $this->json($eCode, $response);
 
     }
 
+    /**
+     * 添加文字笔记
+     * AI分析流程
+     * @param  void
+     * @return void
+     */
+    public function addText(){
+        $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
+        $noteText = $this->post('text', true);
+
+        if (!isset($noteText) || empty($noteText) ) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'text');
+        }
+        // todo 限制1000字符（多余字符截断）
+        if (isset($noteText) && mb_strlen($noteText) > 1000) {
+            $noteText = mb_substr($noteText, 0, 1000);
+        }
+
+        //优先存储用户日记信息
+        $noteId = $this->_noteService->addTextNote($uid, $noteText);
+
+        $eCode = ECODE_SUCCESS;
+        $response = [];
+
+        if(is_int($noteId) && $noteId < 0){
+            switch ($noteId){
+                // 数据库操作失败
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }else{
+            $response = [
+                'note_id' => $noteId,
+                'note_type' => 'text',
+                'title' => '文本日记',
+                'tags' => [],
+                'content' => $noteText,
+                'created_at' => date('Y-m-d H:i:s'),
+            ];
+        }
+
+        //todo 【关键】启动后台任务（不阻塞当前协程）
+        if (!empty($noteText) && is_string($noteText) && mb_strlen(trim($noteText), 'UTF-8') > 100) {
+            go(function () use ($uid, $noteId, $noteText) {
+                $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
+            });
+        }
+
+        return $this->json($eCode, $response);
+    }
 
     /**
      * 笔记分析

@@ -386,6 +386,52 @@ class Note extends \Service\Base
     }
 
     /**
+     * 添加文本笔记【富文本】
+     * @param   int     $uid
+     * @param   string  $noteText
+     * @return void
+     */
+    public function addTextNote($uid, $noteText){
+        $data = [
+            'user_id' => $uid,
+            'note_type' => self::NOTE_TYPE_TEXT,
+            'content' => $noteText,
+        ];
+        $result = $this->_daoVnNoteModel->insert($data);
+
+        if ($result === false) {//入库失败
+            return -7;
+        } else {
+            return $result;
+        }
+    }
+
+    /**
+     * 添加图片笔记
+     * @param   int     $uid
+     * @param   string  $noteText
+     * @param   array  $imageUrls
+     * @return void
+     */
+    public function addImagesNote($uid, $noteText, $imageUrls)
+    {
+        $data = [
+            'user_id' => $uid,
+            'note_type' => self::NOTE_TYPE_IMAGE,
+            'content' => $noteText,
+            'media_url' => json_encode($imageUrls),
+        ];
+
+        $result = $this->_daoVnNoteModel->insert($data);
+
+        if ($result === false) {//入库失败
+            return -7;
+        } else {
+            return $result;
+        }
+    }
+
+    /**
      * 添加笔记
      * @param   int     $uid
      * @param   string  $noteText

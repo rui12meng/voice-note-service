@@ -34,12 +34,12 @@ class OcrVolc extends \Model\SvrBase
     public function Ocr(string $file){
         try {
 
-            //$imageBase64 = base64_encode(file_get_contents(WEBPATH.'/test2.jpeg'));
+            $imageBase64 = base64_encode(file_get_contents(WEBPATH.'/testE.jpeg'));
 $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jpeg';
 
             // 1. 构造原始请求参数（不含 Signature）
             $params = [
-                //'image_base64'      => $imageBase64,
+                'image_base64'      => $imageBase64,
                 'image_url' => $url,
             ];
 
@@ -59,7 +59,12 @@ $url = 'https://pics0.baidu.com/feed/b8389b504fc2d5628c9e35489426aae277c66c41.jp
 
             echo "\nDemo OCR\n";
             $response = $client->CallAPI($action, ['form_params' => $params]);
-            var_dump($response);
+            $body = (string) $response->getBody(); // ← 关键：转为字符串
+            var_dump($body);
+            $data = json_decode($body, true);    // 转为数组
+
+            print_r($data);
+
 
             exit();
 

@@ -32,6 +32,33 @@ class Actions
     }
 
     /**
+     * 获取用户某日行动ID列表
+     * @param  int $uid    用户ID
+     * @param  string $date  日期
+     * @param  int status 完成状态
+     * @return void
+     */
+    public function getIds($uid, $date, $status = 0){
+
+        $where = [
+            'user_id' => $uid,
+            'due_date' => $date,
+            'status' => $status,
+            'is_deleted' => 0,
+        ];
+        $result = $this->_daoVnActionsModel->select('id', $where);
+
+        if($result === false){
+            return [];
+        }
+        $actionIds = [];
+        foreach ($result as $item){
+            $actionIds = $item['id'];
+        }
+        return $actionIds;
+    }
+
+    /**
      * 获取用户当日行动总数量
      * @param  int $uid    用户ID
      * @param  string $execDay  行动日期
