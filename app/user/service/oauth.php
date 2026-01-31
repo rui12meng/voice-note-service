@@ -344,7 +344,7 @@ class Oauth extends \Service\Base
             'user_id' => $uid,
             'email' => $data['email'] ?? '',
             'nickname' => $data['name'] ?? '',
-            'avatar' => $data['avatar'] ?? '',
+            'avatar_url' => $data['avatar'] ?? '',
         ];
 
         $infoId = $this->_svrDaoVnUserInfoModel->insert($userInfoData);
