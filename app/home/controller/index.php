@@ -39,6 +39,9 @@ class Index extends \App\Application
     public function userLatestInsights(){
         //todo 1. 用户最近7天已解析日记数
         $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
         $count = $this->_indexService->noteCountLast7Days($uid);
         $response = [];
         $eCode = ECODE_SUCCESS;

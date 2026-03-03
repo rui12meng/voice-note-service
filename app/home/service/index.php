@@ -42,8 +42,8 @@ class Index extends Service\Base
      * @param  int    $days
      * @return void
      */
-    public function noteCountLast7Days($uid, $days){
-        $startDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+    public function noteCountLast7Days($uid, $days = -7){
+        $startDate = date('Y-m-d H:i:s', strtotime("{$days} days"));
         $columns = 'id';
         $where = [
             'user_id' => $uid,
@@ -51,7 +51,7 @@ class Index extends Service\Base
             'is_deleted' => 0,
             'created_at' => ['EGT', $startDate], //>=
         ];
-        $result = $this->_daoNoteTagsModel->count($columns, $where);
+        $result = $this->_daoVnNotesModel->count($columns, $where);
         if($result === false){
             return -7;
         }

@@ -7,7 +7,7 @@ namespace Model;
  * $Id: dao_vn_emotion_tags.php $
  */
 
-class DaoVnTags extends \Lsf\Model
+class DaoVnEmotionTags extends \Lsf\Model
 {
     public $primary     = 'id';
     public $tablePrefix = '';
