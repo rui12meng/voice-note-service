@@ -8,7 +8,7 @@ namespace Home\Service;
  * $Id: index.php $
  */
 
-class Index extends Service\Base
+class Index
 {
 
     const EMOTION_LIST = [
