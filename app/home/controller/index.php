@@ -50,8 +50,8 @@ class Index extends \App\Application
             $tag = $this->_indexService->userNoteTags($uid);
 
             $response = [
-                'emotion_tags' => $emotion,
                 'note_tags' => $tag,
+                'emotion_tags' => $emotion,
             ];
         }
         return $this->json($eCode, $response);
