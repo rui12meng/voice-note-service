@@ -31,7 +31,74 @@ class Reflections extends \App\Application
     }
 
     /**
-     * 日复盘
+     * 行动复盘
+     * @param  void
+     * @return void
+     */
+    public function submit(){
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+        $startDate = $this->post('start_date', true);
+        if ( ! isset($startDate) || empty($startDate)) {
+            $startDate = date('Y-m-d');
+        }
+        $endDate = $this->post('end_date', true);
+        if ( ! isset($endDate) || empty($endDate)) {
+            $endDate = date('Y-m-d');
+        }
+        if(strtotime($startDate) > strtotime($endDate)){
+            return $this->json( 1004007 , []);
+        }
+        if($startDate === $endDate){
+            $type = 'daily';
+        }else{
+            $type = 'weekly';
+        }
+
+        $completedActions = $this->post('completed_actions', true);
+        if (!isset($completedActions) || empty($completedActions)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'completed_actions');
+        }
+
+        $actionIds = $this->getReflectionActionsIds($uid, $startDate, $endDate, [], $completedActions);
+
+        if ( ! isset($actionIds) || empty($actionIds)) {
+            return $this->json(1004006, []);
+        }
+        //满意度评分
+        $satisfaction = $this->post('satisfaction', true);
+        if (!isset($satisfaction) || empty($satisfaction)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'satisfaction');
+        }
+        //todo 需要确认自我评价是否必传
+        $summary = $this->post('summary' , true);
+        if (!isset($summary) || empty($summary)) {
+            $summary = '';
+        }
+
+        // todo 需要判断用户是否还有分析权限？有-分析，无-存储不分析？
+        $result = $this->_reflectionsService->createAndAIAnalysis($uid, $type, $startDate, $endDate, $actionIds, $satisfaction, $summary );
+
+        $eCode = ECODE_SUCCESS;
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+        return $this->json($eCode, []);
+
+    }
+
+    /**
+     * 日复盘（V1.2）
      * @param  void
      * @return void
      */
@@ -114,33 +181,34 @@ class Reflections extends \App\Application
      * @param  void
      * @return void
      */
-    private function getReflectionActionsIds($uid, $date, $pending_cfg, $completed_cfg){
+    private function getReflectionActionsIds($uid, $startDate, $endDate, $pending_cfg, $completed_cfg){
         $actionIds = [];
-        // 处理未完成任务
-        if($pending_cfg['mode'] == 'all'){
-            // todo 查询全部未完成ids
-            $result = $this->_actionsService->getIds($uid, $date, 0);
-            $actionIds = array_merge($actionIds, $result);
 
-        }else{ // selected
-            $actionIds = array_merge($actionIds , $pending_cfg['action_ids']);
+        // 处理未完成任务
+        if (!empty($pending_cfg)) {
+            if (isset($pending_cfg['mode']) && $pending_cfg['mode'] == 'all') {
+                $result = $this->_actionsService->getIds($uid, $startDate, $endDate, 0);
+                $actionIds = array_merge($actionIds, $result);
+            } elseif (isset($pending_cfg['action_ids']) && is_array($pending_cfg['action_ids'])) {
+                $actionIds = array_merge($actionIds, $pending_cfg['action_ids']);
+            }
         }
 
         // 处理已完成任务
-        if($completed_cfg['mode'] == 'all'){
-            // todo 查询全部已完成ids
-            $result = $this->_actionsService->getIds($uid, $date, 1);
-            $actionIds = array_merge($actionIds, $result);
-
-        }else{
-            $actionIds = array_merge($actionIds , $completed_cfg['action_ids']);
+        if (!empty($completed_cfg)) {
+            if (isset($completed_cfg['mode']) && $completed_cfg['mode'] == 'all') {
+                $result = $this->_actionsService->getIds($uid, $startDate, $endDate, 1);
+                $actionIds = array_merge($actionIds, $result);
+            } elseif (isset($completed_cfg['action_ids']) && is_array($completed_cfg['action_ids'])) {
+                $actionIds = array_merge($actionIds, $completed_cfg['action_ids']);
+            }
         }
 
-        return $actionIds;
+        return array_unique($actionIds);
     }
 
     /**
-     * 周复盘
+     * 周复盘（V1.2）
      * @param  void
      * @return void
      */
@@ -241,7 +309,7 @@ class Reflections extends \App\Application
     }
 
     /**
-     * 用户根据行动ID删除行动
+     * 用户根据复盘ID删除复盘记录
      * 采取软删除
      * @param  void
      * @return void
@@ -252,12 +320,12 @@ class Reflections extends \App\Application
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
-        $actionId = $this->post('action_id', true);
-        if ( ! isset($actionId) || empty($actionId)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'action_id');
+        $reflectionId = $this->post('reflection_id', true);
+        if ( ! isset($reflectionId) || empty($reflectionId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'reflection_id');
         }
 
-        $result = $this->_actionsService->deleteActionById($uid, $actionId);
+        $result = $this->_reflectionsService->deleteReflectionById($uid, $reflectionId);
 
         $eCode = ECODE_SUCCESS;
 
@@ -278,90 +346,47 @@ class Reflections extends \App\Application
     }
 
     /**
-     * 用户根据行动ID更新行动数据
+     * 用户复盘列表
+     * 支持按日期查询 /默认当日
      * @param  void
      * @return void
      */
-    public function edit(){
-        $uid = 101;
-        $actionId = $this->post('action_id', true);
-        if ( ! isset($actionId) || empty($actionId)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'action_id');
-        }
-
-        /*$dateOption = $this->post('date_option', true);
-        if(isset($dateOption) && !empty($dateOption) && !in_array((int)$dateOption, [1,2,3], true)){
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'date_option 非法');
-        }*/
-        $actionDate = $this->post('date', true);
-        if ( ! isset($actionDate) || empty($actionDate)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'date');
-        }
-
-        $result = $this->_actionsService->editActionById($uid, $actionId, $actionDate);
-
-        $eCode = ECODE_SUCCESS;
-
-        if (is_int($result) && $result < 0) {
-            switch ($result) {
-                //数据库异常
-                case -6:
-                case -7:
-                    $eCode = ECODE_DATABASE_QUERY_FAIL;
-                    break;
-                //未知错误
-                default:
-                    $eCode = ECODE_UNDEFINED_ERROR;
-            }
-        }
-        return $this->json($eCode , []);
-    }
-
-    /**
-     * 用户行动列表（待办/完成）
-     * 支持按日期查询 /默认当日/默认待办
-     * todo 如果是习惯，需要算法算出坚持次数
-     * todo 需要同步今日习惯到任务表
-     * @param  void
-     * @return void
-     */
-    public function uList(){
+    public function lists(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
         }
 
-        $actionDate = $this->post('due_date', true);
-        if ( ! isset($actionDate) || empty($actionDate)) {
-            $actionDate = date('Y-m-d');
+        $startDate = $this->post('start_date', true);
+        if ( ! isset($startDate) || empty($startDate)) {
+            $startDate = date('Y-m-d');
         }
 
-        $status = $this->post('due_status', true);
-        if ( ! isset($status) || empty($status)) {
-            $status = self::USER_ACTION_CANCEL;
+        $endDate = $this->post('end_date', true);
+        if ( ! isset($endDate) || empty($endDate)) {
+            $endDate = date('Y-m-d');
         }
 
-        //todo 同步今日习惯到任务表（仅待办需要同步）/按查看日期仅同步一次
-        if($status === self::USER_ACTION_CANCEL && $actionDate <= date('Y-m-d')){
-            // todo 调用服务：获取今日需展示的习惯并自动落库到 actions
-            $this->_actionsService->syncExecHabitsToActions($uid, $actionDate);
-            // todo 如果同步习惯失败，不报错，不阻塞
+        if(strtotime($startDate) > strtotime($endDate)){
+            return $this->json( 1004007 , []);
         }
 
         $cursor = $this->post('cursor', true);
         if ( ! isset($cursor) || empty($cursor) || $cursor < 0 || !is_int($cursor)) {
-            //游标（Base64 编码的 (created_at, id)）
+            //游标
             $cursor = '';
         }
         $pageSize = $this->post('limit', true);
         if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0 || !is_numeric($pageSize)) {
             $pageSize = 20;
         }
+        //WHERE start_date <= ?  -- ? = query_end
+        //  AND end_date >= ?    -- ? = query_start
         $filters = [
-            'due_date' => $actionDate,
-            'status' => $status,
+            'start_date' => ['ELT', $endDate],
+            'end_date' => ['EGT', $startDate],
         ];
-        $result = $this->_actionsService->actionList($uid, $cursor, $pageSize, $filters);
+        $result = $this->_reflectionsService->reflectionList($uid, $cursor, $pageSize, $filters);
         $eCode = ECODE_SUCCESS;
 
         if (is_int($result) && $result < 0) {
@@ -378,6 +403,39 @@ class Reflections extends \App\Application
 
         return $this->json($eCode , $result);
 
+    }
+
+    /**
+     * 用户根据复盘id查看复盘结果（详情）
+     * @param  void
+     * @return void
+     */
+    public function detail(){
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+        $reflectionId = $this->post('reflection_id', true);
+        if ( ! isset($reflectionId) || empty($reflectionId)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'reflection_id');
+        }
+
+        $result = $this->_reflectionsService->getReflectionDetailById($uid, $reflectionId);
+        $eCode = ECODE_SUCCESS;
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+
+        return $this->json($eCode , $result);
     }
 
 

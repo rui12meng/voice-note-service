@@ -2,16 +2,16 @@
 namespace Model;
 
 /**
- * 笔记标签数据
+ * 情绪标签数据
  * @author mengrui
- * $Id: dao_vn_tags.php $
+ * $Id: dao_vn_emotion_tags.php $
  */
 
 class DaoVnTags extends \Lsf\Model
 {
     public $primary     = 'id';
     public $tablePrefix = '';
-    public $table       = 'note_tags';
+    public $table       = 'emotion_tags';
 
     public function __construct()
     {
@@ -19,26 +19,25 @@ class DaoVnTags extends \Lsf\Model
     }
 
     /**
-     * 按条件查询日记标签
+     * 按条件查询情绪标签
      * @param  int    $uid
      * @param  int    $days
      * @return void
      */
-    public function getNoteTagsBySql($uid, $days){
+    public function getEmotionTagsBySql($uid, $days){
         $startDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
-
-        //todo 如果标签数据量很大，可能会出现性能瓶颈，避免性能开销，限制200
         $sql = <<<SQL
 SELECT
-    nt.note_id, 
-    nt.name
-FROM note_tags AS nt
+    et.note_id, 
+    et.emotion_type_id,
+    et.intensity
+FROM emotion_tags AS et
 JOIN notes AS n 
-    ON nt.note_id = n.id
+    ON et.note_id = n.id
 WHERE n.user_id = {$uid} 
-    AND n.created_at >= {$startDate} 
-    AND nt.is_deleted = 0
-ORDER BY n.created_at DESC 
+    AND n.create_at >= {$startDate} 
+    AND et.is_deleted = 0
+ORDER BY n.create_at DESC 
 LIMIT 200
 SQL;
 

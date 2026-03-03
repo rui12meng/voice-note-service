@@ -34,15 +34,17 @@ class Actions
     /**
      * 获取用户某日行动ID列表
      * @param  int $uid    用户ID
-     * @param  string $date  日期
+     * @param  string $startDate  开始日期
+     * @param  string $endDate  结束日期
      * @param  int status 完成状态
      * @return void
      */
-    public function getIds($uid, $date, $status = 0){
+    public function getIds($uid, $startDate, $endDate, $status = 0){
 
         $where = [
             'user_id' => $uid,
-            'due_date' => $date,
+            'due_date' => ['EGT', $startDate],
+            'due_date' => ['ELT', $endDate],
             'status' => $status,
             'is_deleted' => 0,
         ];
@@ -376,11 +378,11 @@ class Actions
         ];
         $where = array_merge($where, $filters);
         if (!empty($cursor)) {
-            $where['id'] = ['LE', (int)$cursor];
+            $where['id'] = ['LT', (int)$cursor];
         }
 
         $columns = 'id, title, content, streak, status, due_date, habit_id';
-        $orderBy = 'id ASC';
+        $orderBy = 'id DESC';
         $list = $this->_daoVnActionsModel->select($columns, $where, $orderBy, $pageSize+1);
 
         if($list === false){

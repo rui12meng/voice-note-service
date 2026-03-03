@@ -339,6 +339,64 @@ class Actions extends \App\Application
     }
 
     /**
+     * 用户查询时间区间范围内的行动列表
+     * 支持按日期范围查询 /默认当日/默认完成
+     * @param  void
+     * @return void
+     */
+    public function lists(){
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+        }
+
+        $startDate = $this->post('start_date', true);
+        if ( ! isset($startDate) || empty($startDate)) {
+            $startDate = date('Y-m-d');
+        }
+        $filters['due_date'] = ['EGT', $startDate];
+
+        $endDate = $this->post('end_date', true);
+        if ( ! isset($endDate) || empty($endDate)) {
+            $endDate = date('Y-m-d');
+        }
+        $filters['due_date'] = ['ELT', $endDate];
+
+        $status = $this->post('due_status', true);
+        if ( isset($status) && in_array( (int)$status, [0, 1], true)) {
+            $filters['status'] = $status;
+        }
+
+        $cursor = $this->post('cursor', true);
+        if ( ! isset($cursor) || empty($cursor) || $cursor < 0 || !is_int($cursor)) {
+            //游标
+            $cursor = '';
+        }
+        $pageSize = $this->post('limit', true);
+        if ( ! isset($pageSize) || empty($pageSize) || $pageSize < 0 || !is_numeric($pageSize)) {
+            $pageSize = 20;
+        }
+        
+        $result = $this->_actionsService->actionList($uid, $cursor, $pageSize, $filters);
+        $eCode = ECODE_SUCCESS;
+
+        if (is_int($result) && $result < 0) {
+            switch ($result) {
+                //数据库异常
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                //未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }
+
+        return $this->json($eCode , $result);
+
+    }
+
+    /**
      * 全量更新日记关联行动任务（全量替换，一键保存）
      * todo 编辑&新增（有action_id的更新；无action_id则录入）
      * @param  void
