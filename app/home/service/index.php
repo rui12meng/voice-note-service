@@ -8,11 +8,22 @@ namespace Home\Service;
  * $Id: index.php $
  */
 
-class Index
+class Index extends Service\Base
 {
+
+    const EMOTION_LIST = [
+        1 => 'joy' , //'快乐'
+        2 =>'sadness' , //'悲伤'
+        3 => 'anger' , //'愤怒'
+        4 => 'fear' , //'焦虑'
+        5 => 'surprise' , //'惊讶'
+        6 => 'disgust' , // '厌恶'
+        7 => 'neutral' , //'平静'
+    ];
+
     private $_daoVnNotesModel;
     private $_daoVnNoteTagsModel;
-    //private $_daoVnNoteEmotionTagsModel;
+    private $_daoVnNoteEmotionTagsModel;
 
     /**
      * 构造函数
@@ -22,7 +33,7 @@ class Index
     public function __construct(){
         $this->_daoVnNotesModel = \Lsf\Loader::Model('DaoVnNotes', true);
         $this->_daoVnNoteTagsModel = \Lsf\Loader::Model('DaoVnTags', true);
-        //$this->_daoVnNoteEmotionTagsModel = \Lsf\Loader::Model('DaoVnEmotionTags', true);
+        $this->_daoVnNoteEmotionTagsModel = \Lsf\Loader::Model('DaoVnEmotionTags', true);
     }
 
     /**
@@ -53,10 +64,11 @@ class Index
      * @param  int $days   时间窗口
      * @return void
      */
-    public function userNoteTags($uid, $days)
+    public function userNoteTags($uid, $days = -7)
     {
         $result = $this->_daoVnNoteTagsModel->getNoteTagsBySql($uid, $days);
-        if(isset($result) && !empty($result)){
+        $tags = [];
+        if(isset($result) && is_array($result) && count($result) > 0){
             // 去重操作：保证每个 note_id 和 name 组合只出现一次
             $uniqueTags = [];
             foreach ($result as $row) {
@@ -81,11 +93,12 @@ class Index
             // 按出现次数排序并获取 Top 3 标签
             arsort($tagCounts);
             $topTags = array_slice($tagCounts, 0, 3);
-            return $topTags;
-        }else{
-            return [];
-        }
+            foreach ($topTags as $tagName => $count) {
+                $tags[] = $tagName;
+            }
 
+        }
+        return $tags;
     }
 
     /**
@@ -94,8 +107,15 @@ class Index
      * @param  int $days   时间窗口
      * @return void
      */
-    public function userEmotionTags($uid, $days){
-        //$this->_daoVnNoteEmotionTagsModel->getEmotionTagsBySql($uid, $days);
+    public function userEmotionTags($uid, $days = -7){
+        $result = $this->_daoVnNoteEmotionTagsModel->getEmotionTagsBySql($uid, $days);
+        $emotionTags = [];
+        if(isset($result) && is_array($result) && count($result) > 0){
+            foreach ($result as $row) {
+                $emotionTags[] = self::EMOTION_LIST[$row['emotion_type']];
+            }
+        }
+        return $emotionTags;
     }
 
 }

@@ -25,7 +25,7 @@ class DaoVnTags extends \Lsf\Model
      * @return void
      */
     public function getNoteTagsBySql($uid, $days){
-        $startDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+        $startDate = date('Y-m-d H:i:s', strtotime("{$days} days"));
 
         //todo 如果标签数据量很大，可能会出现性能瓶颈，避免性能开销，限制200
         $sql = <<<SQL
@@ -36,9 +36,8 @@ FROM note_tags AS nt
 JOIN notes AS n 
     ON nt.note_id = n.id
 WHERE n.user_id = {$uid} 
-    AND n.created_at >= {$startDate} 
+    AND n.created_at >= "{$startDate}" 
     AND nt.is_deleted = 0
-ORDER BY n.created_at DESC 
 LIMIT 200
 SQL;
 

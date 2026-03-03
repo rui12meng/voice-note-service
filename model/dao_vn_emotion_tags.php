@@ -24,21 +24,24 @@ class DaoVnTags extends \Lsf\Model
      * @param  int    $days
      * @return void
      */
-    public function getEmotionTagsBySql($uid, $days){
-        $startDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+    public function getEmotionTagsBySql($uid, $days = -7){
+        $startDate = date('Y-m-d H:i:s', strtotime("{$days} days"));
         $sql = <<<SQL
 SELECT
-    et.note_id, 
     et.emotion_type_id,
-    et.intensity
+    COUNT(*) AS emotion_count,
+    ROUND(SUM(et.intensity) / COUNT(*), 2) AS emotion_star
 FROM emotion_tags AS et
 JOIN notes AS n 
     ON et.note_id = n.id
 WHERE n.user_id = {$uid} 
-    AND n.create_at >= {$startDate} 
+    AND n.create_at >= "{$startDate}" 
     AND et.is_deleted = 0
-ORDER BY n.create_at DESC 
-LIMIT 200
+GROUP BY 
+    et.emotion_type_id
+ORDER BY 
+    emotion_count DESC, emotion_star DESC  -- 先按频次降序，再按强度降序
+LIMIT 3
 SQL;
 
         $result = $this->query($sql);
@@ -47,8 +50,6 @@ SQL;
         }else{
             return $result;
         }
-
-
     }
 
 }
