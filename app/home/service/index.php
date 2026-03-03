@@ -67,7 +67,7 @@ class Index
     public function userNoteTags($uid, $days = -7)
     {
         $result = $this->_daoVnNoteTagsModel->getNoteTagsBySql($uid, $days);
-        $tags = [];
+        $topicTags = [];
         if(isset($result) && is_array($result) && count($result) > 0){
             // 去重操作：保证每个 note_id 和 name 组合只出现一次
             $uniqueTags = [];
@@ -94,11 +94,11 @@ class Index
             arsort($tagCounts);
             $topTags = array_slice($tagCounts, 0, 3);
             foreach ($topTags as $tagName => $count) {
-                $tags[] = $tagName;
+                $topicTags[] = $tagName;
             }
 
         }
-        return $tags;
+        return $topicTags;
     }
 
     /**
