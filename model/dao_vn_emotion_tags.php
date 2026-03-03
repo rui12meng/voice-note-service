@@ -36,7 +36,7 @@ JOIN notes AS n
     ON et.note_id = n.id
 WHERE n.user_id = {$uid} 
     AND n.created_at >= "{$startDate}" 
-    AND et.is_deleted = 0
+    AND n.is_deleted = 0
 GROUP BY 
     et.emotion_type_id
 ORDER BY 

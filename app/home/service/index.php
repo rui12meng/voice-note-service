@@ -112,7 +112,9 @@ class Index
         $emotionTags = [];
         if(isset($result) && is_array($result) && count($result) > 0){
             foreach ($result as $row) {
-                $emotionTags[] = self::EMOTION_LIST[$row['emotion_type']];
+                if(array_key_exists($row['emotion_type_id'], self::EMOTION_LIST)){
+                    $emotionTags[] =  self::EMOTION_LIST[$row['emotion_type_id']];
+                }
             }
         }
         return $emotionTags;
