@@ -1,5 +1,6 @@
 <?php
 namespace Home\Controller;
+use Swoole\Coroutine\Channel;
 
 /**
  * 默认控制器
@@ -40,9 +41,15 @@ class Index extends \App\Application
         $uid = $this->uid;
         $count = $this->_indexService->noteCountLast7Days($uid);
         $response = [];
-        $eCode = 0;
+        $eCode = ECODE_SUCCESS;
         if(is_int($count) && $count >= 3){
-            $result= $this->_indexService->test();
+            $emotion = $this->_indexService->userEmotionTags($uid);
+            $tag = $this->_indexService->userNoteTags($uid);
+
+            $response = [
+                'emotion_tags' => $emotion,
+                'note_tags' => $tag,
+            ];
         }
         return $this->json($eCode, $response);
 
