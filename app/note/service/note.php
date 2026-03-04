@@ -86,6 +86,15 @@ class Note extends \Service\Base
         $result = $this->_douBaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
 
         //todo 4. 分析后更新表数据为已分析状态
+        if(is_array($result) && !empty($result)){
+            $data = [
+                'is_analyzed' => 1,
+            ];
+            $where = [
+                'id' => $noteId,
+            ];
+            $this->_daoVnNoteModel->update($data, $where);
+        }
 
         return $result;
 
@@ -304,16 +313,16 @@ class Note extends \Service\Base
         $promptRow = null;
         $baseRuntimeVars = [];
 
-        if (is_array($cached) && isset($cached['prompt_row']) && isset($cached['runtime_vars'])) {
+        if (is_array($cached) && isset($cached['prompt_row'])) {
             $promptRow = $cached['prompt_row'];
-            $baseRuntimeVars = $cached['runtime_vars'];
+            //$baseRuntimeVars = $cached['runtime_vars'];
         } else {
             $where = [
                 'prompt_key' => $promptKey,
                 'scene' => $scene,
-                'version' => 'v1',
+                'version' => 'v0.1',
             ];
-            $result = $this->_daoVnAiPromptTemplatesModel->select('system_prompt,user_prompt_template,variables' , $where);
+            $result = $this->_daoVnAiPromptTemplatesModel->select('system_prompt,user_prompt_template' , $where);
             if ($result === false) {
                 return -7;
             }
@@ -321,50 +330,52 @@ class Note extends \Service\Base
                 $promptRow = [
                     'system_prompt' => $result[0]['system_prompt'],
                     'user_prompt_template' => $result[0]['user_prompt_template'],
-                    'variables' => json_decode($result[0]['variables'], true),
+                    //'variables' => json_decode($result[0]['variables'], true),
                 ];
             }else{
                 return -6;
             }
 
-            $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1]);
-            if ($AnalyseType === false) {
-                return -7;
-            }
-
-            foreach ($AnalyseType as $item) {
-                $baseRuntimeVars["{$item['name']}_schema"] = $item['json_schema'];
-            }
+//            $AnalyseType = $this->_daoVnAiAnalysisTypesModel->select('name , json_schema',['is_active' => 1]);
+//            if ($AnalyseType === false) {
+//                return -7;
+//            }
+//
+//            foreach ($AnalyseType as $item) {
+//                $baseRuntimeVars["{$item['name']}_schema"] = $item['json_schema'];
+//            }
 
             $cacheData = [
                 'prompt_row' => $promptRow,
-                'runtime_vars' => $baseRuntimeVars,
+                //'runtime_vars' => $baseRuntimeVars,
             ];
             $this->setCache($redisKey, $cacheData, self::REDIS_EXPIRE_BASE_TIME*24);
         }
 
-        $runtimeVars = $baseRuntimeVars;
-        $runtimeVars['diary_text'] = $text;
+        //$runtimeVars = $baseRuntimeVars;
+        //$runtimeVars['diary_text'] = $text;
 
-        foreach ($promptRow['variables'] as $varName => $type) {
-            if (!array_key_exists($varName, $runtimeVars)) {
-                return false;
-            }
-        }
+//        foreach ($promptRow['variables'] as $varName => $type) {
+//            if (!array_key_exists($varName, $runtimeVars)) {
+//                return false;
+//            }
+//        }
 
-        $replaceMap = [];
+//        $replaceMap = [];
+//
+//        foreach ($promptRow['variables'] as $varName => $type) {
+//            $value = $runtimeVars[$varName];
+//
+//            if ($type === 'json') {
+//                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+//            } else {
+//                $value = (string) $value;
+//            }
+//
+//            $replaceMap['{{' . $varName . '}}'] = $value;
+//        }
 
-        foreach ($promptRow['variables'] as $varName => $type) {
-            $value = $runtimeVars[$varName];
-
-            if ($type === 'json') {
-                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
-            } else {
-                $value = (string) $value;
-            }
-
-            $replaceMap['{{' . $varName . '}}'] = $value;
-        }
+        $replaceMap['{{diary_text}}'] = $text;
 
         $userPrompt = strtr(
             $promptRow['user_prompt_template'],

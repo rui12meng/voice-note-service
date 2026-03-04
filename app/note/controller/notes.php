@@ -98,7 +98,7 @@ class Notes extends \App\Application
             $signUrl = isset($result['signUrl']) ? $result['signUrl'] : '';
         }
 
-        //如果text存在则不需要语音识别 todo 限制1000字符
+        //如果text存在则不需要语音识别
         $noteText = $this->post('text', true);
 
         if (!isset($noteText) || empty($noteText) ) {
@@ -111,6 +111,7 @@ class Notes extends \App\Application
                 $noteText = isset($result['text']) ? $result['text'] : '';
             }
         }
+        //todo 限制1000字符
         if (isset($noteText) && mb_strlen($noteText) > 1000) {
             $noteText = mb_substr($noteText, 0, 1000);
         }
