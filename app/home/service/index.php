@@ -1,7 +1,6 @@
 <?php
 namespace Home\Service;
 
-
 /**
  * 通用服务
  * @author mengrui
@@ -10,17 +9,6 @@ namespace Home\Service;
 
 class Index
 {
-
-    const EMOTION_LIST = [
-        1 => 'joy' , //'快乐'
-        2 =>'sadness' , //'悲伤'
-        3 => 'anger' , //'愤怒'
-        4 => 'fear' , //'焦虑'
-        5 => 'surprise' , //'惊讶'
-        6 => 'disgust' , // '厌恶'
-        7 => 'neutral' , //'平静'
-    ];
-
     private $_daoVnNotesModel;
     private $_daoVnNoteTagsModel;
     private $_daoVnNoteEmotionTagsModel;
@@ -112,9 +100,10 @@ class Index
         $emotionTags = [];
         if(isset($result) && is_array($result) && count($result) > 0){
             foreach ($result as $row) {
-                if(array_key_exists($row['emotion_type_id'], self::EMOTION_LIST)){
-                    $emotionTags[] =  self::EMOTION_LIST[$row['emotion_type_id']];
-                }
+                $emotionTags[] =  emotionMap($row['emotion_type_id']);
+//                if(array_key_exists($row['emotion_type_id'], self::EMOTION_LIST)){
+//                    $emotionTags[] =  self::EMOTION_LIST[$row['emotion_type_id']];
+//                }
             }
         }
         return $emotionTags;
