@@ -165,6 +165,25 @@ class Note extends \Service\Base
             ];
             $this->_daoVnEmotionTagsModel->insert($EmotionData);
         }
+
+        //todo 存储actions到用户行动表
+        $dataActions = [];
+        if(!empty($actions)){
+            foreach ($actions as $k => $v) {
+                if(!empty($v['step'])){
+                    $dataActions[] = [
+                        'note_id' => $noteId,
+                        'user_id' => $uid,
+                        'title' => $v['step'],
+                        'source' => 'ai',
+                        'due_date' => $v['timing'] === '当下' ? date('Y-m-d H:i:s') : date('Y-m-d H:i:s', strtotime('tomorrow')),
+                    ];
+                }
+            }
+        }
+        if(!empty($dataActions)){
+            $this->_daoVnActionsModel->batchInsert($dataActions);
+        }
     }
 
     /**
@@ -179,11 +198,11 @@ class Note extends \Service\Base
 
         $actions = $this->_daoVnActionsModel->getActions($uid, $noteId);
 
-        $habitsDb = $this->_daoVnHabitsModel->getHabitsByNoteId($uid, $noteId);
+        //$habitsDb = $this->_daoVnHabitsModel->getHabitsByNoteId($uid, $noteId);
 
         $insight = [];
         $emotion = [];
-        $habitAi = [];
+        //$habitAi = [];
 
         if ($aiResult !== false && !empty($aiResult)) {
             foreach ($aiResult as $row) {
@@ -210,9 +229,9 @@ class Note extends \Service\Base
                     case 'emotion':
                         $emotion = $value;
                         break;
-                    case 'habits':
-                        $habitAi = $value;
-                        break;
+//                    case 'habits':
+//                        $habitAi = $value;
+//                        break;
                     default:
                         break;
                 }
@@ -223,27 +242,27 @@ class Note extends \Service\Base
             $actions = [];
         }
 
-        if (is_array($habitsDb) && !empty($habitsDb)) {
-            $habits = isset($habitsDb[0]) ? $habitsDb[0] : [];
-        } else {
-            if (is_array($habitAi) && !empty($habitAi)) {
-                if (isset($habitAi['habit_suggestion'])) {
-                    $habitAi['habit_name'] = $habitAi['habit_suggestion'];
-                    unset($habitAi['habit_suggestion']);
-                }
-            }
-            $habits = $habitAi;
-        }
+//        if (is_array($habitsDb) && !empty($habitsDb)) {
+//            $habits = isset($habitsDb[0]) ? $habitsDb[0] : [];
+//        } else {
+//            if (is_array($habitAi) && !empty($habitAi)) {
+//                if (isset($habitAi['habit_suggestion'])) {
+//                    $habitAi['habit_name'] = $habitAi['habit_suggestion'];
+//                    unset($habitAi['habit_suggestion']);
+//                }
+//            }
+//            $habits = $habitAi;
+//        }
 
-        if (!is_array($habits)) {
-            $habits = [];
-        }
+//        if (!is_array($habits)) {
+//            $habits = [];
+//        }
 
         return [
             'insight' => (object)$insight,
             'emotion' => (object)$emotion,
             'actions' => $actions,
-            'habits' => (object)$habits,
+            //'habits' => (object)$habits,
         ];
     }
 
