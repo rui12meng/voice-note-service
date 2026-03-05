@@ -29,7 +29,7 @@ class NoteAiAnalysis
         return $this->_daoVnNoteAiAnalysis->insert($data);
     }
 
-    public function addBatchNoteAiAnalysis($noteId, $model, array $items, $analyzedAt)
+    public function addBatchNoteAiAnalysis($noteId, $model, array $items)
     {
         $rows = [];
         $now = date('Y-m-d H:i:s');
@@ -39,7 +39,7 @@ class NoteAiAnalysis
                 'ai_model_version' => $model,
                 'analysis_type_name' => $k,
                 'analysis_data' => is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE),
-                'analyzed_at' => $analyzedAt,
+                'analyzed_at' => $now,
                 'created_at' => $now,
             ];
         }
