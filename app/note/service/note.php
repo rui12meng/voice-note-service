@@ -30,6 +30,7 @@ class Note extends \Service\Base
     private $_daoVnNoteAiAnalysisModel;
     private $_daoVnActionsModel;
     private $_daoVnHabitsModel;
+    private $_daoVnEmotionTagsModel;
     private $_uploadService;
 
     /**
@@ -47,6 +48,7 @@ class Note extends \Service\Base
         $this->_daoVnAiAnalysisTypesModel = \Lsf\Loader::model('DaoVnAiAnalysisTypes', false, APP_NAME_NOTE);
         $this->_daoVnNoteTagsModel = \Lsf\Loader::model('DaoVnNoteTags', false, APP_NAME_NOTE);
         $this->_daoVnNoteAiAnalysisModel = \Lsf\Loader::model('DaoVnNoteAiAnalysis', false, APP_NAME_NOTE);
+        $this->_daoVnEmotionTagsModel = \Lsf\Loader::model('DaoVnEmotionTags',true);
         $this->_daoVnActionsModel = \Lsf\Loader::model('DaoVnActions', true);
         $this->_daoVnHabitsModel = \Lsf\Loader::model('DaoVnHabits', true);
         $this->_uploadService = \Lsf\Loader::service('Upload', true);

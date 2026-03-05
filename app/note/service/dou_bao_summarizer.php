@@ -89,7 +89,7 @@ class DouBaoSummarizer
 
         $this->_daoVnAiAnalysisUsageModel->insert($data);
 
-        $final['ai_model_version'] = $response['model'] ?? $this->_model;
+        $final['ai_model'] = $response['model'] ?? $this->_model;
         return $final;
     }
 
