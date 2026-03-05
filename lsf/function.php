@@ -103,7 +103,8 @@ function emotionMap($input, $direction = 'key_to_value') {
 
     // 情况 B: 输入是单个值 (标量查询)
     // 严格检查键是否存在
-    if (array_key_exists($input, $targetMap)) {
+    $inputValue = strtolower(trim((string)$input));
+    if (array_key_exists($inputValue, $targetMap)) {
         return $targetMap[$input];
     }
 
