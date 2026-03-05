@@ -83,7 +83,10 @@ function emotionMap($input, $direction = 'key_to_value') {
     static $reverseMapCache = null;
 
     if ($direction === 'value_to_key' && $reverseMapCache === null) {
-        $reverseMapCache = array_flip($emotionMap);
+        $reverseMapCache = [];
+        foreach ($emotionMap as $key => $value) {
+            $reverseMapCache[strtolower($value)] = $key;
+        }
     }
 
     $targetMap = ($direction === 'key_to_value') ? $emotionMap : $reverseMapCache;
@@ -93,7 +96,7 @@ function emotionMap($input, $direction = 'key_to_value') {
         $result = [];
         foreach ($input as $item) {
             // 递归调用自己处理单个元素，保持逻辑统一
-            $res = emotionMap($emotionMap, $item, $direction);
+            $res = emotionMap($item, $direction);
             if ($res !== null) {
                 $result[] = $res;
             }
@@ -103,9 +106,9 @@ function emotionMap($input, $direction = 'key_to_value') {
 
     // 情况 B: 输入是单个值 (标量查询)
     // 严格检查键是否存在
-    $inputValue = strtolower(trim((string)$input));
-    if (array_key_exists($inputValue, $targetMap)) {
-        return $targetMap[$input];
+    $cleanInput = strtolower(trim((string)$input));
+    if (array_key_exists($cleanInput, $targetMap)) {
+        return $targetMap[$cleanInput];
     }
 
     return null;
