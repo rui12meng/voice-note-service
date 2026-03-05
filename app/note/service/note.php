@@ -119,11 +119,18 @@ class Note extends \Service\Base
         $this->_noteAiAnalysisService->addBatchNoteAiAnalysis($noteId, $data['ai_model'], $items);
 
         //todo 同时更新notes表is_analyzed 为分析状态
+        $actionMap = [
+            'allow' => 1, // 正常
+            'warn'  => 2, // 警告
+            'block' => 3  // 拦截
+        ];
+
         $uData = [
             'title' => $data['title'],
             'summary' => $data['summary'],
             'ai_model_version' => $data['ai_model'],
-            'moderation_status' => 0, //todo 待完善
+            'is_critical' => $data['is_critical'] === true ? 1 : 0,
+            'moderation_status' => $actionMap[$data['action']] ?? 1,
             'is_analyzed' => 1,
             'analyzed_at' => date('Y-m-d H:i:s'),
         ];
