@@ -85,19 +85,77 @@ class Note extends \Service\Base
         $promptMessage = $this->getNotePrompt($content);
         $result = $this->_douBaoSummarizerService->aiAnalysis($promptMessage, $uid, $noteId);
 
-        //todo 4. 分析后更新表数据为已分析状态
+        //todo 4. AI分析后更新表数据
         if(is_array($result) && !empty($result)){
-            $data = [
-                'is_analyzed' => 1,
-            ];
-            $where = [
-                'id' => $noteId,
-            ];
-            $this->_daoVnNoteModel->update($data, $where);
+            $this->storeAiData($uid, $noteId, $result);
         }
 
         return $result;
 
+    }
+
+    /**
+     * 存储笔记AI分析数据
+     * @param   int     $uid
+     * @param   int     $noteId
+     * @param   array   $data
+     * @return void
+     */
+    public function storeAiData($uid, $noteId, $data){
+
+        $insight = isset($data['insight']) ? $data['insight'] : [];
+        $emotion = isset($data['mood_analysis']) ? $data['mood_analysis'] : [];
+        $actions = isset($data['actions']) ? $data['actions'] : [];
+        $habits = isset($data['habits']) ? $data['habits'] : [];
+
+        $items = [
+            'insight' => is_array($insight) ? $insight : (string)$insight,
+            'emotion' => is_array($emotion) ? $emotion : (string)$emotion,
+            'actions' => is_array($actions) ? $actions : (string)$actions,
+            'habits' => is_array($habits) ? $habits : (string)$habits,
+        ];
+        $this->_noteAiAnalysisService->addBatchNoteAiAnalysis($noteId, $data['ai_model'], $items);
+
+        //todo 同时更新notes表is_analyzed 为分析状态
+        $uData = [
+            'title' => $data['title'],
+            'summary' => $data['summary'],
+            'ai_model_version' => $data['ai_model'],
+            'moderation_status' => 0, //todo 待完善
+            'is_analyzed' => 1,
+            'analyzed_at' => date('Y-m-d H:i:s'),
+        ];
+        $this->_daoVnNoteModel->update($uData, ['id'=>$noteId]);
+
+        //todo 存储tags到tag表，批量存储
+        $dataTags = [];
+        foreach ($data['tags'] as $k => $v) {
+            if(!empty($v)){
+                $dataTags[] = [
+                    'note_id' => $noteId,
+                    'user_id' => $uid,
+                    'name' => $v,
+                    'normalized_name' => strtolower(trim($v)),
+                    'source' => 'ai',
+                ];
+            }
+        }
+        if(!empty($dataTags)){
+            $this->_daoVnNoteTagsModel->batchInsert($dataTags);
+        }
+
+        //todo 存储emotionTags到情绪表
+        $mood = isset($emotion['emotion']) ? $emotion['emotion'] : '';
+        $intensity = isset($emotion['intensity']) ? $emotion['intensity'] : 0;
+
+        if(isset($mood) && !empty($mood)){
+            $EmotionData = [
+                'note_id' => $noteId,
+                'emotion_type_id' => emotionMap($mood , 'value_to_key'),
+                'intensity' => $intensity,
+            ];
+            $this->_daoVnEmotionTagsModel->insert($EmotionData);
+        }
     }
 
     /**

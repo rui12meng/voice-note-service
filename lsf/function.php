@@ -64,6 +64,53 @@ function getUqId(){
 }
 
 /**
+ * 通用映射查询函数
+ * @param mixed $input 查询条件 (可以是单个值/键，也可以是数组)
+ * @param string $direction 查询方向: 'key_to_value' (默认) 或 'value_to_key'
+ * @return mixed 返回对应的值/键，如果输入是数组则返回关联数组；找不到返回 null 或跳过
+ */
+function emotionMap($input, $direction = 'key_to_value') {
+    $emotionMap = [
+        1 => 'joy' , //'快乐'
+        2 =>'sadness' , //'悲伤'
+        3 => 'anger' , //'愤怒'
+        4 => 'fear' , //'焦虑'
+        5 => 'surprise' , //'惊讶'
+        6 => 'disgust' , // '厌恶'
+        7 => 'neutral' , //'平静'
+    ];
+    // 构建反向映射缓存 (Value => Key)，仅当需要反向查询时构建
+    static $reverseMapCache = null;
+
+    if ($direction === 'value_to_key' && $reverseMapCache === null) {
+        $reverseMapCache = array_flip($emotionMap);
+    }
+
+    $targetMap = ($direction === 'key_to_value') ? $emotionMap : $reverseMapCache;
+
+    // 情况 A: 输入是数组 (批量查询)
+    if (is_array($input)) {
+        $result = [];
+        foreach ($input as $item) {
+            // 递归调用自己处理单个元素，保持逻辑统一
+            $res = emotionMap($emotionMap, $item, $direction);
+            if ($res !== null) {
+                $result[] = $res;
+            }
+        }
+        return $result;
+    }
+
+    // 情况 B: 输入是单个值 (标量查询)
+    // 严格检查键是否存在
+    if (array_key_exists($input, $targetMap)) {
+        return $targetMap[$input];
+    }
+
+    return null;
+}
+
+/**
  * 字符串加解密
  * @param  string  $string
  * @param  string  $operation
