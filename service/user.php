@@ -270,11 +270,16 @@ class User extends Base
         if($result === false){
             return -7;
         }
-        $url = $this->_uploadService->getSignUrl($url);
+
+        $signUrl = '';
+        if(isset($url['pathUrl'])){
+            $signUrl = $this->_uploadService->getSignUrl($url['pathUrl']);
+        }
+
         if($url === false){ //  头像文件签名失败
             return -2;
         }
-        return $url;
+        return $signUrl;
     }
 
     /**
