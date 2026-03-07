@@ -115,7 +115,10 @@ class Upload
             // $url = "https://{$bucket}.{$endpoint}/{$objectKey}";
 
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
-            $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $pathUrl, 3600); // 3600秒 = 1小时
+            $options = [
+                'response-content-disposition' => 'inline',
+            ];
+            $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $pathUrl, 3600, 'GET', $options); // 3600秒 = 1小时
 
             return $url;
 
