@@ -64,7 +64,30 @@ class Upload
             // $url = "https://{$bucket}.{$endpoint}/{$objectKey}";
 
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
-            $signUrl = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600); // 3600秒 = 1小时
+            switch (strtolower($ext)) {
+                case 'jpg':
+                case 'jpeg':
+                    $contentType = 'image/jpeg';
+                    break;
+                case 'png':
+                    $contentType = 'image/png';
+                    break;
+                case 'gif':
+                    $contentType = 'image/gif';
+                    break;
+                case 'webp':
+                    $contentType = 'image/webp';
+                    break;
+                default:
+                    $contentType = '';
+                    break;
+            }
+
+            $options = [
+                'response-content-type' => $contentType,
+                'response-content-disposition' => 'inline',
+            ];
+            $signUrl = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $objectKey, 3600, 'GET', $options); // 3600秒 = 1小时
             $durationMs = round((microtime(true) - $startTime) * 1000);
             // 7. 构造公开访问 URL
 //            $publicUrl = "https://".$this->_aliyunOssConfig['bucket'].".".$this->_aliyunOssConfig['end_point']."/" . rawurlencode($objectKey);
@@ -109,16 +132,43 @@ class Upload
     public function getSignUrl($pathUrl){
         try {
             $ossClient = new OssClient($this->_aliyunOssConfig['access_key_id'], $this->_aliyunOssConfig['access_key_secret'], $this->_aliyunOssConfig['end_point']);
-
+            \Lsf\Loader::plugin('Log')->info('', [
+                'http_header'   => [],
+                'url'           => 'oss sdk',
+                'method'        => 'sdk',
+                'post_data'     => $pathUrl
+            ], 'sdk_request_start');
             // ===== 生成访问 URL =====
             // 方式 A：公开读 Bucket（不推荐，仅演示）
             // $url = "https://{$bucket}.{$endpoint}/{$objectKey}";
 
             // 方式 B：私有 Bucket + 临时签名 URL（推荐！有效期 1 小时）
+            $ext = pathinfo($pathUrl, PATHINFO_EXTENSION);
+            switch (strtolower($ext)) {
+                case 'jpg':
+                case 'jpeg':
+                    $contentType = 'image/jpeg';
+                    break;
+                case 'png':
+                    $contentType = 'image/png';
+                    break;
+                case 'gif':
+                    $contentType = 'image/gif';
+                    break;
+                case 'webp':
+                    $contentType = 'image/webp';
+                    break;
+                default:
+                    $contentType = '';
+                    break;
+            }
+
             $options = [
+                'response-content-type' => $contentType,
                 'response-content-disposition' => 'inline',
             ];
             $url = $ossClient->signUrl($this->_aliyunOssConfig['bucket'], $pathUrl, 3600, 'GET', $options); // 3600秒 = 1小时
+            \Lsf\Loader::plugin('Log')->info('', $url, 'sdk_request_end');
 
             return $url;
 

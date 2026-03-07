@@ -256,7 +256,7 @@ class User extends \App\Application
         $mimeType = finfo_file($f_info, $files_info['tmp_name']);
         finfo_close($f_info);
 
-        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif']; // 允许的 MIME 类型
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif','image/webp']; // 允许的 MIME 类型
         if (!in_array($mimeType, $allowedMimes)) {
             return $this->json(1002010, []);
         }
