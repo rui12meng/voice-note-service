@@ -259,9 +259,12 @@ class User extends Base
         if($url === false){ //上传失败
             return -1;
         }
-        $data = [
-            'avatar_url' => $url,
-        ];
+        $data['avatar_url'] = '';
+        if(isset($url['pathUrl'])){
+            $data = [
+                'avatar_url' => $url['pathUrl'],
+            ];
+        }
         $where = ['user_id' => $uid];
         $result = $this->_svrDaoVnUserInfoModel->update($data , $where);
         if($result === false){
