@@ -55,6 +55,10 @@ class Application extends \Lsf\Controller
         // 帐号
         '/user/oauth/login_or_sign_up'                  => 1,
         '/user/user/token_refresh'                      => 1,
+
+	//静态协议
+	'/h5/index/user_policy' => 1,
+	'/h5/index/private_policy' => 1,
     ];
 
     /**
