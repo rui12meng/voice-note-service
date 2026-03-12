@@ -84,9 +84,9 @@ class Oauth extends \Service\Base
                 throw new \Exception("Invalid apple audience");
             }
 
-//            if ($decoded->exp < time()) {
-//                throw new \Exception("expired token");
-//            }
+            if ($decoded->exp < time()) {
+                throw new \Exception("expired token");
+            }
 
             $data['sub'] = isset($decoded->sub) ? $decoded->sub : '';
             $data['email'] = isset($decoded->email) ? $decoded->email : '';
