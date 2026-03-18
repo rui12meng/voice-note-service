@@ -77,7 +77,7 @@ class Actions extends \App\Application
 
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $actionId = $this->post('action_id', true);
         if ( ! isset($actionId) || empty($actionId)) {
@@ -153,7 +153,7 @@ class Actions extends \App\Application
     public function complete(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $actionId = $this->post('action_id', true);
         if ( ! isset($actionId) || empty($actionId)) {
@@ -187,7 +187,7 @@ class Actions extends \App\Application
     public function cancel(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $actionId = $this->post('action_id', true);
         if ( ! isset($actionId) || empty($actionId)) {
@@ -224,7 +224,7 @@ class Actions extends \App\Application
     public function uList(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $actionDate = $this->post('due_date', true);
@@ -285,7 +285,7 @@ class Actions extends \App\Application
     public function nList(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $noteId = $this->post('note_id', true);
@@ -347,7 +347,7 @@ class Actions extends \App\Application
     public function lists(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $startDate = $this->post('start_date', true);
@@ -405,7 +405,7 @@ class Actions extends \App\Application
     public function save(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {

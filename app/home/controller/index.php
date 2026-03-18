@@ -40,7 +40,7 @@ class Index extends \App\Application
         //todo 1. 用户最近7天已解析日记数
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $count = $this->_indexService->noteCountLast7Days($uid);
         $response = [];

@@ -47,7 +47,7 @@ class Notes extends \App\Application
     {
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $audioInfo = $this->files('audio', true);
@@ -162,7 +162,7 @@ class Notes extends \App\Application
 
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $imagesInfo = $this->files('images', true);
@@ -293,7 +293,7 @@ class Notes extends \App\Application
     public function addText(){
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $noteText = $this->post('text', true);
@@ -352,7 +352,7 @@ class Notes extends \App\Application
 
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+            return $this->json(1001013, [], 'token失效');
         }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
@@ -405,7 +405,7 @@ class Notes extends \App\Application
     public function analyzed(){
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'uid');
+            return $this->json(1001013, [], 'token失效');
         }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
@@ -425,6 +425,9 @@ class Notes extends \App\Application
      */
     public function info(){
         $uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->json(1001013, [], 'token失效');
+        }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
             return $this->errParamMissing(ECODE_PARAM_MISSING, 'note_id');
@@ -472,7 +475,7 @@ class Notes extends \App\Application
     public function lists(){
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $cursor = $this->post('cursor', true);
@@ -508,7 +511,7 @@ class Notes extends \App\Application
     {
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $noteId = $this->post('note_id', true);
@@ -545,7 +548,7 @@ class Notes extends \App\Application
     {
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $noteId = $this->post('note_id', true);
@@ -580,6 +583,24 @@ class Notes extends \App\Application
         }
 
         return $this->json(ECODE_SUCCESS, []);
+    }
+
+    /**
+     * 获取用户日记分析免费额度
+     * @param  void
+     * @return void
+     */
+    public function checkTodayFreeQuota(){
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->json(1001013, [], 'token失效');
+        }
+        $result = $this->_noteService->getUserTodayFreeLimit($uid);
+        if ($result === false) {
+            $eCode = 1003012;
+            return $this->json($eCode, []);
+        }
+        return $this->json(ECODE_SUCCESS, $result);
     }
 }
 

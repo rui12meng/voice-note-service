@@ -88,7 +88,7 @@ class Base
             $redisValue = json_encode($data, JSON_UNESCAPED_UNICODE);
             $result = \Lsf\Loader::plugin('RedisPool')->redis()->setex($redisKey, $expire, $redisValue);
             if(!$result){
-                \Lsf\Loader::plugin('Log')->error(9040510, [
+                \Lsf\Loader::plugin('Log')->error(1000510, [
                     'redis_key'     => $redisKey,
                     'call_function' => 'setex',
                     'result'        => $result
@@ -98,7 +98,7 @@ class Base
                 return TRUE;
             }
         }catch(\RedisException $e){
-            \Lsf\Loader::plugin('Log')->error(9040511, [
+            \Lsf\Loader::plugin('Log')->error(1000511, [
                 'redis_key'     => $redisKey,
                 'call_function' => 'setex',
                 'code'          => $e->getCode(),
@@ -120,14 +120,14 @@ class Base
             if(!empty($redisData)){
                 $data = json_decode($redisData, TRUE);
                 if(json_last_error() > 0){
-                    \Lsf\Loader::plugin('Log')->error(9044500, ['redis_key' => $redisKey, 'redis_data' => $redisData]);
+                    \Lsf\Loader::plugin('Log')->error(1000510, ['redis_key' => $redisKey, 'redis_data' => $redisData]);
                     return FALSE;
                 }else{
                     return $data;
                 }
             }
         }catch(\RedisException $e){
-            \Lsf\Loader::plugin('Log')->error(9040511, [
+            \Lsf\Loader::plugin('Log')->error(1000511, [
                 'redis_key'     => $redisKey,
                 'call_function' => 'get',
                 'code'          => $e->getCode(),

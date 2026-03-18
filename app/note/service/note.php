@@ -64,8 +64,8 @@ class Note extends \Service\Base
      */
     public function doAnalyzeNotesTasks($uid, $noteId, $content){
         // todo 1. 验证用户AI分析权限：免费用户每天最多2次
-        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $uid;
-        $usedTimes = (int) $this->getCache($redisKey);
+        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . date('YmdHms') . ':' . $uid;
+        $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
         if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
             // 超过当日次数限制
@@ -92,8 +92,86 @@ class Note extends \Service\Base
             $this->storeAiData($uid, $noteId, $result);
         }
 
+        //todo 更新缓存次数
+        $this->incrUntilMidnight($redisKey);
+
         return $result;
 
+    }
+
+    /**
+     * 获取用户免费分析次数
+     * @param int $uid 用户唯一ID
+     * @return void
+     */
+    public function getUserTodayFreeLimit($uid){
+        try{
+            $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . date('YmdHms') . ':' . $uid;
+            $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
+            if(!$usedTimes){
+                \Lsf\Loader::plugin('Log')->error(1000510, [
+                    'redis_key'     => $redisKey,
+                    'call_function' => 'get',
+                    'result'        => $usedTimes
+                ]);
+                return FALSE;
+            }else{
+                $result = [];
+                $result['quotaType'] = 'FREE';
+                $result['usedCount'] = $usedTimes;
+                $result['freeLimit'] = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES;
+                if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
+                    // 超过当日次数限制
+                    $result['hasFreeQuota'] = false;
+                }else{
+                    $result['hasFreeQuota'] = true;
+                }
+                return $result;
+            }
+        }catch(\RedisException $e){
+            \Lsf\Loader::plugin('Log')->error(1000511, [
+                'redis_key'     => $redisKey,
+                'call_function' => 'get',
+                'code'          => $e->getCode(),
+                'message'       => $e->getMessage()
+            ]);
+            return FALSE;
+        }
+
+    }
+
+    /**
+     * 增加计数并设置过期时间为当天 24:00
+     * @param string $key 键名 (建议带上日期前缀或业务前缀，如 "stat:visit:2023-10-27")
+     * @return int 增加后的新值
+     */
+    private function incrUntilMidnight($key) {
+        $redis = \Lsf\Loader::plugin('RedisPool')->redis();
+        // 第一步：原子性加 1
+        $newValue = $redis->incr($key);
+
+        // 第二步：如果返回值为 1，说明是今天第一次创建该 Key，需要设置过期时间
+        if ($newValue === 1) {
+            // 计算当前时间到当天 24:00 (即明天 00:00) 的剩余秒数
+            $now = time();
+
+            // 获取明天的零点时间戳
+            $nextMidnight = strtotime('tomorrow');
+
+            // 计算剩余秒数
+            $ttl = $nextMidnight - $now;
+
+            // 防御性编程：防止计算出错导致 ttl <= 0
+            if ($ttl > 0) {
+                $redis->expire($key, $ttl);
+            } else {
+                // 极端情况：如果在 23:59:59 执行，可能 ttl 为 0 或负数，
+                // 此时可以直接设一个很小的值，或者设为 1 秒让它立刻过期
+                $redis->expire($key, 1);
+            }
+        }
+
+        return $newValue;
     }
 
     /**

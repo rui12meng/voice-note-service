@@ -38,7 +38,7 @@ class Reflections extends \App\Application
     public function submit(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $startDate = $this->post('start_date', true);
         if ( ! isset($startDate) || empty($startDate)) {
@@ -105,7 +105,7 @@ class Reflections extends \App\Application
     public function daily(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $type = 'daily';
 
@@ -215,7 +215,7 @@ class Reflections extends \App\Application
     public function weekly(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
@@ -318,7 +318,7 @@ class Reflections extends \App\Application
 
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $reflectionId = $this->post('reflection_id', true);
         if ( ! isset($reflectionId) || empty($reflectionId)) {
@@ -354,7 +354,7 @@ class Reflections extends \App\Application
     public function lists(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $startDate = $this->post('start_date', true);
@@ -413,7 +413,7 @@ class Reflections extends \App\Application
     public function detail(){
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $reflectionId = $this->post('reflection_id', true);
         if ( ! isset($reflectionId) || empty($reflectionId)) {

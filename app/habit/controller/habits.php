@@ -37,11 +37,10 @@ class Habits extends \App\Application
     public function addV2()
     {
         // 用户uid
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+            return $this->json(1001013, [], 'token失效');
+        }
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
             $noteId = 0;
@@ -186,7 +185,7 @@ class Habits extends \App\Application
         // 用户uid
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
@@ -280,7 +279,7 @@ class Habits extends \App\Application
         // 用户uid
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         //habit_id 必传
         $habitId = $this->post('habit_id', true);
@@ -331,7 +330,7 @@ class Habits extends \App\Application
         // 用户uid
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $habitId = $this->post('habit_id', true);
@@ -427,11 +426,10 @@ class Habits extends \App\Application
     public function editV2()
     {
         // 用户uid
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+            return $this->json(1001013, [], 'token失效');
+        }
 
         $habitId = $this->post('habit_id', true);
         if (!isset($habitId) || empty($habitId)) {
@@ -576,7 +574,7 @@ class Habits extends \App\Application
     {
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $habitId = $this->post('habit_id', true);
@@ -611,7 +609,7 @@ class Habits extends \App\Application
     {
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         // 搜索关键词，可选
@@ -664,11 +662,10 @@ class Habits extends \App\Application
      */
     public function batchAdd()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+            return $this->json(1001013, [], 'token失效');
+        }
 
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {
@@ -744,11 +741,10 @@ class Habits extends \App\Application
      */
     public function batchSave()
     {
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
-        }*/
-        $uid = 101;
+            return $this->json(1001013, [], 'token失效');
+        }
 
         $noteId = $this->post('note_id', true);
         if (!isset($noteId) || empty($noteId)) {

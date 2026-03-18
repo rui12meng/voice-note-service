@@ -84,11 +84,11 @@ class User extends \App\Application
         //1. 解析 access_token 取 uid;不需要校验 exp 是否过期(入口文件已实现)
         $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $jti = $this->jti;
         if ( ! isset($jti) || empty($jti)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         // 2. refresh_token 必须删除或失效化
@@ -238,7 +238,7 @@ class User extends \App\Application
         // 用户id
         $uid = $this->uid;
         if (empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         // 头像信息
         $files_info = $this->files('avatar', true);

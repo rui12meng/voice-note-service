@@ -38,7 +38,7 @@ class Tags extends \App\Application
     {
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
         $noteId = $this->post('note_id', true);
         if ( ! isset($noteId) || empty($noteId)) {
@@ -93,7 +93,7 @@ class Tags extends \App\Application
     {
         $uid = $this->uid;
         if (!isset($uid) || empty($uid)) {
-            return $this->errParamMissing(ECODE_PARAM_MISSING, 'token');
+            return $this->json(1001013, [], 'token失效');
         }
 
         $noteId = $this->post('note_id', true);
