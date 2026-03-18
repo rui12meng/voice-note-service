@@ -83,7 +83,6 @@ class Upload
             return $response;
 
         } catch (OssException $e) {
-            var_dump($e);
             \Lsf\Loader::plugin('Log')->error(1002013, [
                 'file' => $file_info,
                 'file_path' => $objectKey,
