@@ -108,26 +108,24 @@ class Note extends \Service\Base
         try{
             $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . date('YmdHms') . ':' . $uid;
             $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
-            if(!$usedTimes){
-                \Lsf\Loader::plugin('Log')->error(1000510, [
-                    'redis_key'     => $redisKey,
-                    'call_function' => 'get',
-                    'result'        => $usedTimes
-                ]);
-                return FALSE;
-            }else{
-                $result = [];
-                $result['quotaType'] = 'FREE';
+
+            $result = [];
+            $result['quotaType'] = 'FREE';
+            $result['freeLimit'] = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES;
+            // todo Key 不存在
+            if ($usedTimes === false) {
+                $result['usedCount'] = 0;
+            } else {// todo Key 存在
                 $result['usedCount'] = $usedTimes;
-                $result['freeLimit'] = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES;
-                if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
-                    // 超过当日次数限制
-                    $result['hasFreeQuota'] = false;
-                }else{
-                    $result['hasFreeQuota'] = true;
-                }
-                return $result;
             }
+            if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
+                // 超过当日次数限制
+                $result['hasFreeQuota'] = false;
+            }else{
+                $result['hasFreeQuota'] = true;
+            }
+            return $result;
+
         }catch(\RedisException $e){
             \Lsf\Loader::plugin('Log')->error(1000511, [
                 'redis_key'     => $redisKey,
