@@ -110,21 +110,22 @@ class Note extends \Service\Base
             $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
             $response = [];
-            $result['quotaType'] = 'FREE';
-            $result['freeLimit'] = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES;
+            $audioData = [];
+            $audioData['quotaType'] = 'FREE';
+            $audioData['freeLimit'] = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES;
             // todo Key 不存在
             if ($usedTimes === false) {
-                $result['usedCount'] = 0;
+                $audioData['usedCount'] = 0;
             } else {// todo Key 存在
-                $result['usedCount'] = $usedTimes;
+                $audioData['usedCount'] = $usedTimes;
             }
             if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
                 // 超过当日次数限制
-                $result['hasFreeQuota'] = false;
+                $audioData['hasFreeQuota'] = false;
             }else{
-                $result['hasFreeQuota'] = true;
+                $audioData['hasFreeQuota'] = true;
             }
-            $response['audio'] = $result;
+            $response['audio'] = $audioData;
             return $response;
 
         }catch(\RedisException $e){
