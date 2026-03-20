@@ -38,7 +38,7 @@ class StsAli
      * @param $fileType string
      * @return void
      */
-    public function getStsToken($uid,$fileType = 'audio') {
+    public function getStsToken($uid, $fileType = 'audio') {
 
         $accessKeyId = $this->_aLiYunOssStsConfig['access_key_id'];
         $accessKeySecret = $this->_aLiYunOssStsConfig['access_key_secret'];
@@ -96,7 +96,7 @@ class StsAli
 
             $logInfo = [
                 'sts_session_id'  => $roleSessionName,
-                'result'        => $resp,
+                'result'        => json_encode($resp),
             ];
 
             \Lsf\Loader::plugin('Log')->info('', $logInfo, 'sts_sdk_request_end');
