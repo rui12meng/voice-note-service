@@ -46,11 +46,10 @@ class Notes extends \App\Application
      * @return void
      */
     public function addAudioSync(){
-        /*$uid = $this->uid;
+        $uid = $this->uid;
         if ( ! isset($uid) || empty($uid)) {
             return $this->json(1001013, [], 'token失效');
-        }*/
-        $uid = 101;
+        }
         //音频文件相对路径
         $audioPath = $this->post('audio_path', true);
         if ( ! isset($audioPath) || empty($audioPath)) {
@@ -109,7 +108,7 @@ class Notes extends \App\Application
                     'note_type' => 'audio',
                     'title' => isset($result['title']) ? $result['title'] : '语音日记',
                     'tags' => is_array($tags) ? $tags : [],
-                    'audio_urls' => $signUrl,
+                    'audio_urls' => $audioUrl,
                     'content' => $noteText,
                     'summary' => isset($result['summary']) ? $result['summary'] : '',
                     'created_at' => date('Y-m-d H:i:s'),
@@ -120,7 +119,7 @@ class Notes extends \App\Application
                     'note_type' => 'audio',
                     'title' => '语音日记',
                     'tags' => [],
-                    'audio_urls' => $signUrl,
+                    'audio_urls' => $audioUrl,
                     'content' => $noteText,
                     'summary' =>'',
                     'created_at' => date('Y-m-d H:i:s'),
