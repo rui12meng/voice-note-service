@@ -65,7 +65,7 @@ class Note extends \Service\Base
      */
     public function doAnalyzeNotesTasks($uid, $noteId, $content, $entryType = 'Audio'){
         // todo 1. 验证用户AI分析权限：免费用户每天最多2次
-        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $entryType . ':' . date('YmdHms') . ':' . $uid;
+        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $entryType . ':' . date('Ymd') . ':' . $uid;
         $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
         if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
@@ -106,7 +106,7 @@ class Note extends \Service\Base
      * @return void
      */
     public function getUserTodayFreeLimit($uid){
-        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . 'Audio' . ':' . date('YmdHms') . ':' . $uid;
+        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . 'Audio' . ':' . date('Ymd') . ':' . $uid;
         try{
             $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
