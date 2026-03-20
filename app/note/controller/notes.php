@@ -62,13 +62,17 @@ class Notes extends \App\Application
             return $this->json(1003013, [], 'Url非法');
         }
         $signUrl = $this->_noteService->buildSignedMediaUrls(json_encode(array($pathUrl)));
+        $audioUrl = '';
+        if(isset($signUrl[0]) && is_string($signUrl[0])){
+            $audioUrl = $signUrl[0];
+        }
         //如果text存在则不需要语音识别
         $noteText = $this->post('text', true);
 
         if (!isset($noteText) || empty($noteText) ) {
             //如果 text 为空 → 触发服务端 ASR
-            if(!empty($signUrl)){
-                $result = $this->_asrService->voiceAsr($signUrl); //扩展名放到voiceAsr内部处理
+            if(!empty($audioUrl)){
+                $result = $this->_asrService->voiceAsr($audioUrl); //扩展名放到voiceAsr内部处理
                 if(is_int($result) && $result < 0){// 语音识别失败
                     return $this->json(1003006, []);
                 }
@@ -96,7 +100,7 @@ class Notes extends \App\Application
             }
         }else{
             $result = $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
-            
+
             if(is_array($result) && !empty($result)){
                 // todo 获取tags
                 $tags = $this->_noteService->getNoteTag($uid, $noteId);
