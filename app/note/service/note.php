@@ -59,12 +59,13 @@ class Note extends \Service\Base
      * @param int $uid
      * @param int $noteId
      * @param  string $content
+     * @param string $entryType
      * @throws \Exception
      * @return void
      */
-    public function doAnalyzeNotesTasks($uid, $noteId, $content){
+    public function doAnalyzeNotesTasks($uid, $noteId, $content, $entryType = 'Audio'){
         // todo 1. 验证用户AI分析权限：免费用户每天最多2次
-        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . 'Audio' . ':' . date('YmdHms') . ':' . $uid;
+        $redisKey = self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT . ':' . $entryType . ':' . date('YmdHms') . ':' . $uid;
         $usedTimes = (int)\Lsf\Loader::plugin('RedisPool')->redis()->get($redisKey);
 
         if ($usedTimes >= self::REDIS_KEY_USER_LIMIT_FOR_ANALYZE_TEXT_MAX_TIMES) {
@@ -437,11 +438,30 @@ class Note extends \Service\Base
     }
 
     /**
+     * 根据noteId获取笔记tag
+     * @param   int     $uid
+     * @param   int     $noteId
+     * @return  void
+     */
+    public function getNoteTag($uid, $noteId){
+        $tags = $this->_daoVnNoteTagsModel->select('id,name' , ['user_id'=> $uid, 'note_id' => $noteId , 'is_deleted' => 0]);
+        if ($tags === false) {
+            //查询失败
+            return -7;
+        }
+        $noteTags = [];
+        if(is_array($tags) && !empty($tags)){
+            $noteTags = $tags;
+        }
+        return $noteTags;
+    }
+
+    /**
      * 生成media_url签名地址
      * @param  string   $raw  media_url字段返回的json串
      * @return void
      */
-    private function buildSignedMediaUrls($raw)
+    public function buildSignedMediaUrls($raw)
     {
         $signUrls = [];
         if (is_string($raw) && $raw !== '') {

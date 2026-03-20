@@ -20,4 +20,11 @@ return array(
     'Google\\Auth\\' => array($vendorDir . '/google/auth/src'),
     'GPBMetadata\\Google\\Protobuf\\' => array($vendorDir . '/google/protobuf/src/GPBMetadata/Google/Protobuf'),
     'Firebase\\JWT\\' => array($vendorDir . '/firebase/php-jwt/src'),
+    'Darabonba\\OpenApi\\' => array($vendorDir . '/alibabacloud/openapi-core/src'),
+    'Darabonba\\GatewaySpi\\' => array($vendorDir . '/alibabacloud/gateway-spi/src'),
+    'AlibabaCloud\\Tea\\' => array($vendorDir . '/alibabacloud/tea/src'),
+    'AlibabaCloud\\SDK\\Sts\\V20150401\\' => array($vendorDir . '/alibabacloud/sts-20150401/src'),
+    'AlibabaCloud\\Dara\\' => array($vendorDir . '/alibabacloud/darabonba/src'),
+    'AlibabaCloud\\Credentials\\' => array($vendorDir . '/alibabacloud/credentials/src'),
+    'Adbar\\' => array($vendorDir . '/adbario/php-dot-notation/src'),
 );

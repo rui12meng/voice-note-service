@@ -1,0 +1,116 @@
+<?php
+
+// This file is auto-generated, don't edit it. Thanks.
+
+namespace AlibabaCloud\SDK\Sts\V20150401\Models;
+
+use AlibabaCloud\Dara\Model;
+use AlibabaCloud\SDK\Sts\V20150401\Models\AssumeRoleWithSAMLResponseBody\assumedRoleUser;
+use AlibabaCloud\SDK\Sts\V20150401\Models\AssumeRoleWithSAMLResponseBody\credentials;
+use AlibabaCloud\SDK\Sts\V20150401\Models\AssumeRoleWithSAMLResponseBody\SAMLAssertionInfo;
+
+class AssumeRoleWithSAMLResponseBody extends Model
+{
+    /**
+     * @var assumedRoleUser
+     */
+    public $assumedRoleUser;
+
+    /**
+     * @var credentials
+     */
+    public $credentials;
+
+    /**
+     * @var string
+     */
+    public $requestId;
+
+    /**
+     * @var SAMLAssertionInfo
+     */
+    public $SAMLAssertionInfo;
+
+    /**
+     * @var string
+     */
+    public $sourceIdentity;
+    protected $_name = [
+        'assumedRoleUser' => 'AssumedRoleUser',
+        'credentials' => 'Credentials',
+        'requestId' => 'RequestId',
+        'SAMLAssertionInfo' => 'SAMLAssertionInfo',
+        'sourceIdentity' => 'SourceIdentity',
+    ];
+
+    public function validate()
+    {
+        if (null !== $this->assumedRoleUser) {
+            $this->assumedRoleUser->validate();
+        }
+        if (null !== $this->credentials) {
+            $this->credentials->validate();
+        }
+        if (null !== $this->SAMLAssertionInfo) {
+            $this->SAMLAssertionInfo->validate();
+        }
+        parent::validate();
+    }
+
+    public function toArray($noStream = false)
+    {
+        $res = [];
+        if (null !== $this->assumedRoleUser) {
+            $res['AssumedRoleUser'] = null !== $this->assumedRoleUser ? $this->assumedRoleUser->toArray($noStream) : $this->assumedRoleUser;
+        }
+
+        if (null !== $this->credentials) {
+            $res['Credentials'] = null !== $this->credentials ? $this->credentials->toArray($noStream) : $this->credentials;
+        }
+
+        if (null !== $this->requestId) {
+            $res['RequestId'] = $this->requestId;
+        }
+
+        if (null !== $this->SAMLAssertionInfo) {
+            $res['SAMLAssertionInfo'] = null !== $this->SAMLAssertionInfo ? $this->SAMLAssertionInfo->toArray($noStream) : $this->SAMLAssertionInfo;
+        }
+
+        if (null !== $this->sourceIdentity) {
+            $res['SourceIdentity'] = $this->sourceIdentity;
+        }
+
+        return $res;
+    }
+
+    public function toMap($noStream = false)
+    {
+        return $this->toArray($noStream);
+    }
+
+    public static function fromMap($map = [])
+    {
+        $model = new self();
+        if (isset($map['AssumedRoleUser'])) {
+            $model->assumedRoleUser = assumedRoleUser::fromMap($map['AssumedRoleUser']);
+        }
+
+        if (isset($map['Credentials'])) {
+            $model->credentials = credentials::fromMap($map['Credentials']);
+        }
+
+        if (isset($map['RequestId'])) {
+            $model->requestId = $map['RequestId'];
+        }
+
+        if (isset($map['SAMLAssertionInfo'])) {
+            $model->SAMLAssertionInfo = SAMLAssertionInfo::fromMap($map['SAMLAssertionInfo']);
+        }
+
+        if (isset($map['SourceIdentity'])) {
+            $model->sourceIdentity = $map['SourceIdentity'];
+        }
+
+        return $model;
+    }
+}

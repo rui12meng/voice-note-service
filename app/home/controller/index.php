@@ -10,6 +10,7 @@ use Swoole\Coroutine\Channel;
 class Index extends \App\Application
 {
     private $_indexService;
+    private $_stsService;
 
     /**
      * @param $appName
@@ -20,6 +21,7 @@ class Index extends \App\Application
     {
         parent::__construct($appName, $controllerName, $actionName);
         $this->_indexService = \Lsf\Loader::service('Index', false, APP_NAME_HOME);
+        $this->_stsService = \Lsf\Loader::service('StsAli', true);
     }
 
     /**
@@ -56,5 +58,24 @@ class Index extends \App\Application
         }
         return $this->json($eCode, $response);
 
+    }
+
+    public function getStsToken(){
+        $uid = $this->uid;
+        if (!isset($uid) || empty($uid)) {
+            return $this->json(1001013, [], 'token失效');
+        }
+        $fileType = $this->post('file_type', true);
+
+        if (!isset($fileType) || empty($fileType)) {
+            $fileType = 'audio';
+        }
+        $result = $this->_stsService->getStsToken($uid, $fileType);
+        $eCode = ECODE_SUCCESS;
+        if($result === false){
+            $eCode = 1001018;
+            $result = [];
+        }
+        return $this->json($eCode, $result);
     }
 }

@@ -1,6 +1,8 @@
 <?php
 namespace Note\Controller;
 
+use Lsf\Env;
+
 /**
  * 笔记控制器
  * $Id: notes.php $
@@ -38,7 +40,99 @@ class Notes extends \App\Application
     }
 
     /**
-     * 添加语音笔记
+     * 添加语音笔记(同步 -- 文件大则响应慢) --- 测试使用
+     * 上传OSS+ASR语音识别+AI分析全流程
+     * @param  void
+     * @return void
+     */
+    public function addAudioSync(){
+        /*$uid = $this->uid;
+        if ( ! isset($uid) || empty($uid)) {
+            return $this->json(1001013, [], 'token失效');
+        }*/
+        $uid = 101;
+        //音频文件相对路径
+        $audioPath = $this->post('audio_path', true);
+        if ( ! isset($audioPath) || empty($audioPath)) {
+            return $this->errParamMissing(ECODE_PARAM_MISSING, 'audio_path');
+        }
+        //todo 安全考虑，不信任客户端域名，只取path，服务端拼接信任的OSS域名
+        $pathUrl = $this->buildTrustedUrlFromInput($audioPath);
+        if($pathUrl === false){
+            return $this->json(1003013, [], 'Url非法');
+        }
+        $signUrl = $this->_noteService->buildSignedMediaUrls(json_encode(array($pathUrl)));
+        //如果text存在则不需要语音识别
+        $noteText = $this->post('text', true);
+
+        if (!isset($noteText) || empty($noteText) ) {
+            //如果 text 为空 → 触发服务端 ASR
+            if(!empty($signUrl)){
+                $result = $this->_asrService->voiceAsr($signUrl); //扩展名放到voiceAsr内部处理
+                if(is_int($result) && $result < 0){// 语音识别失败
+                    return $this->json(1003006, []);
+                }
+                $noteText = isset($result['text']) ? $result['text'] : '';
+            }
+        }
+        //todo 限制1000字符
+        if (isset($noteText) && mb_strlen($noteText) > 1000) {
+            $noteText = mb_substr($noteText, 0, 1000);
+        }
+
+        //优先存储用户日记信息
+        $noteId = $this->_noteService->addAudioNote($uid, $noteText, array($pathUrl));
+        $eCode = ECODE_SUCCESS;
+        $response = [];
+        if(is_int($noteId) && $noteId < 0){
+            switch ($noteId){
+                // 数据库操作失败
+                case -7:
+                    $eCode = ECODE_DATABASE_QUERY_FAIL;
+                    break;
+                // 未知错误
+                default:
+                    $eCode = ECODE_UNDEFINED_ERROR;
+            }
+        }else{
+            $result = $this->_noteService->doAnalyzeNotesTasks($uid, $noteId, $noteText);
+            
+            if(is_array($result) && !empty($result)){
+                // todo 获取tags
+                $tags = $this->_noteService->getNoteTag($uid, $noteId);
+                $response = [
+                    'note_id' => $noteId,
+                    'note_type' => 'audio',
+                    'title' => isset($result['title']) ? $result['title'] : '语音日记',
+                    'tags' => is_array($tags) ? $tags : [],
+                    'audio_urls' => $signUrl,
+                    'content' => $noteText,
+                    'summary' => isset($result['summary']) ? $result['summary'] : '',
+                    'created_at' => date('Y-m-d H:i:s'),
+                ];
+            }else{ // todo 分析额度已用尽
+                $response = [
+                    'note_id' => $noteId,
+                    'note_type' => 'audio',
+                    'title' => '语音日记',
+                    'tags' => [],
+                    'audio_urls' => $signUrl,
+                    'content' => $noteText,
+                    'summary' =>'',
+                    'created_at' => date('Y-m-d H:i:s'),
+                ];
+            }
+
+
+
+        }
+
+        return $this->json($eCode, $response);
+
+    }
+
+    /**
+     * 添加语音笔记(异步)
      * 上传OSS+ASR语音识别+AI分析全流程
      * @param  void
      * @return void
@@ -601,6 +695,53 @@ class Notes extends \App\Application
             return $this->json($eCode, []);
         }
         return $this->json(ECODE_SUCCESS, $result);
+    }
+
+    /**
+     * 客户端传输的文件地址校验
+     * @param  string $input path
+     * @return void
+     */
+    private function buildTrustedUrlFromInput(string $input){
+        $input = trim($input);
+        $path = ltrim($input, '/');
+
+        $p = parse_url($path);
+        if ($p === false) {
+            return false;
+        }
+
+        if (isset($p['query']) && $p['query'] !== '') {
+            return false;
+        }
+        if (strpos($input, '?') !== false) {
+            return false;
+        }
+
+        $path = $p['path'] ?? $input;
+        if ($path === '') {
+            $path = '/';
+        }
+
+        if (strpos($path, "\0") !== false || strpos($path, "\\") !== false) {
+            return false;
+        }
+
+        $decoded = $path;
+        for ($i = 0; $i < 3; $i++) {
+            $next = rawurldecode($decoded);
+            if ($next === $decoded) break;
+            $decoded = $next;
+        }
+
+        if (strpos($decoded, '..') !== false) {
+            return false;
+        }
+        if (strpos($decoded, '//') !== false) {
+            return false;
+        }
+
+        return $decoded;
     }
 }
 

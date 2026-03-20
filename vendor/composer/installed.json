@@ -1,6 +1,420 @@
 {
     "packages": [
         {
+            "name": "adbario/php-dot-notation",
+            "version": "2.5.0",
+            "version_normalized": "2.5.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/adbario/php-dot-notation.git",
+                "reference": "081e2cca50c84bfeeea2e3ef9b2c8d206d80ccae"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/adbario/php-dot-notation/zipball/081e2cca50c84bfeeea2e3ef9b2c8d206d80ccae",
+                "reference": "081e2cca50c84bfeeea2e3ef9b2c8d206d80ccae",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": "^5.5 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8|^5.7|^6.6|^7.5|^8.5|^9.5",
+                "squizlabs/php_codesniffer": "^3.6"
+            },
+            "time": "2022-10-14T20:31:46+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Adbar\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Riku Särkinen",
+                    "email": "riku@adbar.io"
+                }
+            ],
+            "description": "PHP dot notation access to arrays",
+            "homepage": "https://github.com/adbario/php-dot-notation",
+            "keywords": [
+                "ArrayAccess",
+                "dotnotation"
+            ],
+            "support": {
+                "issues": "https://github.com/adbario/php-dot-notation/issues",
+                "source": "https://github.com/adbario/php-dot-notation/tree/2.5.0"
+            },
+            "install-path": "../adbario/php-dot-notation"
+        },
+        {
+            "name": "alibabacloud/credentials",
+            "version": "1.2.3",
+            "version_normalized": "1.2.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/aliyun/credentials-php.git",
+                "reference": "f6d1986e7b7be8da781d0b99f24c92d9860ba0c1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/aliyun/credentials-php/zipball/f6d1986e7b7be8da781d0b99f24c92d9860ba0c1",
+                "reference": "f6d1986e7b7be8da781d0b99f24c92d9860ba0c1",
+                "shasum": ""
+            },
+            "require": {
+                "adbario/php-dot-notation": "^2.2",
+                "alibabacloud/tea": "^3.0",
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "ext-simplexml": "*",
+                "ext-xmlwriter": "*",
+                "guzzlehttp/guzzle": "^6.3|^7.0",
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "composer/composer": "^1.8",
+                "drupal/coder": "^8.3",
+                "ext-dom": "*",
+                "ext-pcre": "*",
+                "ext-sockets": "*",
+                "ext-spl": "*",
+                "mikey179/vfsstream": "^1.6",
+                "monolog/monolog": "^1.24",
+                "phpunit/phpunit": "^5.7|^6.6|^9.3",
+                "psr/cache": "^1.0",
+                "symfony/dotenv": "^3.4",
+                "symfony/var-dumper": "^3.4"
+            },
+            "suggest": {
+                "ext-sockets": "To use client-side monitoring"
+            },
+            "time": "2025-04-18T09:09:46+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "AlibabaCloud\\Credentials\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alibaba Cloud SDK",
+                    "email": "sdk-team@alibabacloud.com",
+                    "homepage": "http://www.alibabacloud.com"
+                }
+            ],
+            "description": "Alibaba Cloud Credentials for PHP",
+            "homepage": "https://www.alibabacloud.com/",
+            "keywords": [
+                "alibaba",
+                "alibabacloud",
+                "aliyun",
+                "client",
+                "cloud",
+                "credentials",
+                "library",
+                "sdk",
+                "tool"
+            ],
+            "support": {
+                "issues": "https://github.com/aliyun/credentials-php/issues",
+                "source": "https://github.com/aliyun/credentials-php"
+            },
+            "install-path": "../alibabacloud/credentials"
+        },
+        {
+            "name": "alibabacloud/darabonba",
+            "version": "v1.0.4",
+            "version_normalized": "1.0.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alibabacloud-sdk-php/darabonba.git",
+                "reference": "b1ccea693258ea68e455e330922406f3afe10e9c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alibabacloud-sdk-php/darabonba/zipball/b1ccea693258ea68e455e330922406f3afe10e9c",
+                "reference": "b1ccea693258ea68e455e330922406f3afe10e9c",
+                "shasum": ""
+            },
+            "require": {
+                "adbario/php-dot-notation": "^2.4",
+                "alibabacloud/tea": "^3.2",
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "ext-simplexml": "*",
+                "ext-xmlwriter": "*",
+                "guzzlehttp/guzzle": "^6.3|^7.0",
+                "php": ">=5.5"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8.35|^5.4.3|^9.3",
+                "symfony/dotenv": "^3.4",
+                "symfony/var-dumper": "^3.4"
+            },
+            "suggest": {
+                "ext-sockets": "To use client-side monitoring"
+            },
+            "time": "2025-12-15T10:15:24+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "AlibabaCloud\\Dara\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alibaba Cloud SDK",
+                    "email": "sdk-team@alibabacloud.com",
+                    "homepage": "http://www.alibabacloud.com"
+                }
+            ],
+            "description": "Client of Darabonba for PHP",
+            "homepage": "https://www.alibabacloud.com/",
+            "keywords": [
+                "alibabacloud",
+                "client",
+                "cloud",
+                "tea"
+            ],
+            "support": {
+                "issues": "https://github.com/aliyun/tea-php/issues",
+                "source": "https://github.com/aliyun/tea-php"
+            },
+            "install-path": "../alibabacloud/darabonba"
+        },
+        {
+            "name": "alibabacloud/gateway-spi",
+            "version": "1.0.0",
+            "version_normalized": "1.0.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alibabacloud-sdk-php/alibabacloud-gateway-spi.git",
+                "reference": "7440f77750c329d8ab252db1d1d967314ccd1fcb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alibabacloud-sdk-php/alibabacloud-gateway-spi/zipball/7440f77750c329d8ab252db1d1d967314ccd1fcb",
+                "reference": "7440f77750c329d8ab252db1d1d967314ccd1fcb",
+                "shasum": ""
+            },
+            "require": {
+                "alibabacloud/credentials": "^1.1",
+                "php": ">5.5"
+            },
+            "time": "2022-07-14T05:31:35+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Darabonba\\GatewaySpi\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alibaba Cloud SDK",
+                    "email": "sdk-team@alibabacloud.com"
+                }
+            ],
+            "description": "Alibaba Cloud Gateway SPI Client",
+            "support": {
+                "source": "https://github.com/alibabacloud-sdk-php/alibabacloud-gateway-spi/tree/1.0.0"
+            },
+            "install-path": "../alibabacloud/gateway-spi"
+        },
+        {
+            "name": "alibabacloud/openapi-core",
+            "version": "1.0.9",
+            "version_normalized": "1.0.9.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alibabacloud-sdk-php/openapi-core.git",
+                "reference": "7b241b2a0e71f70629e2ecdc5cbe8c8b6b3a7567"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alibabacloud-sdk-php/openapi-core/zipball/7b241b2a0e71f70629e2ecdc5cbe8c8b6b3a7567",
+                "reference": "7b241b2a0e71f70629e2ecdc5cbe8c8b6b3a7567",
+                "shasum": ""
+            },
+            "require": {
+                "alibabacloud/credentials": "^1.2.2",
+                "alibabacloud/darabonba": "^1",
+                "alibabacloud/gateway-spi": "^1",
+                "php": ">5.5"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8.35|^5.4.3|^9.3",
+                "symfony/dotenv": "^3.4",
+                "symfony/var-dumper": "^3.4"
+            },
+            "time": "2026-01-15T06:47:29+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Darabonba\\OpenApi\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alibaba Cloud SDK",
+                    "email": "sdk-team@alibabacloud.com"
+                }
+            ],
+            "description": "Alibaba Cloud OpenApi Client Core",
+            "support": {
+                "issues": "https://github.com/alibabacloud-sdk-php/openapi-core/issues",
+                "source": "https://github.com/alibabacloud-sdk-php/openapi-core/tree/1.0.9"
+            },
+            "install-path": "../alibabacloud/openapi-core"
+        },
+        {
+            "name": "alibabacloud/sts-20150401",
+            "version": "1.2.0",
+            "version_normalized": "1.2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alibabacloud-sdk-php/sts-20150401.git",
+                "reference": "83e8d12b83fa9dc699cf86375daf34e1a143b9f4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alibabacloud-sdk-php/sts-20150401/zipball/83e8d12b83fa9dc699cf86375daf34e1a143b9f4",
+                "reference": "83e8d12b83fa9dc699cf86375daf34e1a143b9f4",
+                "shasum": ""
+            },
+            "require": {
+                "alibabacloud/darabonba": "^1.0.0",
+                "alibabacloud/openapi-core": "^1.0.0",
+                "php": ">5.5"
+            },
+            "time": "2026-01-07T07:07:09+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "AlibabaCloud\\SDK\\Sts\\V20150401\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alibaba Cloud SDK",
+                    "email": "sdk-team@alibabacloud.com"
+                }
+            ],
+            "description": "Alibaba Cloud Sts (20150401) SDK Library for PHP",
+            "support": {
+                "source": "https://github.com/alibabacloud-sdk-php/sts-20150401/tree/1.2.0"
+            },
+            "install-path": "../alibabacloud/sts-20150401"
+        },
+        {
+            "name": "alibabacloud/tea",
+            "version": "3.2.1",
+            "version_normalized": "3.2.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/aliyun/tea-php.git",
+                "reference": "1619cb96c158384f72b873e1f85de8b299c9c367"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/aliyun/tea-php/zipball/1619cb96c158384f72b873e1f85de8b299c9c367",
+                "reference": "1619cb96c158384f72b873e1f85de8b299c9c367",
+                "shasum": ""
+            },
+            "require": {
+                "adbario/php-dot-notation": "^2.4",
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "ext-simplexml": "*",
+                "ext-xmlwriter": "*",
+                "guzzlehttp/guzzle": "^6.3|^7.0",
+                "php": ">=5.5"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "*",
+                "symfony/dotenv": "^3.4",
+                "symfony/var-dumper": "^3.4"
+            },
+            "suggest": {
+                "ext-sockets": "To use client-side monitoring"
+            },
+            "time": "2023-05-16T06:43:41+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "AlibabaCloud\\Tea\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alibaba Cloud SDK",
+                    "email": "sdk-team@alibabacloud.com",
+                    "homepage": "http://www.alibabacloud.com"
+                }
+            ],
+            "description": "Client of Tea for PHP",
+            "homepage": "https://www.alibabacloud.com/",
+            "keywords": [
+                "alibabacloud",
+                "client",
+                "cloud",
+                "tea"
+            ],
+            "support": {
+                "issues": "https://github.com/aliyun/tea-php/issues",
+                "source": "https://github.com/aliyun/tea-php"
+            },
+            "install-path": "../alibabacloud/tea"
+        },
+        {
             "name": "firebase/php-jwt",
             "version": "v6.4.0",
             "version_normalized": "6.4.0.0",

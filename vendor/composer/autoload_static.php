@@ -10,6 +10,7 @@ class ComposerStaticInit482c491a9bb7de728acc8529664ae325
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        'd767e4fc2dc52fe66584ab8c6684783e' => __DIR__ . '/..' . '/adbario/php-dot-notation/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -38,6 +39,19 @@ class ComposerStaticInit482c491a9bb7de728acc8529664ae325
         'F' => 
         array (
             'Firebase\\JWT\\' => 13,
+        ),
+        'D' => 
+        array (
+            'Darabonba\\OpenApi\\' => 18,
+            'Darabonba\\GatewaySpi\\' => 21,
+        ),
+        'A' => 
+        array (
+            'AlibabaCloud\\Tea\\' => 17,
+            'AlibabaCloud\\SDK\\Sts\\V20150401\\' => 31,
+            'AlibabaCloud\\Dara\\' => 18,
+            'AlibabaCloud\\Credentials\\' => 25,
+            'Adbar\\' => 6,
         ),
     );
 
@@ -98,6 +112,34 @@ class ComposerStaticInit482c491a9bb7de728acc8529664ae325
         'Firebase\\JWT\\' => 
         array (
             0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
+        ),
+        'Darabonba\\OpenApi\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alibabacloud/openapi-core/src',
+        ),
+        'Darabonba\\GatewaySpi\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alibabacloud/gateway-spi/src',
+        ),
+        'AlibabaCloud\\Tea\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alibabacloud/tea/src',
+        ),
+        'AlibabaCloud\\SDK\\Sts\\V20150401\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alibabacloud/sts-20150401/src',
+        ),
+        'AlibabaCloud\\Dara\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alibabacloud/darabonba/src',
+        ),
+        'AlibabaCloud\\Credentials\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alibabacloud/credentials/src',
+        ),
+        'Adbar\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/adbario/php-dot-notation/src',
         ),
     );
 
