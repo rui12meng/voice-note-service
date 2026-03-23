@@ -9,7 +9,6 @@ use AlibabaCloud\Tea\Exception\TeaError;
 use Darabonba\OpenApi\Models\Config;
 use AlibabaCloud\SDK\Sts\V20150401\Models\AssumeRoleRequest;
 use AlibabaCloud\Tea\Utils\Utils\RuntimeOptions;
-use AlibabaCloud\Credentials\Credential\Config as CredentialConfig;
 
 
 /**
@@ -44,9 +43,10 @@ class StsAli
         $accessKeySecret = $this->_aLiYunOssStsConfig['access_key_secret'];
         $roleArn = $this->_aLiYunOssStsConfig['role_arn'];
         $roleSessionName = 'client-upload-session'.'-'.$uid;   // 会话名称，自定义，用于审计
-        $durationSeconds = 900;                       // 临时凭证有效期，单位秒，最小900(15分钟)
+        $durationSeconds = $this->_aLiYunOssStsConfig['duration_seconds']; // 临时凭证有效期，单位秒，最小900(15分钟)
         $bucketName = $this->_aLiYunOssStsConfig['bucket']; // OSS Bucket 名称
-        $regionId = 'cn-beijing';                    // STS 服务所在地域
+        $regionId = $this->_aLiYunOssStsConfig['region_id']; // STS 服务所在地域
+        $endPoint = $this->_aLiYunOssStsConfig['end_point'];
 
         $policy = [
             "Version" => "1",
@@ -102,14 +102,17 @@ class StsAli
             \Lsf\Loader::plugin('Log')->info('', $logInfo, 'sts_sdk_request_end');
 
             // 解析结果
-            if ($resp && $resp->body && $resp->body->Credentials) {
-                $cred = $resp->body->Credentials;
+            if ($resp && $resp->body && $resp->body->credentials) {
+                $cred = $resp->body->credentials;
 
                 return [
-                    'accessKeyId'     => $cred->AccessKeyId,
-                    'accessKeySecret' => $cred->AccessKeySecret,
-                    'securityToken'   => $cred->SecurityToken,
-                    'expiration'      => $cred->Expiration
+                    'accessKeyId'     => $cred->accessKeyId,
+                    'accessKeySecret' => $cred->accessKeySecret,
+                    'securityToken'   => $cred->securityToken,
+                    'expiration'      => $cred->expiration,
+                    'bucketName'      => $bucketName,
+                    'endPoint'        => $endPoint,
+                    'filePath'        => $fileType.'/',
                 ];
             } else {
                 //log
